@@ -59,10 +59,7 @@ export function ServiceTypeAdmin() {
 
   const startEditing = async (serviceType: ServiceType) => {
     setIsEditing(serviceType.id);
-    setEditForm({
-      ...serviceType,
-      tags: serviceType.tags || []
-    });
+    setEditForm(serviceType);
     
     // Fetch assigned training materials for this service type
     const assignedMaterials = await fetchServiceTrainingMaterials(serviceType.id);
@@ -105,7 +102,6 @@ export function ServiceTypeAdmin() {
       description: "",
       default_timeline_days: 7,
       gpt_form_prompt: "",
-      tags: [],
       is_active: true
     });
   };
@@ -134,7 +130,6 @@ export function ServiceTypeAdmin() {
       description: editForm.description,
       default_timeline_days: editForm.default_timeline_days || 7,
       gpt_form_prompt: editForm.gpt_form_prompt,
-      tags: editForm.tags || [],
       is_active: editForm.is_active !== false
     };
 
@@ -214,11 +209,6 @@ export function ServiceTypeAdmin() {
     }
   };
 
-  const handleTagsChange = (tagsString: string) => {
-    const tags = tagsString.split(',').map(tag => tag.trim()).filter(tag => tag);
-    setEditForm({ ...editForm, tags });
-  };
-
   const toggleMaterialSelection = (materialId: string) => {
     setSelectedMaterials(prev => 
       prev.includes(materialId) 
@@ -279,16 +269,6 @@ export function ServiceTypeAdmin() {
                 value={editForm.gpt_form_prompt || ""}
                 onChange={(e) => setEditForm({ ...editForm, gpt_form_prompt: e.target.value })}
                 placeholder="e.g., Ask 10 questions to build a comprehensive resume..."
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="tags">Tags (comma-separated)</Label>
-              <Input
-                id="tags"
-                value={editForm.tags?.join(', ') || ""}
-                onChange={(e) => handleTagsChange(e.target.value)}
-                placeholder="e.g., resume, basic, writing"
               />
             </div>
 
@@ -398,19 +378,6 @@ export function ServiceTypeAdmin() {
                     <p className="text-sm">{new Date(serviceType.created_at).toLocaleDateString()}</p>
                   </div>
                 </div>
-
-                {serviceType.tags && serviceType.tags.length > 0 && (
-                  <div className="mb-4">
-                    <Label className="text-sm font-medium">Tags</Label>
-                    <div className="flex flex-wrap gap-1 mt-1">
-                      {serviceType.tags.map((tag) => (
-                        <Badge key={tag} variant="outline" className="text-xs">
-                          {tag}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                )}
 
                 {serviceType.gpt_form_prompt && (
                   <div className="mb-4">
