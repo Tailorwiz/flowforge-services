@@ -18,6 +18,7 @@ import {
   Download,
   HelpCircle,
   User,
+  LogOut,
   Camera,
   Settings,
   Phone,
@@ -522,6 +523,17 @@ export default function ClientPortal() {
               </div>
             </div>
             <div className="flex items-center gap-4">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={async () => {
+                  await supabase.auth.signOut();
+                }}
+                className="flex items-center gap-2"
+              >
+                <LogOut className="h-4 w-4" />
+                Logout
+              </Button>
               <div className="relative">
                 <Avatar className="h-12 w-12 ring-2 ring-primary/20">
                   <AvatarImage src={profile.avatar_url} alt={profile.name} />
