@@ -26,18 +26,8 @@ export default function CustomerAuth() {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
         try {
-          // Check user role to redirect appropriately
-          const { data: userRole, error } = await supabase
-            .from('user_roles')
-            .select('role')
-            .eq('user_id', session.user.id)
-            .maybeSingle();
-          
-          if (userRole?.role === 'admin') {
-            navigate("/");
-          } else {
-            navigate("/portal");
-          }
+          // For customer portal, always redirect to customer portal regardless of role
+          navigate("/portal");
         } catch (error) {
           navigate("/portal");
         }
@@ -50,21 +40,8 @@ export default function CustomerAuth() {
       if (session) {
         // Defer the role checking to avoid auth state deadlock
         setTimeout(async () => {
-          try {
-            const { data: userRole, error } = await supabase
-              .from('user_roles')
-              .select('role')
-              .eq('user_id', session.user.id)
-              .maybeSingle();
-            
-            if (userRole?.role === 'admin') {
-              navigate("/");
-            } else {
-              navigate("/portal");
-            }
-          } catch (error) {
-            navigate("/portal"); // Default to customer portal
-          }
+          // For customer portal, always redirect to customer portal
+          navigate("/portal");
         }, 0);
       }
     });
