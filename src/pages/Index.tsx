@@ -56,7 +56,7 @@ const Index = () => {
     <div className="min-h-screen bg-background p-6">
       <div className="max-w-6xl mx-auto">
         <div className="flex justify-between items-center mb-8">
-          <h1 className="text-4xl font-bold">Service Type Management System</h1>
+          <h1 className="text-4xl font-bold">RDR Project Portal</h1>
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <User className="w-4 h-4" />
