@@ -69,6 +69,7 @@ export default function TrainingMaterialUpload() {
   const [uploading, setUploading] = useState(false);
   const [editingMaterial, setEditingMaterial] = useState<TrainingMaterial | null>(null);
   const [showAccessDialog, setShowAccessDialog] = useState<TrainingMaterial | null>(null);
+  const [showUploadForm, setShowUploadForm] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -187,12 +188,13 @@ export default function TrainingMaterialUpload() {
         description: "Training material uploaded successfully"
       });
 
-      // Reset form
+      // Reset form and hide it
       setFormData({
         name: "",
         description: "",
         type: "PDF"
       });
+      setShowUploadForm(false);
 
       // Reset file input
       if (event.target) {
@@ -441,91 +443,117 @@ export default function TrainingMaterialUpload() {
 
   return (
     <div className="space-y-6">
-      {/* Upload Form */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Upload className="w-5 h-5" />
-            Upload Training Material
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {/* Upload Form Toggle */}
+      {!showUploadForm ? (
+        <Card>
+          <CardContent className="pt-6">
+            <Button 
+              onClick={() => setShowUploadForm(true)}
+              className="w-full"
+            >
+              <Upload className="w-5 h-5 mr-2" />
+              Add New Training Material
+            </Button>
+          </CardContent>
+        </Card>
+      ) : (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Upload className="w-5 h-5" />
+              Upload Training Material
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="name">Material Name</Label>
+                <Input
+                  id="name"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  placeholder="e.g., The Science of Getting Job Interviews"
+                />
+              </div>
+              <div>
+                <Label htmlFor="type">Type</Label>
+                <Select
+                  value={formData.type}
+                  onValueChange={(value) => setFormData({ ...formData, type: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select file type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {FILE_TYPES.map((type) => (
+                      <SelectItem key={type} value={type}>
+                        {type}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            
             <div>
-              <Label htmlFor="name">Material Name</Label>
-              <Input
-                id="name"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                placeholder="e.g., The Science of Getting Job Interviews"
+              <Label htmlFor="description">Description</Label>
+              <Textarea
+                id="description"
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                placeholder="Brief description of what this material covers..."
+                rows={3}
               />
             </div>
+
             <div>
-              <Label htmlFor="type">Type</Label>
-              <Select
-                value={formData.type}
-                onValueChange={(value) => setFormData({ ...formData, type: value })}
+              <Label htmlFor="file">Training File</Label>
+              <Input
+                id="file"
+                type="file"
+                accept={ACCEPTED_FILE_TYPES[formData.type as keyof typeof ACCEPTED_FILE_TYPES] || '*'}
+                onChange={handleFileUpload}
+                disabled={uploading}
+              />
+              <p className="text-sm text-muted-foreground mt-1">
+                Accepted formats: {ACCEPTED_FILE_TYPES[formData.type as keyof typeof ACCEPTED_FILE_TYPES] || 'All files'}. Max size: 50MB
+              </p>
+            </div>
+
+            <div>
+              <Label htmlFor="thumbnail">Thumbnail Image (Optional)</Label>
+              <Input
+                id="thumbnail"
+                type="file"
+                accept=".jpg,.jpeg,.png,.gif"
+                disabled={uploading}
+              />
+              <p className="text-sm text-muted-foreground mt-1">
+                Upload a thumbnail image for better visual representation
+              </p>
+            </div>
+
+            {uploading && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+                Uploading...
+              </div>
+            )}
+
+            <div className="flex gap-2 pt-4">
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setShowUploadForm(false);
+                  setFormData({ name: "", description: "", type: "PDF" });
+                }}
               >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select file type" />
-                </SelectTrigger>
-                <SelectContent>
-                  {FILE_TYPES.map((type) => (
-                    <SelectItem key={type} value={type}>
-                      {type}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                Cancel
+              </Button>
             </div>
-          </div>
-          
-          <div>
-            <Label htmlFor="description">Description</Label>
-            <Textarea
-              id="description"
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              placeholder="Brief description of what this material covers..."
-              rows={3}
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="file">Training File</Label>
-            <Input
-              id="file"
-              type="file"
-              accept={ACCEPTED_FILE_TYPES[formData.type as keyof typeof ACCEPTED_FILE_TYPES] || '*'}
-              onChange={handleFileUpload}
-              disabled={uploading}
-            />
-            <p className="text-sm text-muted-foreground mt-1">
-              Accepted formats: {ACCEPTED_FILE_TYPES[formData.type as keyof typeof ACCEPTED_FILE_TYPES] || 'All files'}. Max size: 50MB
-            </p>
-          </div>
-
-          <div>
-            <Label htmlFor="thumbnail">Thumbnail Image (Optional)</Label>
-            <Input
-              id="thumbnail"
-              type="file"
-              accept=".jpg,.jpeg,.png,.gif"
-              disabled={uploading}
-            />
-            <p className="text-sm text-muted-foreground mt-1">
-              Upload a thumbnail image for better visual representation
-            </p>
-          </div>
-
-          {uploading && (
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
-              Uploading...
-            </div>
-          )}
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Materials List */}
       <Card>
