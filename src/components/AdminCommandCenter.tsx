@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
 import { 
   User, 
@@ -20,7 +21,9 @@ import {
   Filter,
   Search,
   Eye,
-  TrendingUp
+  TrendingUp,
+  Download,
+  File
 } from "lucide-react";
 
 interface Client {
@@ -59,6 +62,13 @@ interface ExtendedClient extends Client {
   days_until_due: number;
 }
 
+interface ClientFile {
+  id: string;
+  description: string;
+  created_at: string;
+  metadata: any;
+}
+
 export function AdminCommandCenter() {
   const [clients, setClients] = useState<ExtendedClient[]>([]);
   const [loading, setLoading] = useState(true);
@@ -68,6 +78,9 @@ export function AdminCommandCenter() {
   const [packageFilter, setPackageFilter] = useState<string>("all");
   const [urgencyFilter, setUrgencyFilter] = useState<string>("all");
   const [actionNeededFilter, setActionNeededFilter] = useState<boolean>(false);
+  const [viewingClientFiles, setViewingClientFiles] = useState<ExtendedClient | null>(null);
+  const [clientFiles, setClientFiles] = useState<ClientFile[]>([]);
+  const [loadingFiles, setLoadingFiles] = useState(false);
 
   useEffect(() => {
     fetchClientsData();
@@ -240,6 +253,58 @@ export function AdminCommandCenter() {
         {status.toUpperCase()}
       </Badge>
     );
+  };
+
+  const fetchClientFiles = async (clientId: string) => {
+    setLoadingFiles(true);
+    try {
+      const { data, error } = await supabase
+        .from("client_history")
+        .select("id, description, created_at, metadata")
+        .eq("client_id", clientId)
+        .eq("action_type", "file_uploaded")
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      setClientFiles(data || []);
+    } catch (error) {
+      console.error("Error fetching client files:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load client files",
+        variant: "destructive"
+      });
+      setClientFiles([]);
+    } finally {
+      setLoadingFiles(false);
+    }
+  };
+
+  const handleViewClient = async (client: ExtendedClient) => {
+    setViewingClientFiles(client);
+    await fetchClientFiles(client.id);
+  };
+
+  const handleDownloadFile = (file: ClientFile) => {
+    // Extract file information from metadata
+    const fileName = file.metadata?.fileName || 'file';
+    const fileUrl = file.metadata?.fileUrl;
+    
+    if (fileUrl) {
+      // Create a temporary link to download the file
+      const link = document.createElement('a');
+      link.href = fileUrl;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } else {
+      toast({
+        title: "Error", 
+        description: "File URL not found",
+        variant: "destructive"
+      });
+    }
   };
 
   if (loading) {
@@ -520,7 +585,11 @@ export function AdminCommandCenter() {
                     </TableCell>
                     
                     <TableCell>
-                      <Button size="sm" variant="outline">
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => handleViewClient(client)}
+                      >
                         <Eye className="w-4 h-4 mr-2" />
                         View
                       </Button>
@@ -538,6 +607,65 @@ export function AdminCommandCenter() {
           )}
         </CardContent>
       </Card>
+
+      {/* Client Files Dialog */}
+      <Dialog open={viewingClientFiles !== null} onOpenChange={() => setViewingClientFiles(null)}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle>
+              Client Files - {viewingClientFiles?.name}
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="flex-1 overflow-y-auto">
+            {loadingFiles ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                <p className="ml-2">Loading files...</p>
+              </div>
+            ) : clientFiles.length > 0 ? (
+              <div className="space-y-4">
+                {clientFiles.map((file) => (
+                  <div key={file.id} className="border rounded-lg p-4">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-start gap-3 flex-1">
+                        <File className="w-5 h-5 text-primary mt-1 flex-shrink-0" />
+                        <div className="space-y-2 flex-1">
+                          <h4 className="font-medium">{file.description}</h4>
+                          <div className="text-sm text-muted-foreground">
+                            <p>Uploaded: {new Date(file.created_at).toLocaleString()}</p>
+                            {file.metadata?.fileName && (
+                              <p>File: {file.metadata.fileName}</p>
+                            )}
+                            {file.metadata?.fileSize && (
+                              <p>Size: {(file.metadata.fileSize / 1024 / 1024).toFixed(2)} MB</p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleDownloadFile(file)}
+                        disabled={!file.metadata?.fileUrl}
+                      >
+                        <Download className="w-4 h-4 mr-2" />
+                        Download
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <FileText className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                <p className="text-muted-foreground">No files uploaded yet</p>
+                <p className="text-sm text-muted-foreground">Files will appear here once the client uploads them</p>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
