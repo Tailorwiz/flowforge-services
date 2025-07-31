@@ -14,6 +14,170 @@ export type Database = {
   }
   public: {
     Tables: {
+      client_history: {
+        Row: {
+          action_type: string
+          client_id: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          new_value: Json | null
+          old_value: Json | null
+        }
+        Insert: {
+          action_type: string
+          client_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          new_value?: Json | null
+          old_value?: Json | null
+        }
+        Update: {
+          action_type?: string
+          client_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          new_value?: Json | null
+          old_value?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_history_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      client_tasks: {
+        Row: {
+          assigned_date: string | null
+          client_id: string | null
+          completed_date: string | null
+          created_at: string
+          description: string | null
+          due_date: string | null
+          id: string
+          name: string
+          project_id: string | null
+          status: string | null
+          task_id: string | null
+          task_order: number | null
+          updated_at: string
+        }
+        Insert: {
+          assigned_date?: string | null
+          client_id?: string | null
+          completed_date?: string | null
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          name: string
+          project_id?: string | null
+          status?: string | null
+          task_id?: string | null
+          task_order?: number | null
+          updated_at?: string
+        }
+        Update: {
+          assigned_date?: string | null
+          client_id?: string | null
+          completed_date?: string | null
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          name?: string
+          project_id?: string | null
+          status?: string | null
+          task_id?: string | null
+          task_order?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_tasks_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_tasks_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_tasks_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      clients: {
+        Row: {
+          created_at: string
+          email: string
+          estimated_delivery_date: string | null
+          id: string
+          name: string
+          payment_status: string | null
+          phone: string | null
+          service_type_id: string | null
+          status: string | null
+          stripe_customer_id: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          estimated_delivery_date?: string | null
+          id?: string
+          name: string
+          payment_status?: string | null
+          phone?: string | null
+          service_type_id?: string | null
+          status?: string | null
+          stripe_customer_id?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          estimated_delivery_date?: string | null
+          id?: string
+          name?: string
+          payment_status?: string | null
+          phone?: string | null
+          service_type_id?: string | null
+          status?: string | null
+          stripe_customer_id?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clients_service_type_id_fkey"
+            columns: ["service_type_id"]
+            isOneToOne: false
+            referencedRelation: "service_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       document_collaborators: {
         Row: {
           accepted_at: string | null
@@ -192,6 +356,72 @@ export type Database = {
         }
         Relationships: []
       }
+      email_templates: {
+        Row: {
+          content: string
+          created_at: string
+          delay_days: number | null
+          id: string
+          is_active: boolean | null
+          name: string
+          subject: string
+          trigger_type: string | null
+          updated_at: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          delay_days?: number | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          subject: string
+          trigger_type?: string | null
+          updated_at?: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          delay_days?: number | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          subject?: string
+          trigger_type?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      intake_forms: {
+        Row: {
+          created_at: string
+          description: string | null
+          form_fields: Json | null
+          id: string
+          is_active: boolean | null
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          form_fields?: Json | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          form_fields?: Json | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -272,6 +502,57 @@ export type Database = {
           years_experience?: number | null
         }
         Relationships: []
+      }
+      projects: {
+        Row: {
+          actual_delivery_date: string | null
+          client_id: string | null
+          created_at: string
+          estimated_delivery_date: string | null
+          id: string
+          name: string
+          service_type_id: string | null
+          status: string | null
+          updated_at: string
+        }
+        Insert: {
+          actual_delivery_date?: string | null
+          client_id?: string | null
+          created_at?: string
+          estimated_delivery_date?: string | null
+          id?: string
+          name: string
+          service_type_id?: string | null
+          status?: string | null
+          updated_at?: string
+        }
+        Update: {
+          actual_delivery_date?: string | null
+          client_id?: string | null
+          created_at?: string
+          estimated_delivery_date?: string | null
+          id?: string
+          name?: string
+          service_type_id?: string | null
+          status?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "projects_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projects_service_type_id_fkey"
+            columns: ["service_type_id"]
+            isOneToOne: false
+            referencedRelation: "service_types"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       resume_analyses: {
         Row: {
@@ -468,6 +749,255 @@ export type Database = {
           selected_skills?: Json
           updated_at?: string
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      service_email_templates: {
+        Row: {
+          created_at: string
+          email_template_id: string | null
+          id: string
+          service_type_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          email_template_id?: string | null
+          id?: string
+          service_type_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          email_template_id?: string | null
+          id?: string
+          service_type_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_email_templates_email_template_id_fkey"
+            columns: ["email_template_id"]
+            isOneToOne: false
+            referencedRelation: "email_templates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_email_templates_service_type_id_fkey"
+            columns: ["service_type_id"]
+            isOneToOne: false
+            referencedRelation: "service_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      service_intake_forms: {
+        Row: {
+          created_at: string
+          id: string
+          intake_form_id: string | null
+          is_required: boolean | null
+          service_type_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          intake_form_id?: string | null
+          is_required?: boolean | null
+          service_type_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          intake_form_id?: string | null
+          is_required?: boolean | null
+          service_type_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_intake_forms_intake_form_id_fkey"
+            columns: ["intake_form_id"]
+            isOneToOne: false
+            referencedRelation: "intake_forms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_intake_forms_service_type_id_fkey"
+            columns: ["service_type_id"]
+            isOneToOne: false
+            referencedRelation: "service_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      service_tasks: {
+        Row: {
+          created_at: string
+          id: string
+          service_type_id: string | null
+          task_id: string | null
+          task_order: number | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          service_type_id?: string | null
+          task_id?: string | null
+          task_order?: number | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          service_type_id?: string | null
+          task_id?: string | null
+          task_order?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_tasks_service_type_id_fkey"
+            columns: ["service_type_id"]
+            isOneToOne: false
+            referencedRelation: "service_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_tasks_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      service_training_materials: {
+        Row: {
+          created_at: string
+          id: string
+          service_type_id: string | null
+          training_material_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          service_type_id?: string | null
+          training_material_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          service_type_id?: string | null
+          training_material_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_training_materials_service_type_id_fkey"
+            columns: ["service_type_id"]
+            isOneToOne: false
+            referencedRelation: "service_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_training_materials_training_material_id_fkey"
+            columns: ["training_material_id"]
+            isOneToOne: false
+            referencedRelation: "training_materials"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      service_types: {
+        Row: {
+          created_at: string
+          default_timeline_days: number | null
+          description: string | null
+          gpt_form_prompt: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          tags: string[] | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          default_timeline_days?: number | null
+          description?: string | null
+          gpt_form_prompt?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          tags?: string[] | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          default_timeline_days?: number | null
+          description?: string | null
+          gpt_form_prompt?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          tags?: string[] | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      tasks: {
+        Row: {
+          created_at: string
+          default_order: number | null
+          description: string | null
+          id: string
+          is_template: boolean | null
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          default_order?: number | null
+          description?: string | null
+          id?: string
+          is_template?: boolean | null
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          default_order?: number | null
+          description?: string | null
+          id?: string
+          is_template?: boolean | null
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      training_materials: {
+        Row: {
+          content_url: string | null
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          type: string | null
+          updated_at: string
+        }
+        Insert: {
+          content_url?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          type?: string | null
+          updated_at?: string
+        }
+        Update: {
+          content_url?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          type?: string | null
+          updated_at?: string
         }
         Relationships: []
       }
