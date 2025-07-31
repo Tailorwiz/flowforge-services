@@ -4,13 +4,14 @@ import { ClientManager } from "@/components/ClientManager";
 import { ServiceTypeAdmin } from "@/components/ServiceTypeAdmin";
 import { ReminderManager } from "@/components/ReminderManager";
 import { DailyDigest } from "@/components/DailyDigest";
+import { AdminProfile } from "@/components/AdminProfile";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/components/AuthProvider";
 import { LogOut, User } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
 const Index = () => {
-  const [activeTab, setActiveTab] = useState<'digest' | 'clients' | 'reminders' | 'services'>('digest');
+  const [activeTab, setActiveTab] = useState<'digest' | 'clients' | 'reminders' | 'services' | 'profile'>('digest');
   const { user, loading, signOut } = useAuth();
   const navigate = useNavigate();
 
@@ -87,6 +88,12 @@ const Index = () => {
                 Service Settings
               </Button>
               <Button 
+                variant={activeTab === 'profile' ? 'default' : 'outline'}
+                onClick={() => setActiveTab('profile')}
+              >
+                Admin Profile
+              </Button>
+              <Button 
                 variant="ghost" 
                 size="sm"
                 onClick={handleSignOut}
@@ -103,6 +110,7 @@ const Index = () => {
         {activeTab === 'clients' && <ClientManager />}
         {activeTab === 'reminders' && <ReminderManager />}
         {activeTab === 'services' && <ServiceTypeAdmin />}
+        {activeTab === 'profile' && <AdminProfile />}
       </div>
     </div>
   );
