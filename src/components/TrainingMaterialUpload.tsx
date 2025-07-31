@@ -274,11 +274,42 @@ export default function TrainingMaterialUpload() {
     }
   };
 
-  const handleEdit = async (materialId: string, updatedData: Partial<TrainingMaterial>) => {
+  const handleEdit = async (materialId: string, updatedData: Partial<TrainingMaterial>, newThumbnail?: File) => {
     try {
+      let thumbnailUrl = updatedData.thumbnail_url;
+
+      // Handle thumbnail upload if a new one is provided
+      if (newThumbnail) {
+        const thumbExt = newThumbnail.name.split('.').pop();
+        const thumbFileName = `thumb_${Date.now()}_${updatedData.name?.replace(/[^a-zA-Z0-9]/g, '_')}.${thumbExt}`;
+        
+        // Delete old thumbnail if it exists
+        const material = materials.find(m => m.id === materialId);
+        if (material?.thumbnail_url) {
+          const oldThumbPath = material.thumbnail_url.split('/').pop();
+          if (oldThumbPath) {
+            await supabase.storage
+              .from('training-thumbnails')
+              .remove([oldThumbPath]);
+          }
+        }
+
+        // Upload new thumbnail
+        const { error: thumbUploadError } = await supabase.storage
+          .from('training-thumbnails')
+          .upload(thumbFileName, newThumbnail);
+
+        if (!thumbUploadError) {
+          const { data: { publicUrl: thumbPublicUrl } } = supabase.storage
+            .from('training-thumbnails')
+            .getPublicUrl(thumbFileName);
+          thumbnailUrl = thumbPublicUrl;
+        }
+      }
+
       const { error } = await supabase
         .from('training_materials')
-        .update(updatedData)
+        .update({ ...updatedData, thumbnail_url: thumbnailUrl })
         .eq('id', materialId);
 
       if (error) throw error;
@@ -574,7 +605,7 @@ export default function TrainingMaterialUpload() {
 
       {/* Edit Material Dialog */}
       <Dialog open={editingMaterial !== null} onOpenChange={() => setEditingMaterial(null)}>
-        <DialogContent>
+        <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Edit Training Material</DialogTitle>
           </DialogHeader>
@@ -614,15 +645,48 @@ export default function TrainingMaterialUpload() {
                   </SelectContent>
                 </Select>
               </div>
+              
+              {/* Current Thumbnail Preview */}
+              {editingMaterial.thumbnail_url && (
+                <div>
+                  <Label>Current Thumbnail</Label>
+                  <div className="w-32 h-24 bg-primary/10 rounded-lg flex items-center justify-center overflow-hidden mt-2">
+                    <img 
+                      src={editingMaterial.thumbnail_url} 
+                      alt="Current thumbnail"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                </div>
+              )}
+              
+              {/* New Thumbnail Upload */}
+              <div>
+                <Label htmlFor="edit-thumbnail">Update Thumbnail (Optional)</Label>
+                <Input
+                  id="edit-thumbnail"
+                  type="file"
+                  accept=".jpg,.jpeg,.png,.gif"
+                />
+                <p className="text-sm text-muted-foreground mt-1">
+                  Upload a new thumbnail image to replace the current one
+                </p>
+              </div>
+              
               <div className="flex justify-end gap-2">
                 <Button variant="outline" onClick={() => setEditingMaterial(null)}>
                   Cancel
                 </Button>
-                <Button onClick={() => handleEdit(editingMaterial.id, {
-                  name: editingMaterial.name,
-                  description: editingMaterial.description,
-                  type: editingMaterial.type
-                })}>
+                <Button onClick={() => {
+                  const thumbnailInput = document.getElementById('edit-thumbnail') as HTMLInputElement;
+                  const newThumbnail = thumbnailInput?.files?.[0];
+                  
+                  handleEdit(editingMaterial.id, {
+                    name: editingMaterial.name,
+                    description: editingMaterial.description,
+                    type: editingMaterial.type
+                  }, newThumbnail);
+                }}>
                   Save Changes
                 </Button>
               </div>
