@@ -173,9 +173,10 @@ export function AdminProfile() {
               <AvatarUpload 
                 currentAvatarUrl={profile?.avatar_url}
                 onAvatarUpdate={(url) => {
-                  console.log('Avatar updated with URL:', url);
+                  console.log('Profile page avatar updated:', url);
                   setProfile(prev => ({...prev, avatar_url: url}));
-                  // Don't show toast here, AvatarUpload component handles it
+                  // Trigger a page refresh to update the top right avatar
+                  window.dispatchEvent(new CustomEvent('profileUpdated', { detail: { avatar_url: url } }));
                 }}
                 size="lg"
                 showUploadButton={true}

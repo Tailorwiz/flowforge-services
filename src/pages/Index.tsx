@@ -63,11 +63,51 @@ const Index = () => {
         .single();
 
       if (error) throw error;
+      console.log('Fetched user profile:', data);
       setUserProfile(data);
     } catch (error) {
       console.error('Error fetching user profile:', error);
     }
   };
+
+  // Listen for real-time profile updates
+  useEffect(() => {
+    if (user) {
+      const channel = supabase
+        .channel('profile-changes')
+        .on('postgres_changes', 
+          { 
+            event: 'UPDATE', 
+            schema: 'public', 
+            table: 'profiles',
+            filter: `id=eq.${user.id}`
+          }, 
+          (payload) => {
+            console.log('Profile updated via realtime:', payload);
+            setUserProfile(payload.new);
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    }
+  }, [user]);
+
+  // Listen for profile updates from other components
+  useEffect(() => {
+    const handleProfileUpdate = (event: any) => {
+      console.log('Profile update event received:', event.detail);
+      setUserProfile(prev => ({...prev, ...event.detail}));
+      fetchUserProfile(); // Refresh from database
+    };
+
+    window.addEventListener('profileUpdated', handleProfileUpdate);
+    return () => {
+      window.removeEventListener('profileUpdated', handleProfileUpdate);
+    };
+  }, []);
 
   const handleSignOut = async () => {
     try {
@@ -206,7 +246,14 @@ const Index = () => {
                     <div className="flex items-center gap-3">
                       <AvatarUpload 
                         currentAvatarUrl={userProfile?.avatar_url}
-                        onAvatarUpdate={(url) => setUserProfile({...userProfile, avatar_url: url})}
+                        onAvatarUpdate={(url) => {
+                          console.log('Top right avatar updated:', url);
+                          setUserProfile(prev => ({...prev, avatar_url: url}));
+                          // Force a profile refresh to sync everywhere
+                          setTimeout(() => {
+                            fetchUserProfile();
+                          }, 500);
+                        }}
                         size="lg"
                         showUploadButton={true}
                       />
