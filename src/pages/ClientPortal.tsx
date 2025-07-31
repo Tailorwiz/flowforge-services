@@ -518,8 +518,7 @@ export default function ClientPortal() {
             <div className="flex items-center gap-4">
               <RDRLogo />
               <div>
-                <h1 className="text-xl font-bold text-slate-800">RDR Project Portal</h1>
-                <p className="text-sm text-slate-600">Client Dashboard</p>
+                <h1 className="text-2xl font-bold text-slate-800">Client Dashboard</h1>
               </div>
             </div>
             <div className="flex items-center gap-4">
