@@ -25,8 +25,14 @@ import {
   BookOpen,
   AlertCircle,
   ListTodo,
-  UserCheck
+  UserCheck,
+  Edit,
+  Save,
+  Package
 } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import RDRLogo from "@/components/RDRLogo";
 import AvatarUpload from "@/components/AvatarUpload";
 
@@ -39,6 +45,14 @@ interface ClientProfile {
   estimated_delivery_date?: string;
   status: string;
   progress_step: number;
+  first_name?: string;
+  last_name?: string;
+  phone?: string;
+  location?: string;
+  job_title?: string;
+  industry?: string;
+  website?: string;
+  bio?: string;
 }
 
 const PROGRESS_STEPS = [
@@ -126,7 +140,15 @@ export default function ClientPortal() {
           service_type: clientData.service_types?.name || 'Resume Package',
           estimated_delivery_date: clientData.estimated_delivery_date,
           status: clientData.status,
-          progress_step: determineProgressStep(clientData)
+          progress_step: determineProgressStep(clientData),
+          first_name: profileData?.first_name || clientData.name?.split(' ')[0] || '',
+          last_name: profileData?.last_name || clientData.name?.split(' ').slice(1).join(' ') || '',
+          phone: clientData.phone || profileData?.phone,
+          location: profileData?.location,
+          job_title: profileData?.job_title,
+          industry: profileData?.industry,
+          website: profileData?.website,
+          bio: profileData?.bio
         });
 
         // Check if profile photo is needed
@@ -330,6 +352,60 @@ export default function ClientPortal() {
       title: "Profile photo updated!",
       description: "Your profile photo has been successfully uploaded."
     });
+  };
+
+  const handleSaveProfile = async () => {
+    if (!profile || !user) return;
+    
+    try {
+      setLoading(true);
+      
+      // Update the profiles table
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .upsert({
+          id: user.id,
+          email: profile.email,
+          first_name: profile.first_name,
+          last_name: profile.last_name,
+          phone: profile.phone,
+          location: profile.location,
+          job_title: profile.job_title,
+          industry: profile.industry,
+          website: profile.website,
+          bio: profile.bio,
+          updated_at: new Date().toISOString(),
+        });
+
+      if (profileError) throw profileError;
+
+      // Update the clients table 
+      const { error: clientError } = await supabase
+        .from('clients')
+        .update({
+          name: `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || profile.name,
+          email: profile.email,
+          phone: profile.phone,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', profile.id);
+
+      if (clientError) throw clientError;
+
+      toast({
+        title: "Profile Updated",
+        description: "Your profile information has been saved successfully.",
+      });
+    } catch (error) {
+      console.error('Error saving profile:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save profile changes. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleRequestCall = () => {
@@ -900,17 +976,17 @@ export default function ClientPortal() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  {/* Profile Photo */}
-                  <div className="space-y-6">
-                    <div className="text-center">
-                      <div className="relative inline-block">
-                        <Avatar className="h-24 w-24 ring-4 ring-primary/20">
-                          <AvatarImage src={profile.avatar_url} alt={profile.name} />
-                          <AvatarFallback className="text-lg">
-                            <User className="h-8 w-8" />
-                          </AvatarFallback>
-                        </Avatar>
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                  {/* Profile Photo Section */}
+                  <div className="lg:col-span-1">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2 text-sm">
+                          <Camera className="w-4 h-4" />
+                          Profile Photo
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="text-center space-y-4">
                         <AvatarUpload 
                           currentAvatarUrl={profile.avatar_url}
                           onAvatarUpdate={(url) => {
@@ -919,50 +995,184 @@ export default function ClientPortal() {
                           size="lg"
                           showUploadButton={true}
                         />
-                      </div>
-                      <h3 className="text-lg font-semibold mt-4">{profile.name}</h3>
-                      <p className="text-slate-600">{profile.email}</p>
-                    </div>
+                        <div>
+                          <h3 className="text-lg font-semibold">{profile.name}</h3>
+                          <p className="text-slate-600 text-sm">{profile.email}</p>
+                        </div>
+                      </CardContent>
+                    </Card>
                   </div>
 
-                  {/* Profile Info */}
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1">Service Package</label>
-                      <div className="p-3 bg-slate-50 rounded-lg">
-                        <p className="font-medium text-primary">{profile.service_type}</p>
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1">Project Status</label>
-                      <div className="p-3 bg-slate-50 rounded-lg">
-                        <Badge variant={profile.status === 'active' ? 'default' : 'secondary'}>
-                          {profile.status}
-                        </Badge>
-                      </div>
-                    </div>
+                  {/* Profile Information */}
+                  <div className="lg:col-span-2">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2 text-sm">
+                          <Edit className="w-4 h-4" />
+                          Personal Information
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <Label htmlFor="firstName">First Name</Label>
+                            <Input
+                              id="firstName"
+                              value={profile.first_name || ''}
+                              onChange={(e) => setProfile(prev => prev ? { ...prev, first_name: e.target.value } : null)}
+                              placeholder="Enter your first name"
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="lastName">Last Name</Label>
+                            <Input
+                              id="lastName"
+                              value={profile.last_name || ''}
+                              onChange={(e) => setProfile(prev => prev ? { ...prev, last_name: e.target.value } : null)}
+                              placeholder="Enter your last name"
+                            />
+                          </div>
+                        </div>
 
-                    <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1">Estimated Delivery</label>
-                      <div className="p-3 bg-slate-50 rounded-lg">
-                        <p className="flex items-center gap-2">
-                          <Calendar className="w-4 h-4" />
-                          {profile.estimated_delivery_date ? 
-                            new Date(profile.estimated_delivery_date).toLocaleDateString() : 
-                            'To be determined'
-                          }
-                        </p>
-                      </div>
-                    </div>
+                        <div>
+                          <Label htmlFor="email">Email Address</Label>
+                          <Input
+                            id="email"
+                            type="email"
+                            value={profile.email || ''}
+                            onChange={(e) => setProfile(prev => prev ? { ...prev, email: e.target.value } : null)}
+                            placeholder="Enter your email"
+                          />
+                        </div>
 
-                    <div className="pt-4">
-                      <Button onClick={handleRequestCall} className="w-full" variant="outline">
-                        <Phone className="w-4 h-4 mr-2" />
-                        Request a Call
-                      </Button>
-                    </div>
+                        <div>
+                          <Label htmlFor="phone">Phone Number</Label>
+                          <Input
+                            id="phone"
+                            type="tel"
+                            value={profile.phone || ''}
+                            onChange={(e) => setProfile(prev => prev ? { ...prev, phone: e.target.value } : null)}
+                            placeholder="Enter your phone number"
+                          />
+                        </div>
+
+                        <div>
+                          <Label htmlFor="location">Address/Location</Label>
+                          <Input
+                            id="location"
+                            value={profile.location || ''}
+                            onChange={(e) => setProfile(prev => prev ? { ...prev, location: e.target.value } : null)}
+                            placeholder="Enter your address or location"
+                          />
+                        </div>
+
+                        <div>
+                          <Label htmlFor="jobTitle">Job Title</Label>
+                          <Input
+                            id="jobTitle"
+                            value={profile.job_title || ''}
+                            onChange={(e) => setProfile(prev => prev ? { ...prev, job_title: e.target.value } : null)}
+                            placeholder="Enter your job title"
+                          />
+                        </div>
+
+                        <div>
+                          <Label htmlFor="industry">Industry</Label>
+                          <Input
+                            id="industry"
+                            value={profile.industry || ''}
+                            onChange={(e) => setProfile(prev => prev ? { ...prev, industry: e.target.value } : null)}
+                            placeholder="Enter your industry"
+                          />
+                        </div>
+
+                        <div>
+                          <Label htmlFor="website">Website</Label>
+                          <Input
+                            id="website"
+                            type="url"
+                            value={profile.website || ''}
+                            onChange={(e) => setProfile(prev => prev ? { ...prev, website: e.target.value } : null)}
+                            placeholder="Enter your website URL"
+                          />
+                        </div>
+
+                        <div>
+                          <Label htmlFor="bio">Bio</Label>
+                          <Textarea
+                            id="bio"
+                            value={profile.bio || ''}
+                            onChange={(e) => setProfile(prev => prev ? { ...prev, bio: e.target.value } : null)}
+                            placeholder="Tell us about yourself"
+                            rows={3}
+                          />
+                        </div>
+
+                        <div className="flex gap-3 pt-4">
+                          <Button 
+                            onClick={handleSaveProfile} 
+                            className="flex-1"
+                            disabled={!profile}
+                          >
+                            <Save className="w-4 h-4 mr-2" />
+                            Save Changes
+                          </Button>
+                          <Button 
+                            onClick={handleRequestCall} 
+                            variant="outline"
+                            className="flex-1"
+                          >
+                            <Phone className="w-4 h-4 mr-2" />
+                            Request a Call
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
                   </div>
+                </div>
+
+                {/* Service Information */}
+                <div className="mt-8">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-sm">
+                        <Package className="w-4 h-4" />
+                        Service Information
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div>
+                          <label className="block text-sm font-medium text-slate-700 mb-2">Service Package</label>
+                          <div className="p-4 bg-gradient-to-r from-primary/10 to-primary/5 rounded-lg border border-primary/20">
+                            <p className="font-semibold text-primary">{profile.service_type}</p>
+                          </div>
+                        </div>
+                        
+                        <div>
+                          <label className="block text-sm font-medium text-slate-700 mb-2">Project Status</label>
+                          <div className="p-4 bg-slate-50 rounded-lg">
+                            <Badge variant={profile.status === 'active' ? 'default' : 'secondary'}>
+                              {profile.status}
+                            </Badge>
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-slate-700 mb-2">Estimated Delivery</label>
+                          <div className="p-4 bg-slate-50 rounded-lg">
+                            <p className="flex items-center gap-2 text-sm">
+                              <Calendar className="w-4 h-4" />
+                              {profile.estimated_delivery_date ? 
+                                new Date(profile.estimated_delivery_date).toLocaleDateString() : 
+                                'To be determined'
+                              }
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
                 </div>
               </CardContent>
             </Card>
