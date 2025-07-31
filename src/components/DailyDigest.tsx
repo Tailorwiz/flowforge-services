@@ -185,7 +185,7 @@ export function DailyDigest() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold">Hi {userProfile?.display_name || user?.email?.split('@')[0] || 'Admin'}! Here's Your Daily Project Overview!</h2>
+          <h2 className="text-2xl font-bold">Your Daily Project Overview</h2>
           <p className="text-muted-foreground">
             {new Date().toLocaleDateString('en-US', { 
               weekday: 'long', 
