@@ -22,18 +22,29 @@ export default function Auth() {
   useEffect(() => {
     // Check if user is already logged in
     const checkUser = async () => {
+      console.log('Checking existing session...');
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        // Check user role to redirect appropriately
-        const { data: userRole } = await supabase
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', session.user.id)
-          .maybeSingle();
-        
-        if (userRole?.role === 'admin') {
-          navigate("/");
-        } else {
+        console.log('Found existing session for:', session.user.email);
+        try {
+          // Check user role to redirect appropriately
+          const { data: userRole, error } = await supabase
+            .from('user_roles')
+            .select('role')
+            .eq('user_id', session.user.id)
+            .maybeSingle();
+          
+          console.log('Existing user role:', userRole, error);
+          
+          if (userRole?.role === 'admin') {
+            console.log('Redirecting existing admin to dashboard');
+            navigate("/");
+          } else {
+            console.log('Redirecting existing customer to portal');
+            navigate("/portal");
+          }
+        } catch (error) {
+          console.error('Error checking existing user role:', error);
           navigate("/portal");
         }
       }
@@ -41,20 +52,33 @@ export default function Auth() {
     checkUser();
 
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log('Auth state change:', event, session?.user?.email);
       if (session) {
-        // Check user role to redirect appropriately
-        const { data: userRole } = await supabase
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', session.user.id)
-          .maybeSingle();
-        
-        if (userRole?.role === 'admin') {
-          navigate("/");
-        } else {
-          navigate("/portal");
-        }
+        // Defer the role checking to avoid auth state deadlock
+        setTimeout(async () => {
+          try {
+            console.log('Checking user role for:', session.user.id);
+            const { data: userRole, error } = await supabase
+              .from('user_roles')
+              .select('role')
+              .eq('user_id', session.user.id)
+              .maybeSingle();
+            
+            console.log('User role result:', userRole, error);
+            
+            if (userRole?.role === 'admin') {
+              console.log('Redirecting to admin dashboard');
+              navigate("/");
+            } else {
+              console.log('Redirecting to customer portal');
+              navigate("/portal");
+            }
+          } catch (error) {
+            console.error('Error checking user role:', error);
+            navigate("/portal"); // Default to customer portal
+          }
+        }, 0);
       }
     });
 
