@@ -911,6 +911,9 @@ export type Database = {
           id: string
           is_active: boolean | null
           name: string
+          price_cents: number | null
+          stripe_price_id: string | null
+          stripe_product_id: string | null
           tags: string[] | null
           updated_at: string
         }
@@ -922,6 +925,9 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           name: string
+          price_cents?: number | null
+          stripe_price_id?: string | null
+          stripe_product_id?: string | null
           tags?: string[] | null
           updated_at?: string
         }
@@ -933,6 +939,9 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           name?: string
+          price_cents?: number | null
+          stripe_price_id?: string | null
+          stripe_product_id?: string | null
           tags?: string[] | null
           updated_at?: string
         }
