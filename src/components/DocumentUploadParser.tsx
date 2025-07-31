@@ -291,6 +291,12 @@ export function DocumentUploadParser({ serviceTypes, onClientCreated }: Document
       // Generate temporary credentials
       const { tempPassword } = generateClientCredentials();
 
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error('You must be logged in to create clients');
+      }
+
       // Create client record
       const { data: clientData, error: clientError } = await supabase
         .from("clients")
@@ -299,7 +305,7 @@ export function DocumentUploadParser({ serviceTypes, onClientCreated }: Document
           email: parsedData.email,
           phone: parsedData.phone,
           service_type_id: selectedServiceType,
-          user_id: "00000000-0000-0000-0000-000000000000", // Replace with actual user ID when auth is implemented
+          user_id: user.id,
           estimated_delivery_date: estimatedDeliveryDate.toISOString().split('T')[0],
           payment_status: "pending",
           status: "active"
