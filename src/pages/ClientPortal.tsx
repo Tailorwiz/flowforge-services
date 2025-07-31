@@ -532,6 +532,8 @@ export default function ClientPortal() {
                     title: "Logged out successfully",
                     description: "You have been signed out of your account."
                   });
+                  // Redirect to login selection page after logout
+                  window.location.href = "/login";
                 }}
                 className="flex items-center gap-2"
               >
