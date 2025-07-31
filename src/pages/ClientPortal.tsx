@@ -222,9 +222,29 @@ export default function ClientPortal() {
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
         <Card className="w-full max-w-md shadow-xl border-0">
           <CardContent className="text-center p-8">
-            <h2 className="text-xl font-bold mb-2 text-slate-800">Profile Not Found</h2>
-            <p className="text-slate-600 mb-4">We couldn't find your client profile. Please contact support.</p>
-            <Button variant="outline">Contact Support</Button>
+            <div className="mb-4">
+              <RDRLogo />
+            </div>
+            <h2 className="text-xl font-bold mb-2 text-slate-800">Welcome to RDR Project Portal</h2>
+            <p className="text-slate-600 mb-6">
+              Your account has been created successfully! We're setting up your customer profile. 
+              Please contact us to get started with your project.
+            </p>
+            <div className="space-y-3">
+              <Button 
+                onClick={() => window.location.href = '/auth'} 
+                variant="outline" 
+                className="w-full"
+              >
+                Back to Sign In
+              </Button>
+              <Button 
+                onClick={() => window.location.href = 'mailto:support@resultsdrivenresumes.com'} 
+                className="w-full"
+              >
+                Contact Support
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>
