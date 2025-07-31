@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/components/AuthProvider";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -25,6 +26,8 @@ interface DigestData {
 }
 
 export function DailyDigest() {
+  const { user } = useAuth();
+  const [userProfile, setUserProfile] = useState<any>(null);
   const [digestData, setDigestData] = useState<DigestData>({
     dueToday: [],
     dueTomorrow: [],
@@ -38,7 +41,25 @@ export function DailyDigest() {
 
   useEffect(() => {
     fetchDigestData();
-  }, []);
+    fetchUserProfile();
+  }, [user]);
+
+  const fetchUserProfile = async () => {
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+
+      if (error) throw error;
+      setUserProfile(data);
+    } catch (error) {
+      console.error('Error fetching user profile:', error);
+    }
+  };
 
   const fetchDigestData = async () => {
     try {
@@ -164,7 +185,7 @@ export function DailyDigest() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold">RDR Project Portal - Daily Overview</h2>
+          <h2 className="text-2xl font-bold">Hi {userProfile?.display_name || user?.email?.split('@')[0] || 'Admin'}! Here's Your Daily Project Overview!</h2>
           <p className="text-muted-foreground">
             {new Date().toLocaleDateString('en-US', { 
               weekday: 'long', 
