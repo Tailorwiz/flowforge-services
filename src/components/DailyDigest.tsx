@@ -150,10 +150,13 @@ export function DailyDigest() {
 
   const sendDigestEmail = async () => {
     try {
+      // Use testing email for Resend (until domain is verified)
+      const testEmail = "marcushall2023@gmail.com";
+      
       const { data, error } = await supabase.functions.invoke('send-daily-digest', {
         body: { 
           force: true,
-          userEmail: user.email
+          userEmail: testEmail
         }
       });
 
@@ -161,7 +164,7 @@ export function DailyDigest() {
       
       toast({
         title: "Daily digest sent successfully!",
-        description: `Digest email has been sent to ${user.email}`,
+        description: `Digest email has been sent to ${testEmail} (testing mode)`,
       });
       console.log("Daily digest sent successfully");
     } catch (error) {
