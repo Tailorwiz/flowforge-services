@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
 import { Plus, Calendar, CheckCircle } from "lucide-react";
 import { DocumentUploadParser } from "./DocumentUploadParser";
+import { DocumentUploadModal } from "./DocumentUploadModal";
 
 interface ServiceType {
   id: string;
@@ -164,10 +165,19 @@ export function ClientManager() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-3xl font-bold">Client Management</h2>
-        <Button onClick={() => setIsAddingClient(true)}>
-          <Plus className="w-4 h-4 mr-2" />
-          Add Client
-        </Button>
+        <div className="flex gap-2">
+          <DocumentUploadModal 
+            serviceTypes={serviceTypes} 
+            onClientCreated={() => {
+              fetchClients();
+              setIsAddingClient(false);
+            }} 
+          />
+          <Button onClick={() => setIsAddingClient(true)}>
+            <Plus className="w-4 h-4 mr-2" />
+            Add Client Manually
+          </Button>
+        </div>
       </div>
 
       <DocumentUploadParser 
