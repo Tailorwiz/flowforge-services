@@ -10,7 +10,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "@/hooks/use-toast";
-import { Upload, FileText, User, Mail, Phone, Briefcase, Target, Edit3, Save, X, Plus, Trash2, MapPin, Clock, TrendingUp, Globe, Award, Languages } from "lucide-react";
+import { Upload, FileText, User, Mail, Phone, Briefcase, Target, Edit3, Save, X, Plus, Trash2, MapPin, Clock, TrendingUp, Globe, Award, Languages, Copy, Brain } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface ServiceType {
   id: string;
@@ -69,6 +70,8 @@ export function DocumentUploadModal({ serviceTypes, onClientCreated }: DocumentU
   const [selectedServiceType, setSelectedServiceType] = useState<string>("");
   const [isCreatingClient, setIsCreatingClient] = useState(false);
   const [editingData, setEditingData] = useState<ParsedClientData | null>(null);
+  const [pastedText, setPastedText] = useState<string>("");
+  const [isProcessingPaste, setIsProcessingPaste] = useState(false);
 
   const parseDocumentWithAI = async (documentText: string): Promise<ParsedClientData> => {
     try {
@@ -232,7 +235,89 @@ Please extract all available information from this resume file and provide reali
     // Clear the input
     event.target.value = '';
   };
+  
+  const handleTextPaste = async () => {
+    if (!pastedText.trim()) {
+      toast({
+        title: "No Text Provided",
+        description: "Please paste some text to analyze.",
+        variant: "destructive"
+      });
+      return;
+    }
 
+    setIsProcessingPaste(true);
+    
+    try {
+      const extractedData = await parseDocumentWithAI(pastedText);
+      
+      // Create a pseudo-file object for pasted text
+      const pasteFile: UploadedFile = {
+        file: new File([pastedText], "pasted-document.txt", { type: "text/plain" }),
+        id: "paste-" + Math.random().toString(36).substr(2, 9),
+        parsedData: extractedData,
+        isProcessing: false
+      };
+
+      setUploadedFiles(prev => [...prev, pasteFile]);
+      setSelectedFileId(pasteFile.id);
+      setEditingData({ ...extractedData });
+      setPastedText(""); // Clear the textarea
+
+      toast({
+        title: "Text Processed",
+        description: "Successfully analyzed pasted content"
+      });
+    } catch (error) {
+      // Create sample data as fallback
+      const sampleData: ParsedClientData = {
+        name: "Sample Client",
+        email: "client@email.com",
+        phone: "(555) 123-4567",
+        currentTitle: "Professional",
+        industry: "General",
+        skills: ["Microsoft Office", "Project Management", "Communication"],
+        goals: "Seeking new career opportunities with growth potential",
+        experience: "Professional experience",
+        education: "Education background",
+        linkedinUrl: "",
+        portfolioUrl: "",
+        location: "Location",
+        yearsExperience: "5+ years",
+        careerLevel: "Mid",
+        targetJobTitles: ["Target Position"],
+        salaryExpectations: "$60,000 - $80,000",
+        workPreference: "Hybrid",
+        previousCompanies: ["Previous Company"],
+        certifications: [],
+        languages: ["English"],
+        achievements: "Professional achievements",
+        professionalSummary: "Professional summary based on pasted content",
+        securityClearance: "",
+        relocationWilling: "Depends"
+      };
+
+      const pasteFile: UploadedFile = {
+        file: new File([pastedText], "pasted-document.txt", { type: "text/plain" }),
+        id: "paste-" + Math.random().toString(36).substr(2, 9),
+        parsedData: sampleData,
+        isProcessing: false,
+        error: "AI parsing failed, using sample data"
+      };
+
+      setUploadedFiles(prev => [...prev, pasteFile]);
+      setSelectedFileId(pasteFile.id);
+      setEditingData({ ...sampleData });
+      setPastedText("");
+
+      toast({
+        title: "Text Processed (Sample Data)",
+        description: "AI parsing failed, using sample data. Please review and edit the information."
+      });
+    } finally {
+      setIsProcessingPaste(false);
+    }
+  };
   const removeFile = (fileId: string) => {
     setUploadedFiles(prev => prev.filter(f => f.id !== fileId));
     if (selectedFileId === fileId) {
@@ -353,6 +438,8 @@ Please extract all available information from this resume file and provide reali
     setEditingData(null);
     setSelectedServiceType("");
     setIsCreatingClient(false);
+    setPastedText("");
+    setIsProcessingPaste(false);
   };
 
   const totalProcessing = uploadedFiles.filter(f => f.isProcessing).length;
@@ -364,72 +451,123 @@ Please extract all available information from this resume file and provide reali
       if (!open) resetModal();
     }}>
       <DialogTrigger asChild>
-        <Button className="flex items-center gap-2">
-          <Plus className="w-4 h-4" />
-          Add Client via Document Upload
+        <Button className="flex items-center gap-2 bg-rdr-navy hover:bg-rdr-navy/90">
+          <Brain className="w-4 h-4" />
+          Smart Document Upload
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+      <DialogContent className="max-w-5xl max-h-[85vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Upload className="w-5 h-5" />
-            Bulk Document Upload & Client Creation
+          <DialogTitle className="flex items-center gap-2 text-rdr-navy font-heading">
+            <Brain className="w-6 h-6" />
+            Smart Document Upload & Client Creation
           </DialogTitle>
+          <p className="text-rdr-medium-gray">Upload files or paste text to automatically extract client information</p>
         </DialogHeader>
 
         <div className="space-y-6">
-          {/* File Upload Area */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Upload Documents</CardTitle>
-              <p className="text-sm text-muted-foreground">
-                Upload up to 5 resume files (PDF, DOCX, TXT) at once
-              </p>
-            </CardHeader>
-            <CardContent>
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-                <FileText className="w-12 h-12 mx-auto text-gray-400 mb-4" />
-                <div className="space-y-2">
-                  <Label htmlFor="bulk-document-upload" className="cursor-pointer text-lg font-medium hover:text-primary">
-                    Choose Documents to Upload
-                  </Label>
-                  <p className="text-sm text-muted-foreground">
-                    PDF, DOCX, TXT files • Max 5 files
+          {/* Upload Method Tabs */}
+          <Tabs defaultValue="upload" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="upload" className="flex items-center gap-2">
+                <Upload className="w-4 h-4" />
+                Upload Files
+              </TabsTrigger>
+              <TabsTrigger value="paste" className="flex items-center gap-2">
+                <Copy className="w-4 h-4" />
+                Paste Text
+              </TabsTrigger>
+            </TabsList>
+            
+            {/* File Upload Tab */}
+            <TabsContent value="upload" className="space-y-4">
+              <Card className="shadow-lg border border-border">
+                <CardHeader>
+                  <CardTitle className="text-lg text-rdr-navy font-heading">Upload Documents</CardTitle>
+                  <p className="text-sm text-rdr-medium-gray">
+                    Upload up to 5 resume files (PDF, DOCX, TXT) at once
                   </p>
-                  <Input
-                    id="bulk-document-upload"
-                    type="file"
-                    accept=".txt,.pdf,.doc,.docx"
-                    onChange={handleFileUpload}
-                    multiple
-                    className="hidden"
-                  />
-                  <Button asChild className="mt-2">
-                    <Label htmlFor="bulk-document-upload" className="cursor-pointer">
-                      Select Files
-                    </Label>
-                  </Button>
-                </div>
-              </div>
-
-              {/* Processing Progress */}
-              {(totalProcessing > 0 || totalProcessed > 0) && (
-                <div className="mt-4 space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span>Processing Files</span>
-                    <span>{totalProcessed} / {uploadedFiles.length} completed</span>
+                </CardHeader>
+                <CardContent>
+                  <div className="border-2 border-dashed border-rdr-gold/30 rounded-lg p-6 text-center bg-rdr-light-gray/50">
+                    <FileText className="w-12 h-12 mx-auto text-rdr-gold mb-4" />
+                    <div className="space-y-2">
+                      <Label htmlFor="bulk-document-upload" className="cursor-pointer text-lg font-medium hover:text-rdr-navy text-rdr-navy">
+                        Choose Documents to Upload
+                      </Label>
+                      <p className="text-sm text-rdr-medium-gray">
+                        PDF, DOCX, TXT files • Max 5 files
+                      </p>
+                      <Input
+                        id="bulk-document-upload"
+                        type="file"
+                        accept=".txt,.pdf,.doc,.docx"
+                        onChange={handleFileUpload}
+                        multiple
+                        className="hidden"
+                      />
+                      <Button asChild className="mt-2 bg-rdr-navy hover:bg-rdr-navy/90">
+                        <Label htmlFor="bulk-document-upload" className="cursor-pointer">
+                          Select Files
+                        </Label>
+                      </Button>
+                    </div>
                   </div>
-                  <Progress value={(totalProcessed / uploadedFiles.length) * 100} />
-                </div>
-              )}
-            </CardContent>
-          </Card>
+
+                  {/* Processing Progress */}
+                  {(totalProcessing > 0 || totalProcessed > 0) && (
+                    <div className="mt-4 space-y-2">
+                      <div className="flex justify-between text-sm text-rdr-navy">
+                        <span>Processing Files</span>
+                        <span>{totalProcessed} / {uploadedFiles.length} completed</span>
+                      </div>
+                      <Progress value={(totalProcessed / uploadedFiles.length) * 100} className="h-2" />
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* Text Paste Tab */}
+            <TabsContent value="paste" className="space-y-4">
+              <Card className="shadow-lg border border-border">
+                <CardHeader>
+                  <CardTitle className="text-lg text-rdr-navy font-heading">Paste Document Text</CardTitle>
+                  <p className="text-sm text-rdr-medium-gray">
+                    Copy and paste resume text or any document content to extract client information
+                  </p>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="paste-text" className="text-rdr-navy font-medium">
+                      Document Text
+                    </Label>
+                    <Textarea
+                      id="paste-text"
+                      value={pastedText}
+                      onChange={(e) => setPastedText(e.target.value)}
+                      placeholder="Paste resume text, cover letter, or any document content here..."
+                      className="min-h-[200px] text-sm"
+                    />
+                  </div>
+                  <Button 
+                    onClick={handleTextPaste}
+                    disabled={!pastedText.trim() || isProcessingPaste}
+                    className="w-full bg-rdr-navy hover:bg-rdr-navy/90"
+                  >
+                    <Brain className="w-4 h-4 mr-2" />
+                    {isProcessingPaste ? "Analyzing Text..." : "Analyze Text with AI"}
+                  </Button>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
 
           {/* Uploaded Files List */}
           {uploadedFiles.length > 0 && (
-            <Card>
+            <Card className="shadow-lg border border-border">
               <CardHeader>
-                <CardTitle className="text-lg">Uploaded Files</CardTitle>
+                <CardTitle className="text-lg text-rdr-navy font-heading">Processed Documents</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
