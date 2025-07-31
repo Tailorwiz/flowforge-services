@@ -394,7 +394,7 @@ export default function ClientPortal() {
                   <div>
                     <p className="text-white/90 text-sm">Estimated delivery</p>
                     <p className="text-2xl font-bold">
-                      {daysUntilDelivery > 0 ? `${daysUntilDelivery} days` : 'Due now'}
+                      {timeRemaining.days > 0 ? `${timeRemaining.days} days` : 'Due now'}
                     </p>
                     {daysUntilDelivery > 0 && (
                       <p className="text-xs text-white/70 mt-1">
