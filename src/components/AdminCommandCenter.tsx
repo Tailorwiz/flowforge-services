@@ -258,8 +258,7 @@ export function AdminCommandCenter() {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-3xl font-bold">RDR Project Portal - Admin Command Center</h2>
-          <p className="text-muted-foreground">Master view of all clients and projects</p>
+          <h2 className="text-4xl font-bold">Master View of All Clients and Projects</h2>
         </div>
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <TrendingUp className="w-4 h-4" />
