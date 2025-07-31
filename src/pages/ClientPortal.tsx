@@ -65,7 +65,7 @@ const PROGRESS_STEPS = [
 ];
 
 export default function ClientPortal() {
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const [profile, setProfile] = useState<ClientProfile | null>(null);
   const [needsPhotoUpload, setNeedsPhotoUpload] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -527,7 +527,11 @@ export default function ClientPortal() {
                 variant="outline"
                 size="sm"
                 onClick={async () => {
-                  await supabase.auth.signOut();
+                  await signOut();
+                  toast({
+                    title: "Logged out successfully",
+                    description: "You have been signed out of your account."
+                  });
                 }}
                 className="flex items-center gap-2"
               >
