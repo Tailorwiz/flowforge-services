@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Calendar, Clock, User, Package } from 'lucide-react';
 import RDRLogo from './RDRLogo';
 import ProgressTracker from './ProgressTracker';
@@ -19,6 +19,30 @@ const ClientWelcome: React.FC<ClientWelcomeProps> = ({
   const deliveryDate = new Date(estimatedDelivery);
   const today = new Date();
   const daysRemaining = Math.ceil((deliveryDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+  
+  const [timeRemaining, setTimeRemaining] = useState({ days: 0, hours: 0, minutes: 0 });
+
+  useEffect(() => {
+    const updateTimer = () => {
+      const now = new Date();
+      const timeDiff = deliveryDate.getTime() - now.getTime();
+      
+      if (timeDiff > 0) {
+        const days = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((timeDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
+        
+        setTimeRemaining({ days, hours, minutes });
+      } else {
+        setTimeRemaining({ days: 0, hours: 0, minutes: 0 });
+      }
+    };
+
+    updateTimer();
+    const interval = setInterval(updateTimer, 60000); // Update every minute
+
+    return () => clearInterval(interval);
+  }, [deliveryDate]);
 
   return (
     <div className={`space-y-6 ${className}`}>
@@ -87,6 +111,11 @@ const ClientWelcome: React.FC<ClientWelcomeProps> = ({
           <p className="text-rdr-medium-gray text-sm">
             {daysRemaining > 0 ? 'On schedule' : 'Final review'}
           </p>
+          {timeRemaining.days > 0 && (
+            <p className="text-xs text-rdr-medium-gray/80 mt-1">
+              {timeRemaining.days} Days, {timeRemaining.hours} hours, {timeRemaining.minutes} Minutes
+            </p>
+          )}
         </div>
       </div>
 
