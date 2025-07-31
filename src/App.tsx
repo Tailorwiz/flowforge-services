@@ -7,6 +7,7 @@ import { AuthProvider } from "./components/AuthProvider";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import ClientDashboard from "./pages/ClientDashboard";
+import SMSOptInPolicy from "./pages/SMSOptInPolicy";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -22,6 +23,7 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/client/:clientId" element={<ClientDashboard />} />
+            <Route path="/sms-policy" element={<SMSOptInPolicy />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
