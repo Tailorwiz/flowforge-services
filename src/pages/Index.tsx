@@ -21,13 +21,24 @@ import {
   LogOut,
   Zap,
   Clock,
-  AlertTriangle
+  AlertTriangle,
+  ChevronDown
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import RDRLogo from "@/components/RDRLogo";
+import AvatarUpload from "@/components/AvatarUpload";
+import { supabase } from "@/integrations/supabase/client";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState<'digest' | 'command' | 'clients' | 'training' | 'reminders' | 'notifications' | 'services' | 'profile'>('digest');
+  const [userProfile, setUserProfile] = useState<any>(null);
   const { user, loading, signOut } = useAuth();
   const navigate = useNavigate();
 
@@ -36,6 +47,27 @@ const Index = () => {
       navigate("/auth");
     }
   }, [user, loading, navigate]);
+
+  useEffect(() => {
+    if (user) {
+      fetchUserProfile();
+    }
+  }, [user]);
+
+  const fetchUserProfile = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user?.id)
+        .single();
+
+      if (error) throw error;
+      setUserProfile(data);
+    } catch (error) {
+      console.error('Error fetching user profile:', error);
+    }
+  };
 
   const handleSignOut = async () => {
     try {
@@ -143,27 +175,38 @@ const Index = () => {
 
         {/* User Section */}
         <div className="p-4 border-t border-border">
-          <div className="flex items-center gap-3 mb-3 p-3 bg-rdr-light-gray rounded-lg">
-            <div className="w-8 h-8 bg-rdr-navy rounded-lg flex items-center justify-center">
-              <User className="w-4 h-4 text-white" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-rdr-navy truncate">
-                {user.email}
-              </p>
-              <p className="text-xs text-rdr-medium-gray">Administrator</p>
-            </div>
-          </div>
-          
-          <Button 
-            onClick={handleSignOut} 
-            variant="outline" 
-            size="sm"
-            className="w-full flex items-center gap-2 text-rdr-medium-gray hover:text-rdr-navy border-border"
-          >
-            <LogOut className="w-4 h-4" />
-            Sign Out
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="w-full p-3 h-auto justify-start">
+                <div className="flex items-center gap-3 w-full">
+                  <AvatarUpload 
+                    currentAvatarUrl={userProfile?.avatar_url}
+                    onAvatarUpdate={(url) => setUserProfile({...userProfile, avatar_url: url})}
+                    size="md"
+                    showUploadButton={true}
+                  />
+                  <div className="flex-1 min-w-0 text-left">
+                    <p className="text-sm font-medium text-rdr-navy truncate">
+                      {userProfile?.display_name || user.email}
+                    </p>
+                    <p className="text-xs text-rdr-medium-gray">Administrator</p>
+                  </div>
+                  <ChevronDown className="w-4 h-4 text-rdr-medium-gray" />
+                </div>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuItem onClick={() => setActiveTab('profile')}>
+                <User className="w-4 h-4 mr-2" />
+                Profile Settings
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleSignOut} className="text-red-600">
+                <LogOut className="w-4 h-4 mr-2" />
+                Sign Out
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
