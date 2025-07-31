@@ -39,6 +39,11 @@ import {
 const Index = () => {
   const [activeTab, setActiveTab] = useState<'digest' | 'command' | 'clients' | 'training' | 'reminders' | 'notifications' | 'services' | 'profile'>('digest');
   const [userProfile, setUserProfile] = useState<any>(null);
+  const [dashboardStats, setDashboardStats] = useState({
+    rushCount: 0,
+    dueCount: 0,
+    overdueCount: 0
+  });
   const { user, loading, signOut } = useAuth();
   const navigate = useNavigate();
 
@@ -51,6 +56,7 @@ const Index = () => {
   useEffect(() => {
     if (user) {
       fetchUserProfile();
+      fetchDashboardStats();
     }
   }, [user]);
 
@@ -70,6 +76,35 @@ const Index = () => {
     }
   };
 
+  const fetchDashboardStats = async () => {
+    try {
+      const { data: clients, error } = await supabase
+        .from('clients')
+        .select('id, is_rush, estimated_delivery_date, status')
+        .eq('status', 'active');
+
+      if (error) throw error;
+
+      const today = new Date().toISOString().split('T')[0];
+      
+      const rushCount = clients?.filter(client => client.is_rush).length || 0;
+      const dueCount = clients?.filter(client => 
+        client.estimated_delivery_date === today && !client.is_rush
+      ).length || 0;
+      const overdueCount = clients?.filter(client => 
+        client.estimated_delivery_date < today && !client.is_rush
+      ).length || 0;
+
+      setDashboardStats({
+        rushCount,
+        dueCount,
+        overdueCount
+      });
+    } catch (error) {
+      console.error('Error fetching dashboard stats:', error);
+    }
+  };
+
   // Listen for real-time profile updates
   useEffect(() => {
     if (user) {
@@ -85,6 +120,29 @@ const Index = () => {
           (payload) => {
             console.log('Profile updated via realtime:', payload);
             setUserProfile(payload.new);
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    }
+  }, [user]);
+
+  // Listen for real-time client updates to refresh dashboard stats
+  useEffect(() => {
+    if (user) {
+      const channel = supabase
+        .channel('client-changes')
+        .on('postgres_changes', 
+          { 
+            event: '*', 
+            schema: 'public', 
+            table: 'clients'
+          }, 
+          () => {
+            fetchDashboardStats();
           }
         )
         .subscribe();
@@ -168,21 +226,21 @@ const Index = () => {
               <div className="flex items-center justify-center mb-1">
                 <Zap className="w-4 h-4 text-rdr-gold" />
               </div>
-              <div className="text-xs font-medium text-rdr-navy">5</div>
+              <div className="text-xs font-medium text-rdr-navy">{dashboardStats.rushCount}</div>
               <div className="text-xs text-rdr-medium-gray">Rush</div>
             </div>
             <div className="bg-rdr-light-gray rounded-lg p-2">
               <div className="flex items-center justify-center mb-1">
                 <Clock className="w-4 h-4 text-orange-500" />
               </div>
-              <div className="text-xs font-medium text-rdr-navy">12</div>
+              <div className="text-xs font-medium text-rdr-navy">{dashboardStats.dueCount}</div>
               <div className="text-xs text-rdr-medium-gray">Due</div>
             </div>
             <div className="bg-rdr-light-gray rounded-lg p-2">
               <div className="flex items-center justify-center mb-1">
                 <AlertTriangle className="w-4 h-4 text-red-500" />
               </div>
-              <div className="text-xs font-medium text-rdr-navy">3</div>
+              <div className="text-xs font-medium text-rdr-navy">{dashboardStats.overdueCount}</div>
               <div className="text-xs text-rdr-medium-gray">Overdue</div>
             </div>
           </div>
