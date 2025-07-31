@@ -359,7 +359,7 @@ export default function ClientDashboard() {
 
         {/* Main Content Tabs */}
         <Tabs defaultValue="activity" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="activity" className="flex items-center gap-2">
               <MessageCircle className="w-4 h-4" />
               Activity Log
@@ -372,6 +372,10 @@ export default function ClientDashboard() {
                   {files.length}
                 </Badge>
               )}
+            </TabsTrigger>
+            <TabsTrigger value="training" className="flex items-center gap-2">
+              <FileText className="w-4 h-4" />
+              Training
             </TabsTrigger>
             <TabsTrigger value="messages" className="flex items-center gap-2">
               <Mail className="w-4 h-4" />
@@ -459,6 +463,90 @@ export default function ClientDashboard() {
                     </div>
                   )}
                 </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Training Tab */}
+          <TabsContent value="training">
+            <Card>
+              <CardHeader>
+                <CardTitle>Training Materials</CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  Access your exclusive training materials and resources
+                </p>
+              </CardHeader>
+              <CardContent>
+                {client.status === 'active' ? (
+                  <div className="grid gap-4">
+                    {[
+                      {
+                        title: "The Science of Getting Job Interviews",
+                        description: "Learn the proven strategies to land more interview opportunities",
+                        type: "PDF Guide",
+                        downloadUrl: "#"
+                      },
+                      {
+                        title: "The 7-Day Job Interview System",
+                        description: "Master the complete interview process in just one week",
+                        type: "PDF Guide", 
+                        downloadUrl: "#"
+                      },
+                      {
+                        title: "The Resume Tailoring Formula",
+                        description: "Perfect formula for customizing resumes for any job",
+                        type: "PDF Guide",
+                        downloadUrl: "#"
+                      },
+                      {
+                        title: "Job Scams Exposed",
+                        description: "Protect yourself from fraudulent job postings and scams",
+                        type: "PDF Guide",
+                        downloadUrl: "#"
+                      },
+                      {
+                        title: "The ATS Formula", 
+                        description: "Beat Applicant Tracking Systems and get your resume seen",
+                        type: "PDF Guide",
+                        downloadUrl: "#"
+                      }
+                    ].map((material, index) => (
+                      <div key={index} className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors">
+                        <div className="flex items-start gap-3">
+                          <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+                            <FileText className="w-5 h-5 text-primary" />
+                          </div>
+                          <div>
+                            <h4 className="font-medium text-foreground">{material.title}</h4>
+                            <p className="text-sm text-muted-foreground mt-1">{material.description}</p>
+                            <Badge variant="outline" className="mt-2 text-xs">
+                              {material.type}
+                            </Badge>
+                          </div>
+                        </div>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => {
+                            // This would trigger the actual download
+                            toast({
+                              title: "Download Started",
+                              description: `Downloading ${material.title}...`
+                            });
+                          }}
+                        >
+                          Download
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <FileText className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                    <p className="font-medium">Training Materials Not Available</p>
+                    <p className="text-sm">Training materials will be available once your account is activated</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
