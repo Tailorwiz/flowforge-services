@@ -52,7 +52,7 @@ serve(async (req) => {
           }
         ],
         temperature: 0.1,
-        max_tokens: 1000
+        max_tokens: 2000
       }),
     });
 
@@ -89,7 +89,23 @@ serve(async (req) => {
       skills: Array.isArray(extractedData.skills) ? extractedData.skills : [],
       goals: extractedData.goals || '',
       experience: extractedData.experience || '',
-      education: extractedData.education || ''
+      education: extractedData.education || '',
+      // Enhanced fields validation
+      linkedinUrl: extractedData.linkedinUrl || '',
+      portfolioUrl: extractedData.portfolioUrl || '',
+      location: extractedData.location || '',
+      yearsExperience: extractedData.yearsExperience || '',
+      careerLevel: extractedData.careerLevel || '',
+      targetJobTitles: Array.isArray(extractedData.targetJobTitles) ? extractedData.targetJobTitles : [],
+      salaryExpectations: extractedData.salaryExpectations || '',
+      workPreference: extractedData.workPreference || '',
+      previousCompanies: Array.isArray(extractedData.previousCompanies) ? extractedData.previousCompanies : [],
+      certifications: Array.isArray(extractedData.certifications) ? extractedData.certifications : [],
+      languages: Array.isArray(extractedData.languages) ? extractedData.languages : [],
+      achievements: extractedData.achievements || '',
+      professionalSummary: extractedData.professionalSummary || '',
+      securityClearance: extractedData.securityClearance || '',
+      relocationWilling: extractedData.relocationWilling || ''
     };
 
     console.log('Extracted data:', cleanedData);

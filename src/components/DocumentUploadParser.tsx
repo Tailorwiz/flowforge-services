@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
-import { Upload, FileText, User, Mail, Phone, Briefcase, Target, Edit3, Save, X } from "lucide-react";
+import { Upload, FileText, User, Mail, Phone, Briefcase, Target, Edit3, Save, X, MapPin, Clock, TrendingUp, Globe, Award, Languages } from "lucide-react";
 
 interface ServiceType {
   id: string;
@@ -29,6 +29,22 @@ interface ParsedClientData {
   goals: string;
   experience: string;
   education: string;
+  // Enhanced fields
+  linkedinUrl: string;
+  portfolioUrl: string;
+  location: string;
+  yearsExperience: string;
+  careerLevel: string;
+  targetJobTitles: string[];
+  salaryExpectations: string;
+  workPreference: string;
+  previousCompanies: string[];
+  certifications: string[];
+  languages: string[];
+  achievements: string;
+  professionalSummary: string;
+  securityClearance: string;
+  relocationWilling: string;
 }
 
 interface DocumentUploadParserProps {
@@ -79,10 +95,25 @@ export function DocumentUploadParser({ serviceTypes, onClientCreated }: Document
               "skills": ["skill1", "skill2", "skill3"],
               "goals": "Career goals or objective summary",
               "experience": "Brief summary of work experience",
-              "education": "Education background"
+              "education": "Education background",
+              "linkedinUrl": "LinkedIn profile URL",
+              "portfolioUrl": "Portfolio or personal website URL",
+              "location": "City, State or location",
+              "yearsExperience": "Total years of experience (e.g., '5-7 years')",
+              "careerLevel": "Career level: Entry, Mid, Senior, or Executive",
+              "targetJobTitles": ["target job title 1", "target job title 2"],
+              "salaryExpectations": "Salary expectations or range",
+              "workPreference": "Work preference: Remote, Hybrid, or Onsite",
+              "previousCompanies": ["company1", "company2", "company3"],
+              "certifications": ["certification1", "certification2"],
+              "languages": ["language1", "language2"],
+              "achievements": "Notable achievements or awards",
+              "professionalSummary": "Professional summary or objective",
+              "securityClearance": "Security clearance level if mentioned",
+              "relocationWilling": "Willingness to relocate (Yes/No/Depends)"
             }
             
-            If any field is not found, use empty string or empty array for skills.
+            If any field is not found, use empty string or empty array for array fields.
           `
         }
       });
@@ -130,7 +161,23 @@ export function DocumentUploadParser({ serviceTypes, onClientCreated }: Document
         skills: ["Microsoft Office", "Project Management", "Communication"],
         goals: "Seeking new career opportunities with growth potential",
         experience: "10+ years of professional experience",
-        education: "Bachelor's Degree"
+        education: "Bachelor's Degree",
+        // Enhanced fields with sample data
+        linkedinUrl: "https://linkedin.com/in/sample-profile",
+        portfolioUrl: "",
+        location: "New York, NY",
+        yearsExperience: "8-10 years",
+        careerLevel: "Mid",
+        targetJobTitles: ["Senior Manager", "Director"],
+        salaryExpectations: "$80,000 - $100,000",
+        workPreference: "Hybrid",
+        previousCompanies: ["ABC Corp", "XYZ Inc"],
+        certifications: ["PMP", "Six Sigma"],
+        languages: ["English", "Spanish"],
+        achievements: "Led team to 25% efficiency improvement",
+        professionalSummary: "Experienced professional with strong leadership skills",
+        securityClearance: "",
+        relocationWilling: "Depends"
       };
       
       setParsedData(sampleData);
@@ -419,6 +466,194 @@ export function DocumentUploadParser({ serviceTypes, onClientCreated }: Document
                 )}
               </div>
             </div>
+
+            {/* Enhanced Fields Section */}
+            {isEditing && (
+              <div className="border-t pt-4">
+                <h4 className="font-medium mb-4">Additional Information</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label className="flex items-center gap-1">
+                      <Globe className="w-4 h-4" />
+                      LinkedIn URL
+                    </Label>
+                    <Input
+                      type="url"
+                      value={parsedData.linkedinUrl}
+                      onChange={(e) => updateParsedData('linkedinUrl', e.target.value)}
+                      placeholder="https://linkedin.com/in/username"
+                    />
+                  </div>
+
+                  <div>
+                    <Label className="flex items-center gap-1">
+                      <Globe className="w-4 h-4" />
+                      Portfolio/Website
+                    </Label>
+                    <Input
+                      type="url"
+                      value={parsedData.portfolioUrl}
+                      onChange={(e) => updateParsedData('portfolioUrl', e.target.value)}
+                      placeholder="https://yourportfolio.com"
+                    />
+                  </div>
+
+                  <div>
+                    <Label className="flex items-center gap-1">
+                      <MapPin className="w-4 h-4" />
+                      Location
+                    </Label>
+                    <Input
+                      value={parsedData.location}
+                      onChange={(e) => updateParsedData('location', e.target.value)}
+                      placeholder="City, State"
+                    />
+                  </div>
+
+                  <div>
+                    <Label className="flex items-center gap-1">
+                      <Clock className="w-4 h-4" />
+                      Years of Experience
+                    </Label>
+                    <Input
+                      value={parsedData.yearsExperience}
+                      onChange={(e) => updateParsedData('yearsExperience', e.target.value)}
+                      placeholder="e.g., 5-7 years"
+                    />
+                  </div>
+
+                  <div>
+                    <Label className="flex items-center gap-1">
+                      <TrendingUp className="w-4 h-4" />
+                      Career Level
+                    </Label>
+                    <Select value={parsedData.careerLevel} onValueChange={(value) => updateParsedData('careerLevel', value)}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select career level" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Entry">Entry Level</SelectItem>
+                        <SelectItem value="Mid">Mid Level</SelectItem>
+                        <SelectItem value="Senior">Senior Level</SelectItem>
+                        <SelectItem value="Executive">Executive</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <Label>Work Preference</Label>
+                    <Select value={parsedData.workPreference} onValueChange={(value) => updateParsedData('workPreference', value)}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select work preference" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Remote">Remote</SelectItem>
+                        <SelectItem value="Hybrid">Hybrid</SelectItem>
+                        <SelectItem value="Onsite">Onsite</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 gap-4 mt-4">
+                  <div>
+                    <Label>Target Job Titles</Label>
+                    <Input
+                      value={parsedData.targetJobTitles.join(', ')}
+                      onChange={(e) => updateParsedData('targetJobTitles', e.target.value.split(', ').filter(s => s.trim()))}
+                      placeholder="Separate job titles with commas"
+                    />
+                  </div>
+
+                  <div>
+                    <Label>Salary Expectations</Label>
+                    <Input
+                      value={parsedData.salaryExpectations}
+                      onChange={(e) => updateParsedData('salaryExpectations', e.target.value)}
+                      placeholder="e.g., $80,000 - $100,000"
+                    />
+                  </div>
+
+                  <div>
+                    <Label>Previous Companies</Label>
+                    <Input
+                      value={parsedData.previousCompanies.join(', ')}
+                      onChange={(e) => updateParsedData('previousCompanies', e.target.value.split(', ').filter(s => s.trim()))}
+                      placeholder="Separate companies with commas"
+                    />
+                  </div>
+
+                  <div>
+                    <Label className="flex items-center gap-1">
+                      <Award className="w-4 h-4" />
+                      Certifications
+                    </Label>
+                    <Input
+                      value={parsedData.certifications.join(', ')}
+                      onChange={(e) => updateParsedData('certifications', e.target.value.split(', ').filter(s => s.trim()))}
+                      placeholder="Separate certifications with commas"
+                    />
+                  </div>
+
+                  <div>
+                    <Label className="flex items-center gap-1">
+                      <Languages className="w-4 h-4" />
+                      Languages
+                    </Label>
+                    <Input
+                      value={parsedData.languages.join(', ')}
+                      onChange={(e) => updateParsedData('languages', e.target.value.split(', ').filter(s => s.trim()))}
+                      placeholder="Separate languages with commas"
+                    />
+                  </div>
+
+                  <div>
+                    <Label>Notable Achievements</Label>
+                    <Textarea
+                      value={parsedData.achievements}
+                      onChange={(e) => updateParsedData('achievements', e.target.value)}
+                      rows={2}
+                      placeholder="Key accomplishments, awards, recognition..."
+                    />
+                  </div>
+
+                  <div>
+                    <Label>Professional Summary</Label>
+                    <Textarea
+                      value={parsedData.professionalSummary}
+                      onChange={(e) => updateParsedData('professionalSummary', e.target.value)}
+                      rows={3}
+                      placeholder="Brief professional overview..."
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label>Security Clearance</Label>
+                      <Input
+                        value={parsedData.securityClearance}
+                        onChange={(e) => updateParsedData('securityClearance', e.target.value)}
+                        placeholder="e.g., Secret, Top Secret"
+                      />
+                    </div>
+
+                    <div>
+                      <Label>Willing to Relocate</Label>
+                      <Select value={parsedData.relocationWilling} onValueChange={(value) => updateParsedData('relocationWilling', value)}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select option" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Yes">Yes</SelectItem>
+                          <SelectItem value="No">No</SelectItem>
+                          <SelectItem value="Depends">Depends</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
 
             <div>
               <Label>Skills</Label>
