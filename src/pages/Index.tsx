@@ -229,9 +229,9 @@ const Index = () => {
 
       {/* Main Content */}
       <div className="flex-1 overflow-auto">
-        <div className="p-6">
+        <div className="p-6 pb-2">
           {/* Header */}
-          <div className="mb-6 flex items-center justify-between">
+          <div className="mb-4 flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold text-rdr-navy font-heading">
                 {sidebarItems.find(item => item.id === activeTab)?.label || 'Dashboard'}
@@ -239,7 +239,7 @@ const Index = () => {
             </div>
             
             {/* User Profile Section - Top Right */}
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-4 -mt-2">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="p-3 h-auto">
@@ -283,7 +283,7 @@ const Index = () => {
           </div>
 
           {/* Content */}
-          <div className="bg-white rounded-xl shadow-lg border border-border min-h-[600px] p-6">
+          <div className="bg-white rounded-xl shadow-lg border border-border min-h-[600px] p-6 mt-2">
             {activeTab === 'digest' && <DailyDigest />}
             {activeTab === 'command' && <AdminCommandCenter />}
             {activeTab === 'clients' && <ClientManager />}
