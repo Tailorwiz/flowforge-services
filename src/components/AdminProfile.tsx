@@ -167,33 +167,34 @@ export function AdminProfile() {
               Upload or change your profile picture
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex flex-col items-center gap-4">
+          <CardContent className="space-y-6">
+            <div className="flex flex-col items-center gap-6">
               <AvatarUpload 
                 currentAvatarUrl={profile?.avatar_url}
                 onAvatarUpdate={(url) => {
+                  console.log('Avatar updated with URL:', url);
                   setProfile(prev => ({...prev, avatar_url: url}));
-                  toast({
-                    title: "Success",
-                    description: "Profile photo updated successfully!",
-                  });
+                  // Refresh the profile data to ensure consistency
+                  setTimeout(() => {
+                    fetchProfile();
+                  }, 1000);
                 }}
                 size="lg"
                 showUploadButton={true}
               />
-              <div className="text-center">
+              <div className="text-center space-y-3">
                 <p className="text-sm font-medium text-rdr-navy">
                   {profile?.display_name || profile?.first_name || 'Admin User'}
                 </p>
                 <p className="text-xs text-rdr-medium-gray">Administrator</p>
-              </div>
-              <div className="text-center">
-                <p className="text-xs text-rdr-medium-gray mb-2">
-                  Click your photo to upload a new one
-                </p>
-                <p className="text-xs text-rdr-medium-gray">
-                  Recommended: Square image, at least 200x200px
-                </p>
+                <div className="p-3 bg-rdr-light-gray rounded-lg">
+                  <p className="text-xs text-rdr-medium-gray mb-1 font-medium">
+                    📸 Click your photo to upload a new one
+                  </p>
+                  <p className="text-xs text-rdr-medium-gray">
+                    Recommended: Square image, at least 400x400px
+                  </p>
+                </div>
               </div>
             </div>
           </CardContent>

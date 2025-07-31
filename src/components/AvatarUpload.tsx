@@ -23,8 +23,8 @@ const AvatarUpload: React.FC<AvatarUploadProps> = ({
 
   const sizeClasses = {
     sm: 'w-8 h-8',
-    md: 'w-12 h-12',
-    lg: 'w-16 h-16'
+    md: 'w-16 h-16',
+    lg: 'w-32 h-32'
   };
 
   const uploadAvatar = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -67,12 +67,17 @@ const AvatarUpload: React.FC<AvatarUploadProps> = ({
       }
 
       onAvatarUpdate(avatarUrl);
-      toast({
-        title: "Success",
-        description: "Avatar updated successfully!",
-      });
+      
+      // Force a slight delay to ensure the image loads properly
+      setTimeout(() => {
+        toast({
+          title: "Success",
+          description: "Avatar updated successfully!",
+        });
+      }, 500);
 
     } catch (error: any) {
+      console.error('Avatar upload error:', error);
       toast({
         title: "Error",
         description: error.message || "Failed to upload avatar",
@@ -86,16 +91,20 @@ const AvatarUpload: React.FC<AvatarUploadProps> = ({
   return (
     <div className="relative group">
       {/* Avatar Display */}
-      <div className={`${sizeClasses[size]} rounded-full overflow-hidden bg-rdr-light-gray border-2 border-border flex items-center justify-center relative`}>
+      <div className={`${sizeClasses[size]} rounded-full overflow-hidden bg-rdr-light-gray border-4 border-rdr-gold/20 flex items-center justify-center relative shadow-lg`}>
         {currentAvatarUrl ? (
           <img 
-            src={currentAvatarUrl} 
+            src={`${currentAvatarUrl}?t=${Date.now()}`}
             alt="Avatar" 
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover object-center"
+            onError={(e) => {
+              console.error('Image failed to load:', currentAvatarUrl);
+              e.currentTarget.style.display = 'none';
+            }}
           />
         ) : (
           <div className="w-full h-full bg-rdr-navy text-white flex items-center justify-center">
-            <span className="font-medium text-sm">
+            <span className="font-bold text-2xl">
               {user?.email?.charAt(0).toUpperCase()}
             </span>
           </div>
@@ -103,8 +112,11 @@ const AvatarUpload: React.FC<AvatarUploadProps> = ({
         
         {/* Upload Overlay */}
         {showUploadButton && (
-          <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
-            <Camera className="w-4 h-4 text-white" />
+          <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center rounded-full">
+            <div className="text-white text-center">
+              <Camera className="w-6 h-6 mx-auto mb-1" />
+              <span className="text-xs font-medium">Upload</span>
+            </div>
           </div>
         )}
       </div>
