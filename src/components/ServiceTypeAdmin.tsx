@@ -136,7 +136,7 @@ export function ServiceTypeAdmin() {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-3xl font-bold">Service Type Administration</h2>
+        <h2 className="text-3xl font-bold">RDR Project Portal - Service Type Administration</h2>
         <Button onClick={startCreating}>
           <Plus className="w-4 h-4 mr-2" />
           Add Service Type

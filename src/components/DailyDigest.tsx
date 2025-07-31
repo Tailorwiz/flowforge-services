@@ -164,7 +164,7 @@ export function DailyDigest() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold">Daily Overview</h2>
+          <h2 className="text-2xl font-bold">RDR Project Portal - Daily Overview</h2>
           <p className="text-muted-foreground">
             {new Date().toLocaleDateString('en-US', { 
               weekday: 'long', 

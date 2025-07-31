@@ -38,19 +38,19 @@ const handler = async (req: Request): Promise<Response> => {
     console.log('Sending onboarding email to:', clientEmail);
 
     const emailResponse = await resend.emails.send({
-      from: "Results Driven Resumes <onboarding@resend.dev>",
+      from: "RDR Project Portal <onboarding@resend.dev>",
       to: [clientEmail],
-      subject: "Welcome to Results Driven Resumes – Let's Get Started!",
+      subject: "Welcome to RDR Project Portal – Let's Get Started!",
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
           <div style="text-align: center; margin-bottom: 30px;">
-            <h1 style="color: #2563eb; margin-bottom: 10px;">Welcome to Results Driven Resumes!</h1>
+            <h1 style="color: #2563eb; margin-bottom: 10px;">Welcome to RDR Project Portal!</h1>
             <p style="color: #666; font-size: 16px;">Let's transform your career together</p>
           </div>
           
           <div style="background-color: #f8fafc; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
             <h2 style="color: #1e40af; margin-top: 0;">Hi ${clientName},</h2>
-            <p>Thank you for choosing Results Driven Resumes! We're excited to help you land your dream job.</p>
+            <p>Thank you for choosing RDR Project Portal! We're excited to help you land your dream job.</p>
             
             <h3 style="color: #1e40af;">Your Package Details:</h3>
             <ul style="line-height: 1.6;">
@@ -87,7 +87,7 @@ const handler = async (req: Request): Promise<Response> => {
           
           <div style="border-top: 1px solid #e5e7eb; padding-top: 20px; text-align: center; color: #666; font-size: 14px;">
             <p>Questions? Reply to this email or contact us at support@resultsdrivenresumes.com</p>
-            <p>Best regards,<br><strong>Marc Hall & The Results Driven Resumes Team</strong></p>
+            <p>Best regards,<br><strong>Marc Hall & The RDR Project Portal Team</strong></p>
           </div>
         </div>
       `,

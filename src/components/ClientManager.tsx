@@ -249,7 +249,7 @@ export function ClientManager() {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-3xl font-bold">Client Management</h2>
+        <h2 className="text-3xl font-bold">RDR Project Portal - Client Management</h2>
         <div className="flex gap-2">
           <DocumentUploadModal 
             serviceTypes={serviceTypes} 

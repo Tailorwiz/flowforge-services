@@ -148,7 +148,7 @@ export function AdminProfile() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-3xl font-bold tracking-tight">Admin Profile</h2>
+        <h2 className="text-3xl font-bold tracking-tight">RDR Project Portal - Admin Profile</h2>
         <p className="text-muted-foreground">
           Manage your admin profile and notification preferences
         </p>

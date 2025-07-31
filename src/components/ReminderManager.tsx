@@ -287,7 +287,7 @@ export function ReminderManager() {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-3xl font-bold">Reminder & Automation System</h2>
+        <h2 className="text-3xl font-bold">RDR Project Portal - Reminder & Automation System</h2>
         <div className="flex gap-2">
           <Button onClick={triggerDailyDigest} variant="outline">
             <Mail className="w-4 h-4 mr-2" />

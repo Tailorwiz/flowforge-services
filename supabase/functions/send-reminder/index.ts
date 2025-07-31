@@ -40,7 +40,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log("Processing reminder request:", { templateId, clientId, clientEmail, clientName });
 
-    let finalSubject = customSubject || "Reminder from Results Driven Resumes";
+    let finalSubject = customSubject || "Reminder from RDR Project Portal";
     let finalMessage = customMessage || "This is a reminder message.";
 
     // If template ID is provided, fetch and use template
@@ -79,13 +79,13 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Send email using Resend
     const emailResponse = await resend.emails.send({
-      from: "Results Driven Resumes <reminders@resend.dev>",
+      from: "RDR Project Portal <reminders@resend.dev>",
       to: [clientEmail],
       subject: finalSubject,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
           <div style="text-align: center; margin-bottom: 30px;">
-            <h1 style="color: #2563eb; margin-bottom: 10px;">Results Driven Resumes</h1>
+            <h1 style="color: #2563eb; margin-bottom: 10px;">RDR Project Portal</h1>
           </div>
           
           <div style="background-color: #f8fafc; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
@@ -102,7 +102,7 @@ const handler = async (req: Request): Promise<Response> => {
           
           <div style="border-top: 1px solid #e5e7eb; padding-top: 20px; text-align: center; color: #666; font-size: 14px;">
             <p>Questions? Reply to this email or contact us at support@resultsdrivenresumes.com</p>
-            <p>Best regards,<br><strong>The Results Driven Resumes Team</strong></p>
+            <p>Best regards,<br><strong>The RDR Project Portal Team</strong></p>
           </div>
         </div>
       `,
