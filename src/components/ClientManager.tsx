@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
 import { Plus, Calendar, CheckCircle } from "lucide-react";
+import { DocumentUploadParser } from "./DocumentUploadParser";
 
 interface ServiceType {
   id: string;
@@ -15,6 +16,7 @@ interface ServiceType {
   description: string;
   default_timeline_days: number;
   tags: string[];
+  price_cents: number;
 }
 
 interface Client {
@@ -167,6 +169,14 @@ export function ClientManager() {
           Add Client
         </Button>
       </div>
+
+      <DocumentUploadParser 
+        serviceTypes={serviceTypes} 
+        onClientCreated={() => {
+          fetchClients();
+          setIsAddingClient(false);
+        }} 
+      />
 
       {isAddingClient && (
         <Card>
