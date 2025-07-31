@@ -1186,8 +1186,11 @@ export type Database = {
           content_url: string | null
           created_at: string
           description: string | null
+          file_path: string | null
+          file_size: number | null
           id: string
           is_active: boolean | null
+          mime_type: string | null
           name: string
           type: string | null
           updated_at: string
@@ -1196,8 +1199,11 @@ export type Database = {
           content_url?: string | null
           created_at?: string
           description?: string | null
+          file_path?: string | null
+          file_size?: number | null
           id?: string
           is_active?: boolean | null
+          mime_type?: string | null
           name: string
           type?: string | null
           updated_at?: string
@@ -1206,8 +1212,11 @@ export type Database = {
           content_url?: string | null
           created_at?: string
           description?: string | null
+          file_path?: string | null
+          file_size?: number | null
           id?: string
           is_active?: boolean | null
+          mime_type?: string | null
           name?: string
           type?: string | null
           updated_at?: string

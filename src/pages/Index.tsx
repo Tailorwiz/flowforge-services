@@ -7,13 +7,14 @@ import { DailyDigest } from "@/components/DailyDigest";
 import { AdminProfile } from "@/components/AdminProfile";
 import { AdminCommandCenter } from "@/components/AdminCommandCenter";
 import { NotificationCenter } from "@/components/NotificationCenter";
+import TrainingMaterialUpload from "@/components/TrainingMaterialUpload";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/components/AuthProvider";
 import { LogOut, User } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
 const Index = () => {
-  const [activeTab, setActiveTab] = useState<'digest' | 'command' | 'clients' | 'reminders' | 'notifications' | 'services' | 'profile'>('digest');
+  const [activeTab, setActiveTab] = useState<'digest' | 'command' | 'clients' | 'training' | 'reminders' | 'notifications' | 'services' | 'profile'>('digest');
   const { user, loading, signOut } = useAuth();
   const navigate = useNavigate();
 
@@ -84,6 +85,12 @@ const Index = () => {
                 Client Management
               </Button>
               <Button 
+                variant={activeTab === 'training' ? 'default' : 'outline'}
+                onClick={() => setActiveTab('training')}
+              >
+                Training Materials
+              </Button>
+              <Button 
                 variant={activeTab === 'reminders' ? 'default' : 'outline'}
                 onClick={() => setActiveTab('reminders')}
               >
@@ -123,6 +130,7 @@ const Index = () => {
         {activeTab === 'digest' && <DailyDigest />}
         {activeTab === 'command' && <AdminCommandCenter />}
         {activeTab === 'clients' && <ClientManager />}
+        {activeTab === 'training' && <TrainingMaterialUpload />}
         {activeTab === 'reminders' && <ReminderManager />}
         {activeTab === 'notifications' && <NotificationCenter />}
         {activeTab === 'services' && <ServiceTypeAdmin />}

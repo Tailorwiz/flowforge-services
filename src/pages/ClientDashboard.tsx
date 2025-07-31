@@ -60,12 +60,22 @@ interface ClientFile {
   url: string;
 }
 
+interface TrainingMaterial {
+  id: string;
+  name: string;
+  description: string;
+  type: string;
+  content_url: string;
+  is_active: boolean;
+}
+
 export default function ClientDashboard() {
   const { clientId } = useParams();
   const navigate = useNavigate();
   const [client, setClient] = useState<ClientData | null>(null);
   const [history, setHistory] = useState<ClientHistory[]>([]);
   const [files, setFiles] = useState<ClientFile[]>([]);
+  const [trainingMaterials, setTrainingMaterials] = useState<TrainingMaterial[]>([]);
   const [loading, setLoading] = useState(true);
   const [hasNewUploads, setHasNewUploads] = useState(false);
 
@@ -74,6 +84,7 @@ export default function ClientDashboard() {
       fetchClientData();
       fetchClientHistory();
       fetchClientFiles();
+      fetchTrainingMaterials();
       
       // Set up real-time listener for new uploads
       const channel = supabase
@@ -152,6 +163,21 @@ export default function ClientDashboard() {
         url: "#"
       }
     ]);
+  };
+
+  const fetchTrainingMaterials = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("training_materials")
+        .select("*")
+        .eq("is_active", true)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      setTrainingMaterials(data || []);
+    } catch (error) {
+      console.error('Error fetching training materials:', error);
+    }
   };
 
   const getProgressPercentage = () => {
@@ -479,66 +505,43 @@ export default function ClientDashboard() {
               <CardContent>
                 {client.status === 'active' ? (
                   <div className="grid gap-4">
-                    {[
-                      {
-                        title: "The Science of Getting Job Interviews",
-                        description: "Learn the proven strategies to land more interview opportunities",
-                        type: "PDF Guide",
-                        downloadUrl: "#"
-                      },
-                      {
-                        title: "The 7-Day Job Interview System",
-                        description: "Master the complete interview process in just one week",
-                        type: "PDF Guide", 
-                        downloadUrl: "#"
-                      },
-                      {
-                        title: "The Resume Tailoring Formula",
-                        description: "Perfect formula for customizing resumes for any job",
-                        type: "PDF Guide",
-                        downloadUrl: "#"
-                      },
-                      {
-                        title: "Job Scams Exposed",
-                        description: "Protect yourself from fraudulent job postings and scams",
-                        type: "PDF Guide",
-                        downloadUrl: "#"
-                      },
-                      {
-                        title: "The ATS Formula", 
-                        description: "Beat Applicant Tracking Systems and get your resume seen",
-                        type: "PDF Guide",
-                        downloadUrl: "#"
-                      }
-                    ].map((material, index) => (
-                      <div key={index} className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors">
-                        <div className="flex items-start gap-3">
-                          <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-                            <FileText className="w-5 h-5 text-primary" />
+                    {trainingMaterials.length > 0 ? (
+                      trainingMaterials.map((material) => (
+                        <div key={material.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors">
+                          <div className="flex items-start gap-3">
+                            <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+                              <FileText className="w-5 h-5 text-primary" />
+                            </div>
+                            <div>
+                              <h4 className="font-medium text-foreground">{material.name}</h4>
+                              <p className="text-sm text-muted-foreground mt-1">{material.description}</p>
+                              <Badge variant="outline" className="mt-2 text-xs">
+                                {material.type}
+                              </Badge>
+                            </div>
                           </div>
-                          <div>
-                            <h4 className="font-medium text-foreground">{material.title}</h4>
-                            <p className="text-sm text-muted-foreground mt-1">{material.description}</p>
-                            <Badge variant="outline" className="mt-2 text-xs">
-                              {material.type}
-                            </Badge>
-                          </div>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => {
+                              window.open(material.content_url, '_blank');
+                              toast({
+                                title: "Download Started",
+                                description: `Opening ${material.name}...`
+                              });
+                            }}
+                          >
+                            Download
+                          </Button>
                         </div>
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => {
-                            // This would trigger the actual download
-                            toast({
-                              title: "Download Started",
-                              description: `Downloading ${material.title}...`
-                            });
-                          }}
-                        >
-                          Download
-                        </Button>
+                      ))
+                    ) : (
+                      <div className="text-center py-8 text-muted-foreground">
+                        <FileText className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                        <p className="font-medium">No Training Materials Available</p>
+                        <p className="text-sm">Training materials will be added by your consultant</p>
                       </div>
-                    ))}
+                    )}
                   </div>
                 ) : (
                   <div className="text-center py-8 text-muted-foreground">
