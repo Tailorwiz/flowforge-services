@@ -62,6 +62,8 @@ export function DocumentUploadParser({ serviceTypes, onClientCreated }: Document
   const [selectedServiceType, setSelectedServiceType] = useState<string>("");
   const [isEditing, setIsEditing] = useState(false);
   const [uploadedFileName, setUploadedFileName] = useState<string>("");
+  const [pastedText, setPastedText] = useState<string>("");
+  const [inputMethod, setInputMethod] = useState<'file' | 'text'>('file');
 
   const extractTextFromFile = async (file: File): Promise<string> => {
     try {
@@ -265,6 +267,69 @@ export function DocumentUploadParser({ serviceTypes, onClientCreated }: Document
     }
   };
 
+  const handleTextPaste = async () => {
+    if (!pastedText.trim()) {
+      toast({
+        title: "No Text Content",
+        description: "Please paste resume or document text content.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsUploading(true);
+    setUploadedFileName("Pasted Text Content");
+
+    try {
+      // Parse pasted text with AI
+      const extractedData = await parseDocumentWithAI(pastedText);
+      
+      setParsedData(extractedData);
+      toast({
+        title: "Text Parsed Successfully",
+        description: "Review the extracted information and assign a service package."
+      });
+    } catch (error) {
+      console.error('Text parsing error:', error);
+      
+      // Fallback with sample data
+      const sampleData: ParsedClientData = {
+        name: "Sample Client",
+        email: "client@email.com",
+        phone: "(555) 123-4567",
+        currentTitle: "Professional",
+        industry: "General",
+        skills: ["Microsoft Office", "Project Management", "Communication"],
+        goals: "Seeking new career opportunities with growth potential",
+        experience: "10+ years of professional experience",
+        education: "Bachelor's Degree",
+        linkedinUrl: "",
+        portfolioUrl: "",
+        location: "New York, NY",
+        yearsExperience: "8-10 years",
+        careerLevel: "Mid",
+        targetJobTitles: ["Senior Manager", "Director"],
+        salaryExpectations: "$80,000 - $100,000",
+        workPreference: "Hybrid",
+        previousCompanies: ["ABC Corp", "XYZ Inc"],
+        certifications: ["PMP", "Six Sigma"],
+        languages: ["English", "Spanish"],
+        achievements: "Led team to 25% efficiency improvement",
+        professionalSummary: "Experienced professional with strong leadership skills",
+        securityClearance: "",
+        relocationWilling: "Depends"
+      };
+      
+      setParsedData(sampleData);
+      toast({
+        title: "Text Processed (Sample Data)",
+        description: "AI parsing failed, using sample data. Please review and edit before creating client account."
+      });
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   const generateClientCredentials = () => {
     const tempPassword = Math.random().toString(36).slice(-8);
     return { tempPassword };
@@ -392,6 +457,8 @@ export function DocumentUploadParser({ serviceTypes, onClientCreated }: Document
     setSelectedServiceType("");
     setIsEditing(false);
     setUploadedFileName("");
+    setPastedText("");
+    setInputMethod('file');
   };
 
   return (
@@ -407,34 +474,79 @@ export function DocumentUploadParser({ serviceTypes, onClientCreated }: Document
       </CardHeader>
       <CardContent className="space-y-4">
         {!parsedData ? (
-          <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-            <FileText className="w-12 h-12 mx-auto text-gray-400 mb-4" />
-            <div className="space-y-2">
-              <Label htmlFor="document-upload" className="cursor-pointer text-lg font-medium hover:text-primary">
-                {isUploading ? "Processing Document..." : "Choose Document to Upload"}
-              </Label>
-              <p className="text-sm text-muted-foreground">
-                Supports .txt, .pdf, .doc, .docx files
-              </p>
-              <Input
-                id="document-upload"
-                type="file"
-                accept=".txt,.pdf,.doc,.docx"
-                onChange={handleFileUpload}
-                disabled={isUploading}
-                className="hidden"
-              />
+          <div className="space-y-4">
+            {/* Input Method Selector */}
+            <div className="flex gap-2 mb-4">
               <Button 
-                asChild 
-                disabled={isUploading}
-                className="mt-2"
+                variant={inputMethod === 'file' ? 'default' : 'outline'} 
+                onClick={() => setInputMethod('file')}
+                className="flex-1"
               >
-                <Label htmlFor="document-upload" className="cursor-pointer">
-                  {isUploading ? "Processing..." : "Select File"}
-                </Label>
+                <Upload className="w-4 h-4 mr-2" />
+                Upload File
+              </Button>
+              <Button 
+                variant={inputMethod === 'text' ? 'default' : 'outline'} 
+                onClick={() => setInputMethod('text')}
+                className="flex-1"
+              >
+                <FileText className="w-4 h-4 mr-2" />
+                Paste Text
               </Button>
             </div>
-          </div>
+
+            {inputMethod === 'file' ? (
+              <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                <FileText className="w-12 h-12 mx-auto text-gray-400 mb-4" />
+                  <div className="space-y-2">
+                    <Label htmlFor="document-upload" className="cursor-pointer text-lg font-medium hover:text-primary">
+                      {isUploading ? "Processing Document..." : "Choose Document to Upload"}
+                    </Label>
+                    <p className="text-sm text-muted-foreground">
+                      Supports .txt, .pdf, .doc, .docx files
+                    </p>
+                    <Input
+                      id="document-upload"
+                      type="file"
+                      accept=".txt,.pdf,.doc,.docx"
+                      onChange={handleFileUpload}
+                      disabled={isUploading}
+                      className="hidden"
+                    />
+                    <Button 
+                      asChild 
+                      disabled={isUploading}
+                      className="mt-2"
+                    >
+                      <Label htmlFor="document-upload" className="cursor-pointer">
+                        {isUploading ? "Processing..." : "Select File"}
+                      </Label>
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="text-content">Paste Resume or Document Text</Label>
+                    <Textarea
+                      id="text-content"
+                      placeholder="Paste resume content here..."
+                      value={pastedText}
+                      onChange={(e) => setPastedText(e.target.value)}
+                      rows={10}
+                      disabled={isUploading}
+                    />
+                  </div>
+                  <Button 
+                    onClick={handleTextPaste}
+                    disabled={isUploading || !pastedText.trim()}
+                    className="w-full"
+                  >
+                    {isUploading ? "Processing Text..." : "Parse Text Content"}
+                  </Button>
+                </div>
+              )}
+            </div>
         ) : (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
