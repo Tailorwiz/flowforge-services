@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/components/AuthProvider";
+import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -27,6 +28,7 @@ interface DigestData {
 
 export function DailyDigest() {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [userProfile, setUserProfile] = useState<any>(null);
   const [digestData, setDigestData] = useState<DigestData>({
     dueToday: [],
@@ -151,16 +153,24 @@ export function DailyDigest() {
       const { data, error } = await supabase.functions.invoke('send-daily-digest', {
         body: { 
           force: true,
-          userEmail: "admin@resultsdrivenresumes.com"
+          userEmail: user.email
         }
       });
 
       if (error) throw error;
       
-      // Show success notification
+      toast({
+        title: "Daily digest sent successfully!",
+        description: `Digest email has been sent to ${user.email}`,
+      });
       console.log("Daily digest sent successfully");
     } catch (error) {
       console.error("Error sending digest:", error);
+      toast({
+        title: "Error sending digest",
+        description: "Failed to send the daily digest email. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
