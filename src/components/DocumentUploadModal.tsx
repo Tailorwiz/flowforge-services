@@ -304,13 +304,10 @@ Please extract all available information from this resume file and provide reali
         client_id: clientData.id,
         action_type: "client_created_via_upload",
         description: `Client created from document upload: ${selectedFile?.file.name}`,
-        metadata: { 
+        metadata: JSON.parse(JSON.stringify({ 
           uploadMethod: "bulk_document_parser",
-          fileName: selectedFile?.file.name,
-          parsedData: editingData,
-          tempPassword: tempPassword,
-          serviceType: serviceType.name
-        }
+          fileName: selectedFile?.file.name
+        }))
       });
 
       // Trigger onboarding

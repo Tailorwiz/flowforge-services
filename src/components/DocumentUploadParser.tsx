@@ -385,13 +385,11 @@ export function DocumentUploadParser({ serviceTypes, onClientCreated }: Document
         client_id: clientData.id,
         action_type: "client_created_via_upload",
         description: `Client created automatically from document upload: ${uploadedFileName}`,
-        metadata: { 
+        metadata: JSON.parse(JSON.stringify({ 
           uploadMethod: "document_parser",
           fileName: uploadedFileName,
-          parsedData: parsedData,
-          tempPassword: tempPassword,
           serviceType: serviceType.name
-        }
+        }))
       });
 
       // Trigger onboarding automation
@@ -399,10 +397,10 @@ export function DocumentUploadParser({ serviceTypes, onClientCreated }: Document
         client_id: clientData.id,
         action_type: "onboarding_triggered",
         description: "Automatic onboarding initiated from document upload",
-        metadata: { 
+        metadata: JSON.parse(JSON.stringify({ 
           service_type_id: selectedServiceType,
           trigger_source: "document_upload"
-        }
+        }))
       });
 
       // Send onboarding email via edge function

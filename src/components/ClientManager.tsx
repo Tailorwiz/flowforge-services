@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
-import { Plus, Calendar, CheckCircle, Search, ArrowUpDown } from "lucide-react";
+import { Plus, Calendar, CheckCircle, Search, ArrowUpDown, ExternalLink } from "lucide-react";
 import { DocumentUploadParser } from "./DocumentUploadParser";
 import { DocumentUploadModal } from "./DocumentUploadModal";
 
@@ -34,6 +35,7 @@ interface Client {
 }
 
 export function ClientManager() {
+  const navigate = useNavigate();
   const [serviceTypes, setServiceTypes] = useState<ServiceType[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
   const [isAddingClient, setIsAddingClient] = useState(false);
@@ -348,25 +350,48 @@ export function ClientManager() {
       )}
 
       <div className="grid gap-4">
-        {filteredAndSortedClients.map((client) => (
-          <Card key={client.id}>
-            <CardContent className="p-6">
-              <div className="flex justify-between items-start mb-4">
-                <div>
-                  <h3 className="text-xl font-semibold">
-                    {client.name}
-                  </h3>
-                  <p className="text-muted-foreground">{client.email}</p>
+        {filteredAndSortedClients.map((client) => {
+          const daysUntilDelivery = client.estimated_delivery_date ? 
+            Math.ceil((new Date(client.estimated_delivery_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)) : null;
+          const isUrgent = daysUntilDelivery !== null && daysUntilDelivery <= 3;
+          const isOverdue = daysUntilDelivery !== null && daysUntilDelivery < 0;
+          
+          return (
+            <Card 
+              key={client.id} 
+              className={`cursor-pointer hover:shadow-md transition-shadow ${isOverdue ? 'ring-2 ring-destructive' : isUrgent ? 'ring-2 ring-orange-400' : ''}`}
+              onClick={() => navigate(`/client/${client.id}`)}
+            >
+              <CardContent className="p-6">
+                <div className="flex justify-between items-start mb-4">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-xl font-semibold">
+                        {client.name}
+                      </h3>
+                      <ExternalLink className="w-4 h-4 text-muted-foreground" />
+                      {isOverdue && (
+                        <Badge variant="destructive" className="text-xs">
+                          OVERDUE
+                        </Badge>
+                      )}
+                      {isUrgent && !isOverdue && (
+                        <Badge variant="secondary" className="text-xs bg-orange-100 text-orange-800">
+                          URGENT
+                        </Badge>
+                      )}
+                    </div>
+                    <p className="text-muted-foreground">{client.email}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge variant={client.status === 'active' ? 'default' : 'secondary'}>
+                      {client.status}
+                    </Badge>
+                    <Badge variant={client.payment_status === 'paid' ? 'default' : 'secondary'}>
+                      {client.payment_status}
+                    </Badge>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Badge variant={client.status === 'active' ? 'default' : 'secondary'}>
-                    {client.status}
-                  </Badge>
-                  <Badge variant={client.payment_status === 'paid' ? 'default' : 'secondary'}>
-                    {client.payment_status}
-                  </Badge>
-                </div>
-              </div>
               
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                 <div>
@@ -418,9 +443,10 @@ export function ClientManager() {
                 Timeline: {client.service_types.default_timeline_days} days • 
                 Payment: {client.payment_status}
               </div>
-            </CardContent>
-          </Card>
-        ))}
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
     </div>
   );
