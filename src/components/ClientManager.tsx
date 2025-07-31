@@ -247,30 +247,36 @@ export function ClientManager() {
   }, [clients, searchQuery, sortBy, sortOrder]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-3xl font-bold">RDR Project Portal - Client Management</h2>
-        <div className="flex gap-2">
-          <DocumentUploadModal 
-            serviceTypes={serviceTypes} 
-            onClientCreated={() => {
-              fetchClients();
-              setIsAddingClient(false);
-            }} 
-          />
-          <Button onClick={() => setIsAddingClient(true)}>
-            <Plus className="w-4 h-4 mr-2" />
-            Add Client Manually
-          </Button>
-        </div>
+        <h2 className="text-3xl font-bold text-rdr-navy font-heading">Client Management</h2>
+        {!isAddingClient && (
+          <div className="flex gap-3">
+            <Button 
+              variant="outline" 
+              onClick={() => setIsAddingClient(true)}
+              className="flex items-center gap-2 text-rdr-navy border-rdr-navy hover:bg-rdr-navy hover:text-white"
+            >
+              <Plus className="w-4 h-4" />
+              Add Client Manually
+            </Button>
+            <DocumentUploadModal 
+              serviceTypes={serviceTypes} 
+              onClientCreated={() => {
+                fetchClients();
+                setIsAddingClient(false);
+              }} 
+            />
+          </div>
+        )}
       </div>
 
       {/* Search and Sort Controls */}
-      <Card>
+      <Card className="shadow-lg border border-border">
         <CardContent className="p-4">
           <div className="flex flex-col md:flex-row gap-4 items-center">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <Search className="absolute left-3 top-3 h-4 w-4 text-rdr-medium-gray" />
               <Input
                 placeholder="Search by name, email, status, service type..."
                 value={searchQuery}
@@ -279,7 +285,7 @@ export function ClientManager() {
               />
             </div>
             <div className="flex gap-2 items-center">
-              <Label className="text-sm font-medium whitespace-nowrap">Sort by:</Label>
+              <Label className="text-sm font-medium whitespace-nowrap text-rdr-navy">Sort by:</Label>
               <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
                 <SelectTrigger className="w-[180px]">
                   <SelectValue />
@@ -305,28 +311,20 @@ export function ClientManager() {
               </Button>
             </div>
           </div>
-          <div className="mt-2 text-sm text-muted-foreground">
+          <div className="mt-2 text-sm text-rdr-medium-gray">
             Showing {filteredAndSortedClients.length} of {clients.length} clients
           </div>
         </CardContent>
       </Card>
 
-      <DocumentUploadParser 
-        serviceTypes={serviceTypes} 
-        onClientCreated={() => {
-          fetchClients();
-          setIsAddingClient(false);
-        }} 
-      />
-
       {isAddingClient && (
-        <Card>
+        <Card className="shadow-lg border border-border">
           <CardHeader>
-            <CardTitle>Add New Client</CardTitle>
+            <CardTitle className="text-rdr-navy font-heading">Add New Client</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <Label htmlFor="name">Full Name *</Label>
+              <Label htmlFor="name" className="text-rdr-navy">Full Name *</Label>
               <Input
                 id="name"
                 value={newClient.name}
@@ -334,7 +332,7 @@ export function ClientManager() {
               />
             </div>
             <div>
-              <Label htmlFor="email">Email *</Label>
+              <Label htmlFor="email" className="text-rdr-navy">Email *</Label>
               <Input
                 id="email"
                 type="email"
@@ -343,7 +341,7 @@ export function ClientManager() {
               />
             </div>
             <div>
-              <Label htmlFor="phone">Phone</Label>
+              <Label htmlFor="phone" className="text-rdr-navy">Phone</Label>
               <Input
                 id="phone"
                 value={newClient.phone}
@@ -351,7 +349,7 @@ export function ClientManager() {
               />
             </div>
             <div>
-              <Label htmlFor="service_type">Service Type *</Label>
+              <Label htmlFor="service_type" className="text-rdr-navy">Service Type *</Label>
               <Select onValueChange={(value) => setNewClient({...newClient, service_type_id: value})}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select service type" />
@@ -366,8 +364,12 @@ export function ClientManager() {
               </Select>
             </div>
             <div className="flex gap-2">
-              <Button onClick={addClient}>Add Client</Button>
-              <Button variant="outline" onClick={() => setIsAddingClient(false)}>Cancel</Button>
+              <Button onClick={addClient} className="bg-rdr-navy hover:bg-rdr-navy/90">
+                Add Client
+              </Button>
+              <Button variant="outline" onClick={() => setIsAddingClient(false)}>
+                Cancel
+              </Button>
             </div>
           </CardContent>
         </Card>
