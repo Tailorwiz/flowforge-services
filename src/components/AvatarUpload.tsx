@@ -96,7 +96,8 @@ const AvatarUpload: React.FC<AvatarUploadProps> = ({
           <img 
             src={`${currentAvatarUrl}?t=${Date.now()}`}
             alt="Avatar" 
-            className="w-full h-full object-cover object-center"
+            className="w-full h-full object-cover object-top"
+            style={{ objectPosition: '50% 20%' }}
             onError={(e) => {
               console.error('Image failed to load:', currentAvatarUrl);
               e.currentTarget.style.display = 'none';

@@ -111,6 +111,7 @@ export function AdminProfile() {
         display_name: data.displayName,
         phone: data.phone,
         bio: data.bio,
+        avatar_url: profile?.avatar_url, // Preserve existing avatar URL
         updated_at: new Date().toISOString(),
       };
 
@@ -174,10 +175,7 @@ export function AdminProfile() {
                 onAvatarUpdate={(url) => {
                   console.log('Avatar updated with URL:', url);
                   setProfile(prev => ({...prev, avatar_url: url}));
-                  // Refresh the profile data to ensure consistency
-                  setTimeout(() => {
-                    fetchProfile();
-                  }, 1000);
+                  // Don't show toast here, AvatarUpload component handles it
                 }}
                 size="lg"
                 showUploadButton={true}
