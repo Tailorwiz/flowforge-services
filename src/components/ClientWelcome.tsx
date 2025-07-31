@@ -13,7 +13,7 @@ interface ClientWelcomeProps {
 const ClientWelcome: React.FC<ClientWelcomeProps> = ({ 
   clientName = "John Smith",
   packageName = "Professional Resume Package",
-  estimatedDelivery = "2024-02-15",
+  estimatedDelivery = "2025-08-07",
   className = ""
 }) => {
   const deliveryDate = new Date(estimatedDelivery);
@@ -111,7 +111,7 @@ const ClientWelcome: React.FC<ClientWelcomeProps> = ({
           <p className="text-rdr-medium-gray text-sm">
             {daysRemaining > 0 ? 'On schedule' : 'Final review'}
           </p>
-          {timeRemaining.days > 0 && (
+          {daysRemaining > 0 && (
             <p className="text-xs text-rdr-medium-gray/80 mt-1">
               {timeRemaining.days} Days, {timeRemaining.hours} hours, {timeRemaining.minutes} Minutes
             </p>
