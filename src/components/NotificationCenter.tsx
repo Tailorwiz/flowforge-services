@@ -32,32 +32,36 @@ interface NotificationRule {
   priority: number;
 }
 
-interface Notification {
+interface ClientActivity {
   id: string;
-  type: string;
-  title: string;
-  message: string;
-  client_id?: string;
-  client_name?: string;
-  is_read: boolean;
-  is_rush: boolean;
+  action_type: string;
+  description: string;
+  client_id: string;
   created_at: string;
   metadata?: any;
+  clients?: {
+    name: string;
+    email: string;
+    is_rush: boolean;
+  };
 }
 
 export function NotificationCenter() {
   const { user } = useAuth();
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [rules, setRules] = useState<NotificationRule[]>([]);
+  const [recentActivities, setRecentActivities] = useState<ClientActivity[]>([]);
   const [loading, setLoading] = useState(true);
   const [unreadCount, setUnreadCount] = useState(0);
 
-  // Notification preferences
+  // Notification preferences (will be stored in database later)
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [smsNotifications, setSmsNotifications] = useState(false);
   const [rushPriority, setRushPriority] = useState(true);
   const [digestTime, setDigestTime] = useState("08:00");
   const [reminderDelay, setReminderDelay] = useState(48);
+  const [fileUploadAlerts, setFileUploadAlerts] = useState(true);
+  const [messageAlerts, setMessageAlerts] = useState(true);
+  const [dailyDigest, setDailyDigest] = useState(true);
+  const [intakeReminders, setIntakeReminders] = useState(true);
 
   useEffect(() => {
     if (user) {
@@ -69,11 +73,7 @@ export function NotificationCenter() {
   const initializeNotificationSystem = async () => {
     try {
       setLoading(true);
-      await Promise.all([
-        fetchNotifications(),
-        fetchNotificationRules(),
-        setupDefaultRules()
-      ]);
+      await fetchRecentActivities();
     } catch (error) {
       console.error("Error initializing notification system:", error);
       toast({
@@ -86,150 +86,56 @@ export function NotificationCenter() {
     }
   };
 
-  const fetchNotifications = async () => {
-    const { data, error } = await supabase
-      .from("admin_notifications")
-      .select("*")
-      .order("created_at", { ascending: false })
-      .limit(50);
+  const fetchRecentActivities = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("client_history")
+        .select(`
+          *,
+          clients (
+            name,
+            email,
+            is_rush
+          )
+        `)
+        .in("action_type", ["file_uploaded", "message_received", "client_created_via_upload", "onboarding_triggered"])
+        .order("created_at", { ascending: false })
+        .limit(20);
 
-    if (error) {
-      console.error("Error fetching notifications:", error);
-      return;
-    }
-
-    setNotifications(data || []);
-    setUnreadCount((data || []).filter(n => !n.is_read).length);
-  };
-
-  const fetchNotificationRules = async () => {
-    const { data, error } = await supabase
-      .from("notification_rules")
-      .select("*")
-      .eq("user_id", user?.id)
-      .order("priority", { ascending: false });
-
-    if (error) {
-      console.error("Error fetching notification rules:", error);
-      return;
-    }
-
-    setRules(data || []);
-  };
-
-  const setupDefaultRules = async () => {
-    const defaultRules = [
-      {
-        rule_type: "file_upload",
-        is_enabled: true,
-        conditions: { event: "file_uploaded" },
-        actions: { 
-          notify_admin: true, 
-          send_email: emailNotifications,
-          send_sms: smsNotifications 
-        },
-        priority: 8
-      },
-      {
-        rule_type: "message_received",
-        is_enabled: true,
-        conditions: { event: "message_received", unread: true },
-        actions: { 
-          notify_admin: true, 
-          send_email: emailNotifications,
-          priority_if_rush: rushPriority 
-        },
-        priority: 7
-      },
-      {
-        rule_type: "daily_digest",
-        is_enabled: true,
-        conditions: { schedule: "daily", time: digestTime },
-        actions: { 
-          send_digest: true, 
-          include_due_today: true,
-          include_due_tomorrow: true,
-          include_overdue: true 
-        },
-        priority: 5
-      },
-      {
-        rule_type: "intake_reminder",
-        is_enabled: true,
-        conditions: { 
-          delay_hours: reminderDelay,
-          status: "intake_pending" 
-        },
-        actions: { 
-          send_email: true, 
-          send_sms: true,
-          auto_reminder: true 
-        },
-        priority: 6
-      },
-      {
-        rule_type: "rush_priority",
-        is_enabled: rushPriority,
-        conditions: { client_is_rush: true },
-        actions: { 
-          priority_notification: true,
-          immediate_alert: true 
-        },
-        priority: 10
+      if (error) {
+        console.error("Error fetching activities:", error);
+        return;
       }
-    ];
 
-    // Check if rules already exist for this user
-    for (const rule of defaultRules) {
-      const { data: existing } = await supabase
-        .from("notification_rules")
-        .select("id")
-        .eq("user_id", user?.id)
-        .eq("rule_type", rule.rule_type)
-        .single();
+      setRecentActivities(data || []);
+      // Count unread activities from last 24 hours
+      const oneDayAgo = new Date();
+      oneDayAgo.setDate(oneDayAgo.getDate() - 1);
+      const recentCount = (data || []).filter(activity => 
+        new Date(activity.created_at) > oneDayAgo
+      ).length;
+      setUnreadCount(recentCount);
 
-      if (!existing) {
-        await supabase
-          .from("notification_rules")
-          .insert({
-            ...rule,
-            user_id: user?.id
-          });
-      }
+    } catch (error) {
+      console.error("Error fetching recent activities:", error);
     }
   };
 
   const setupRealtimeSubscriptions = () => {
-    // Subscribe to client file uploads
-    const fileUploadChannel = supabase
-      .channel("file_uploads")
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "client_history",
-          filter: "action_type=eq.file_uploaded"
-        },
-        (payload) => {
-          handleFileUploadNotification(payload.new);
-        }
-      )
-      .subscribe();
+    console.log("Setting up real-time subscriptions...");
 
-    // Subscribe to client messages
-    const messageChannel = supabase
-      .channel("client_messages")
+    // Subscribe to client file uploads and activities
+    const activitiesChannel = supabase
+      .channel("client_activities")
       .on(
         "postgres_changes",
         {
           event: "INSERT",
           schema: "public",
-          table: "client_history",
-          filter: "action_type=eq.message_received"
+          table: "client_history"
         },
         (payload) => {
-          handleMessageNotification(payload.new);
+          handleNewActivity(payload.new);
         }
       )
       .subscribe();
@@ -251,183 +157,94 @@ export function NotificationCenter() {
       .subscribe();
 
     return () => {
-      supabase.removeChannel(fileUploadChannel);
-      supabase.removeChannel(messageChannel);
+      supabase.removeChannel(activitiesChannel);
       supabase.removeChannel(clientChannel);
     };
   };
 
-  const handleFileUploadNotification = async (historyRecord: any) => {
+  const handleNewActivity = async (activity: any) => {
     try {
-      // Get client info
-      const { data: client } = await supabase
-        .from("clients")
-        .select("name, is_rush")
-        .eq("id", historyRecord.client_id)
-        .single();
+      // Get client info if not included
+      let clientData = null;
+      if (activity.client_id) {
+        const { data: client } = await supabase
+          .from("clients")
+          .select("name, email, is_rush")
+          .eq("id", activity.client_id)
+          .single();
+        clientData = client;
+      }
 
-      const notification = {
-        type: "file_upload",
-        title: "New File Uploaded",
-        message: `${client?.name || 'A client'} uploaded a new file`,
-        client_id: historyRecord.client_id,
-        client_name: client?.name,
-        is_rush: client?.is_rush || false,
-        metadata: {
-          file_name: historyRecord.metadata?.fileName,
-          upload_time: historyRecord.created_at
-        }
+      const activityWithClient = {
+        ...activity,
+        clients: clientData
       };
 
-      await createNotification(notification);
-      
-      // Show toast for immediate feedback
-      toast({
-        title: client?.is_rush ? "🚨 RUSH: New File Upload" : "📁 New File Upload",
-        description: `${client?.name} uploaded: ${historyRecord.metadata?.fileName || 'a file'}`,
-        duration: client?.is_rush ? 10000 : 5000
-      });
+      // Add to recent activities
+      setRecentActivities(prev => [activityWithClient, ...prev.slice(0, 19)]);
+      setUnreadCount(prev => prev + 1);
+
+      // Show notification based on activity type
+      if (activity.action_type === "file_uploaded" && fileUploadAlerts) {
+        toast({
+          title: clientData?.is_rush ? "🚨 RUSH: New File Upload" : "📁 New File Upload",
+          description: `${clientData?.name || 'A client'} uploaded a file`,
+          duration: clientData?.is_rush ? 10000 : 5000
+        });
+      } else if (activity.action_type === "message_received" && messageAlerts) {
+        toast({
+          title: clientData?.is_rush ? "🚨 RUSH: New Message" : "💬 New Message",
+          description: `${clientData?.name || 'A client'} sent you a message`,
+          duration: clientData?.is_rush ? 10000 : 5000
+        });
+      }
+
+      // Send email/SMS if enabled and for rush clients
+      if ((emailNotifications || (smsNotifications && clientData?.is_rush)) && activity.action_type !== "onboarding_triggered") {
+        await sendAdminNotification(activity, clientData);
+      }
 
     } catch (error) {
-      console.error("Error handling file upload notification:", error);
-    }
-  };
-
-  const handleMessageNotification = async (historyRecord: any) => {
-    try {
-      const { data: client } = await supabase
-        .from("clients")
-        .select("name, is_rush")
-        .eq("id", historyRecord.client_id)
-        .single();
-
-      const notification = {
-        type: "message_received",
-        title: "New Client Message",
-        message: `${client?.name || 'A client'} sent you a message`,
-        client_id: historyRecord.client_id,
-        client_name: client?.name,
-        is_rush: client?.is_rush || false,
-        metadata: {
-          message_preview: historyRecord.description.substring(0, 100),
-          received_time: historyRecord.created_at
-        }
-      };
-
-      await createNotification(notification);
-
-      toast({
-        title: client?.is_rush ? "🚨 RUSH: New Message" : "💬 New Message",
-        description: `${client?.name}: ${historyRecord.description.substring(0, 50)}...`,
-        duration: client?.is_rush ? 10000 : 5000
-      });
-
-    } catch (error) {
-      console.error("Error handling message notification:", error);
+      console.error("Error handling new activity:", error);
     }
   };
 
   const scheduleIntakeReminder = async (client: any) => {
-    // Schedule automated reminder for intake completion
-    const reminderTime = new Date();
-    reminderTime.setHours(reminderTime.getHours() + reminderDelay);
+    if (!intakeReminders) return;
 
+    console.log(`Scheduling intake reminder for ${client.name} in ${reminderDelay} hours`);
+    
+    // This would typically call an edge function to schedule the reminder
     try {
       await supabase.functions.invoke("schedule-intake-reminder", {
         body: {
           clientId: client.id,
           clientName: client.name,
           clientEmail: client.email,
-          reminderTime: reminderTime.toISOString(),
+          delayHours: reminderDelay,
           isRush: client.is_rush
         }
       });
-
-      console.log(`Intake reminder scheduled for ${client.name} at ${reminderTime}`);
     } catch (error) {
       console.error("Error scheduling intake reminder:", error);
     }
   };
 
-  const createNotification = async (notification: Omit<Notification, 'id' | 'is_read' | 'created_at'>) => {
+  const sendAdminNotification = async (activity: any, client: any) => {
     try {
-      const { data, error } = await supabase
-        .from("admin_notifications")
-        .insert({
-          ...notification,
-          user_id: user?.id,
-          is_read: false
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      setNotifications(prev => [data, ...prev]);
-      setUnreadCount(prev => prev + 1);
-
-      // Send email/SMS if enabled
-      if (emailNotifications || (smsNotifications && notification.is_rush)) {
-        await supabase.functions.invoke("send-admin-notification", {
-          body: {
-            notification: data,
-            preferences: {
-              email: emailNotifications,
-              sms: smsNotifications && notification.is_rush,
-              rush_priority: rushPriority
-            }
+      await supabase.functions.invoke("send-admin-notification", {
+        body: {
+          activity,
+          client,
+          preferences: {
+            email: emailNotifications,
+            sms: smsNotifications && client?.is_rush,
+            rush_priority: rushPriority
           }
-        });
-      }
-
-    } catch (error) {
-      console.error("Error creating notification:", error);
-    }
-  };
-
-  const markAsRead = async (notificationId: string) => {
-    try {
-      await supabase
-        .from("admin_notifications")
-        .update({ is_read: true })
-        .eq("id", notificationId);
-
-      setNotifications(prev => 
-        prev.map(n => n.id === notificationId ? { ...n, is_read: true } : n)
-      );
-      setUnreadCount(prev => Math.max(0, prev - 1));
-
-    } catch (error) {
-      console.error("Error marking notification as read:", error);
-    }
-  };
-
-  const updateNotificationRule = async (ruleType: string, updates: Partial<NotificationRule>) => {
-    try {
-      await supabase
-        .from("notification_rules")
-        .update(updates)
-        .eq("user_id", user?.id)
-        .eq("rule_type", ruleType);
-
-      setRules(prev => 
-        prev.map(rule => 
-          rule.rule_type === ruleType ? { ...rule, ...updates } : rule
-        )
-      );
-
-      toast({
-        title: "Settings Updated",
-        description: "Notification preferences saved successfully"
+        }
       });
-
     } catch (error) {
-      console.error("Error updating notification rule:", error);
-      toast({
-        title: "Error",
-        description: "Failed to update notification settings",
-        variant: "destructive"
-      });
+      console.error("Error sending admin notification:", error);
     }
   };
 
@@ -451,6 +268,36 @@ export function NotificationCenter() {
         description: "Failed to send test digest",
         variant: "destructive"
       });
+    }
+  };
+
+  const getActivityIcon = (activityType: string) => {
+    switch (activityType) {
+      case "file_uploaded":
+        return <FileUp className="w-4 h-4" />;
+      case "message_received":
+        return <MessageSquare className="w-4 h-4" />;
+      case "client_created_via_upload":
+        return <FileUp className="w-4 h-4" />;
+      case "onboarding_triggered":
+        return <Bell className="w-4 h-4" />;
+      default:
+        return <Bell className="w-4 h-4" />;
+    }
+  };
+
+  const getActivityTitle = (activity: ClientActivity) => {
+    switch (activity.action_type) {
+      case "file_uploaded":
+        return "File Uploaded";
+      case "message_received":
+        return "Message Received";
+      case "client_created_via_upload":
+        return "New Client Added";
+      case "onboarding_triggered":
+        return "Onboarding Started";
+      default:
+        return "Client Activity";
     }
   };
 
@@ -478,7 +325,7 @@ export function NotificationCenter() {
         <div className="flex items-center gap-2">
           <Badge variant={unreadCount > 0 ? "destructive" : "secondary"}>
             <Bell className="w-4 h-4 mr-1" />
-            {unreadCount} unread
+            {unreadCount} recent
           </Badge>
         </div>
       </div>
@@ -501,10 +348,8 @@ export function NotificationCenter() {
                   File Upload Alerts
                 </Label>
                 <Switch
-                  checked={rules.find(r => r.rule_type === 'file_upload')?.is_enabled || false}
-                  onCheckedChange={(checked) => 
-                    updateNotificationRule('file_upload', { is_enabled: checked })
-                  }
+                  checked={fileUploadAlerts}
+                  onCheckedChange={setFileUploadAlerts}
                 />
               </div>
               <p className="text-sm text-muted-foreground">
@@ -522,10 +367,8 @@ export function NotificationCenter() {
                   Unread Message Alerts
                 </Label>
                 <Switch
-                  checked={rules.find(r => r.rule_type === 'message_received')?.is_enabled || false}
-                  onCheckedChange={(checked) => 
-                    updateNotificationRule('message_received', { is_enabled: checked })
-                  }
+                  checked={messageAlerts}
+                  onCheckedChange={setMessageAlerts}
                 />
               </div>
               <p className="text-sm text-muted-foreground">
@@ -543,10 +386,8 @@ export function NotificationCenter() {
                   Morning Digest
                 </Label>
                 <Switch
-                  checked={rules.find(r => r.rule_type === 'daily_digest')?.is_enabled || false}
-                  onCheckedChange={(checked) => 
-                    updateNotificationRule('daily_digest', { is_enabled: checked })
-                  }
+                  checked={dailyDigest}
+                  onCheckedChange={setDailyDigest}
                 />
               </div>
               <div className="flex items-center gap-2">
@@ -577,10 +418,8 @@ export function NotificationCenter() {
                   Auto-Intake Reminders
                 </Label>
                 <Switch
-                  checked={rules.find(r => r.rule_type === 'intake_reminder')?.is_enabled || false}
-                  onCheckedChange={(checked) => 
-                    updateNotificationRule('intake_reminder', { is_enabled: checked })
-                  }
+                  checked={intakeReminders}
+                  onCheckedChange={setIntakeReminders}
                 />
               </div>
               <div className="flex items-center gap-2">
@@ -674,57 +513,81 @@ export function NotificationCenter() {
         </Card>
       </div>
 
-      {/* Recent Notifications */}
+      {/* Recent Activities */}
       <Card>
         <CardHeader>
-          <CardTitle>Recent Notifications</CardTitle>
+          <CardTitle>Recent Client Activities</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
-            {notifications.length === 0 ? (
+            {recentActivities.length === 0 ? (
               <p className="text-muted-foreground text-center py-8">
-                No notifications yet. They'll appear here when clients interact with your portal.
+                No recent activities. They'll appear here when clients interact with your portal.
               </p>
             ) : (
-              notifications.slice(0, 10).map((notification) => (
+              recentActivities.map((activity) => (
                 <div 
-                  key={notification.id}
+                  key={activity.id}
                   className={`p-4 rounded-lg border ${
-                    notification.is_read ? 'bg-muted/50' : 'bg-background'
-                  } ${notification.is_rush ? 'border-red-200 bg-red-50/50' : ''}`}
+                    activity.clients?.is_rush ? 'border-red-200 bg-red-50/50' : 'bg-background'
+                  }`}
                 >
                   <div className="flex items-start justify-between">
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
-                        {notification.type === 'file_upload' && <FileUp className="w-4 h-4" />}
-                        {notification.type === 'message_received' && <MessageSquare className="w-4 h-4" />}
+                        {getActivityIcon(activity.action_type)}
                         <p className="font-medium">
-                          {notification.is_rush && "🚨 "}{notification.title}
+                          {activity.clients?.is_rush && "🚨 "}{getActivityTitle(activity)}
                         </p>
-                        {!notification.is_read && (
+                        {new Date(activity.created_at) > new Date(Date.now() - 24*60*60*1000) && (
                           <Badge variant="secondary" className="text-xs">New</Badge>
                         )}
                       </div>
                       <p className="text-sm text-muted-foreground">
-                        {notification.message}
+                        {activity.clients?.name ? `${activity.clients.name}: ` : ""}{activity.description}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        {new Date(notification.created_at).toLocaleString()}
+                        {new Date(activity.created_at).toLocaleString()}
                       </p>
                     </div>
-                    {!notification.is_read && (
-                      <Button 
-                        size="sm" 
-                        variant="ghost"
-                        onClick={() => markAsRead(notification.id)}
-                      >
-                        Mark Read
-                      </Button>
-                    )}
                   </div>
                 </div>
               ))
             )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Implementation Note */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <AlertTriangle className="w-5 h-5 text-amber-500" />
+            Notification System Status
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <span>🔔 Real-time file upload alerts</span>
+              <Badge variant="outline" className="text-green-600">Active</Badge>
+            </div>
+            <div className="flex items-center justify-between">
+              <span>📧 Daily digest system</span>
+              <Badge variant="outline" className="text-green-600">Active</Badge>
+            </div>
+            <div className="flex items-center justify-between">
+              <span>🚨 RUSH priority system</span>
+              <Badge variant="outline" className="text-green-600">Active</Badge>
+            </div>
+            <div className="flex items-center justify-between">
+              <span>⏰ Auto-intake reminders</span>
+              <Badge variant="outline" className="text-amber-600">Requires edge function</Badge>
+            </div>
+            <div className="flex items-center justify-between">
+              <span>📱 SMS notifications</span>
+              <Badge variant="outline" className="text-amber-600">Requires edge function</Badge>
+            </div>
           </div>
         </CardContent>
       </Card>

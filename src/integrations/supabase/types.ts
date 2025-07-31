@@ -14,6 +14,51 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_notifications: {
+        Row: {
+          client_id: string | null
+          client_name: string | null
+          created_at: string
+          id: string
+          is_read: boolean
+          is_rush: boolean
+          message: string
+          metadata: Json | null
+          title: string
+          type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          client_id?: string | null
+          client_name?: string | null
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          is_rush?: boolean
+          message: string
+          metadata?: Json | null
+          title: string
+          type: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          client_id?: string | null
+          client_name?: string | null
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          is_rush?: boolean
+          message?: string
+          metadata?: Json | null
+          title?: string
+          type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       client_history: {
         Row: {
           action_type: string
@@ -470,6 +515,42 @@ export type Database = {
           is_active?: boolean | null
           name?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      notification_rules: {
+        Row: {
+          actions: Json
+          conditions: Json
+          created_at: string
+          id: string
+          is_enabled: boolean
+          priority: number
+          rule_type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          actions?: Json
+          conditions?: Json
+          created_at?: string
+          id?: string
+          is_enabled?: boolean
+          priority?: number
+          rule_type: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          actions?: Json
+          conditions?: Json
+          created_at?: string
+          id?: string
+          is_enabled?: boolean
+          priority?: number
+          rule_type?: string
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
