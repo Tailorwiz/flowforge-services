@@ -173,6 +173,39 @@ export type Database = {
           },
         ]
       }
+      client_training_access: {
+        Row: {
+          access_type: string
+          client_id: string
+          created_at: string
+          granted_at: string
+          granted_by: string | null
+          id: string
+          package_name: string | null
+          training_material_id: string
+        }
+        Insert: {
+          access_type?: string
+          client_id: string
+          created_at?: string
+          granted_at?: string
+          granted_by?: string | null
+          id?: string
+          package_name?: string | null
+          training_material_id: string
+        }
+        Update: {
+          access_type?: string
+          client_id?: string
+          created_at?: string
+          granted_at?: string
+          granted_by?: string | null
+          id?: string
+          package_name?: string | null
+          training_material_id?: string
+        }
+        Relationships: []
+      }
       clients: {
         Row: {
           created_at: string
@@ -1192,6 +1225,7 @@ export type Database = {
           is_active: boolean | null
           mime_type: string | null
           name: string
+          thumbnail_url: string | null
           type: string | null
           updated_at: string
         }
@@ -1205,6 +1239,7 @@ export type Database = {
           is_active?: boolean | null
           mime_type?: string | null
           name: string
+          thumbnail_url?: string | null
           type?: string | null
           updated_at?: string
         }
@@ -1218,6 +1253,7 @@ export type Database = {
           is_active?: boolean | null
           mime_type?: string | null
           name?: string
+          thumbnail_url?: string | null
           type?: string | null
           updated_at?: string
         }

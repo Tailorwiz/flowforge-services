@@ -21,7 +21,9 @@ import {
   AlertCircle,
   MessageCircle,
   Target,
-  TrendingUp
+  TrendingUp,
+  Download,
+  Eye
 } from "lucide-react";
 
 interface ClientData {
@@ -67,6 +69,7 @@ interface TrainingMaterial {
   type: string;
   content_url: string;
   is_active: boolean;
+  thumbnail_url?: string;
 }
 
 export default function ClientDashboard() {
@@ -166,15 +169,18 @@ export default function ClientDashboard() {
   };
 
   const fetchTrainingMaterials = async () => {
+    if (!client?.id) return;
+    
     try {
-      const { data, error } = await supabase
+      // Get all active materials (for now, we'll implement access control later)
+      const { data: allMaterials, error: allError } = await supabase
         .from("training_materials")
         .select("*")
         .eq("is_active", true)
         .order("created_at", { ascending: false });
 
-      if (error) throw error;
-      setTrainingMaterials(data || []);
+      if (allError) throw allError;
+      setTrainingMaterials(allMaterials || []);
     } catch (error) {
       console.error('Error fetching training materials:', error);
     }
@@ -504,36 +510,65 @@ export default function ClientDashboard() {
               </CardHeader>
               <CardContent>
                 {client.status === 'active' ? (
-                  <div className="grid gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {trainingMaterials.length > 0 ? (
                       trainingMaterials.map((material) => (
-                        <div key={material.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors">
-                          <div className="flex items-start gap-3">
-                            <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-                              <FileText className="w-5 h-5 text-primary" />
+                        <Card key={material.id} className="group hover:shadow-md transition-shadow">
+                          <CardContent className="p-6">
+                            <div className="flex flex-col gap-4">
+                              <div className="w-full h-32 bg-primary/10 rounded-lg flex items-center justify-center overflow-hidden">
+                                {material.thumbnail_url ? (
+                                  <img 
+                                    src={material.thumbnail_url} 
+                                    alt={material.name}
+                                    className="w-full h-full object-cover"
+                                  />
+                                ) : (
+                                  <FileText className="w-12 h-12 text-primary" />
+                                )}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <h3 className="font-semibold text-base mb-2 line-clamp-2">
+                                  {material.name}
+                                </h3>
+                                <p className="text-sm text-muted-foreground mb-3 line-clamp-3">
+                                  {material.description}
+                                </p>
+                                <div className="flex items-center justify-between">
+                                  <Badge variant="outline" className="text-xs">
+                                    {material.type}
+                                  </Badge>
+                                  <div className="flex gap-2">
+                                    {material.type === 'PDF' && (
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() => window.open(material.content_url, '_blank')}
+                                        className="gap-2"
+                                      >
+                                        <Eye className="w-4 h-4" />
+                                        View
+                                      </Button>
+                                    )}
+                                    <Button
+                                      size="sm"
+                                      onClick={() => {
+                                        const link = document.createElement('a');
+                                        link.href = material.content_url;
+                                        link.download = material.name;
+                                        link.click();
+                                      }}
+                                      className="gap-2"
+                                    >
+                                      <Download className="w-4 h-4" />
+                                      Download
+                                    </Button>
+                                  </div>
+                                </div>
+                              </div>
                             </div>
-                            <div>
-                              <h4 className="font-medium text-foreground">{material.name}</h4>
-                              <p className="text-sm text-muted-foreground mt-1">{material.description}</p>
-                              <Badge variant="outline" className="mt-2 text-xs">
-                                {material.type}
-                              </Badge>
-                            </div>
-                          </div>
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => {
-                              window.open(material.content_url, '_blank');
-                              toast({
-                                title: "Download Started",
-                                description: `Opening ${material.name}...`
-                              });
-                            }}
-                          >
-                            Download
-                          </Button>
-                        </div>
+                          </CardContent>
+                        </Card>
                       ))
                     ) : (
                       <div className="text-center py-8 text-muted-foreground">

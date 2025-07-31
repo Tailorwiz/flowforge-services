@@ -6,13 +6,18 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
 import { 
   Upload, 
   FileText, 
   Trash2, 
   Download,
-  AlertCircle 
+  AlertCircle,
+  Edit,
+  Users,
+  Image as ImageIcon
 } from "lucide-react";
 
 interface TrainingMaterial {
@@ -25,20 +30,54 @@ interface TrainingMaterial {
   file_size: number;
   is_active: boolean;
   created_at: string;
+  thumbnail_url?: string;
 }
+
+interface Client {
+  id: string;
+  name: string;
+  email: string;
+  status: string;
+}
+
+const FILE_TYPES = [
+  'PDF',
+  'MS Word/Docx',
+  'Video',
+  'Audio',
+  'PowerPoint',
+  'Excel',
+  'Image',
+  'Other'
+];
+
+const ACCEPTED_FILE_TYPES = {
+  'PDF': '.pdf',
+  'MS Word/Docx': '.doc,.docx',
+  'Video': '.mp4,.mov,.avi,.wmv',
+  'Audio': '.mp3,.wav,.m4a',
+  'PowerPoint': '.ppt,.pptx',
+  'Excel': '.xls,.xlsx',
+  'Image': '.jpg,.jpeg,.png,.gif',
+  'Other': '*'
+};
 
 export default function TrainingMaterialUpload() {
   const [materials, setMaterials] = useState<TrainingMaterial[]>([]);
+  const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
+  const [editingMaterial, setEditingMaterial] = useState<TrainingMaterial | null>(null);
+  const [showAccessDialog, setShowAccessDialog] = useState<TrainingMaterial | null>(null);
   const [formData, setFormData] = useState({
     name: "",
     description: "",
-    type: "PDF Guide"
+    type: "PDF"
   });
 
   useEffect(() => {
     fetchTrainingMaterials();
+    fetchClients();
   }, []);
 
   const fetchTrainingMaterials = async () => {
@@ -62,18 +101,23 @@ export default function TrainingMaterialUpload() {
     }
   };
 
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const fetchClients = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("clients")
+        .select("id, name, email, status")
+        .order("name");
+
+      if (error) throw error;
+      setClients(data || []);
+    } catch (error) {
+      console.error('Error fetching clients:', error);
+    }
+  };
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>, thumbnailFile?: File) => {
     const file = event.target.files?.[0];
     if (!file) return;
-
-    if (file.type !== 'application/pdf') {
-      toast({
-        title: "Invalid File Type",
-        description: "Please upload PDF files only",
-        variant: "destructive"
-      });
-      return;
-    }
 
     if (!formData.name.trim()) {
       toast({
@@ -103,6 +147,24 @@ export default function TrainingMaterialUpload() {
         .from('training-materials')
         .getPublicUrl(filePath);
 
+      // Upload thumbnail if provided
+      let thumbnailUrl = null;
+      if (thumbnailFile) {
+        const thumbExt = thumbnailFile.name.split('.').pop();
+        const thumbFileName = `thumb_${Date.now()}_${formData.name.replace(/[^a-zA-Z0-9]/g, '_')}.${thumbExt}`;
+        
+        const { error: thumbUploadError } = await supabase.storage
+          .from('training-thumbnails')
+          .upload(thumbFileName, thumbnailFile);
+
+        if (!thumbUploadError) {
+          const { data: { publicUrl: thumbPublicUrl } } = supabase.storage
+            .from('training-thumbnails')
+            .getPublicUrl(thumbFileName);
+          thumbnailUrl = thumbPublicUrl;
+        }
+      }
+
       // Create database record
       const { error: dbError } = await supabase
         .from('training_materials')
@@ -114,6 +176,7 @@ export default function TrainingMaterialUpload() {
           file_path: filePath,
           file_size: file.size,
           mime_type: file.type,
+          thumbnail_url: thumbnailUrl,
           is_active: true
         });
 
@@ -128,7 +191,7 @@ export default function TrainingMaterialUpload() {
       setFormData({
         name: "",
         description: "",
-        type: "PDF Guide"
+        type: "PDF"
       });
 
       // Reset file input
@@ -211,6 +274,87 @@ export default function TrainingMaterialUpload() {
     }
   };
 
+  const handleEdit = async (materialId: string, updatedData: Partial<TrainingMaterial>) => {
+    try {
+      const { error } = await supabase
+        .from('training_materials')
+        .update(updatedData)
+        .eq('id', materialId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Training material updated successfully"
+      });
+
+      setEditingMaterial(null);
+      fetchTrainingMaterials();
+
+    } catch (error) {
+      console.error('Error updating material:', error);
+      toast({
+        title: "Update Failed",
+        description: "Failed to update training material",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const grantClientAccess = async (clientId: string, materialId: string) => {
+    try {
+      const { error } = await supabase
+        .from('client_training_access')
+        .insert({
+          client_id: clientId,
+          training_material_id: materialId,
+          access_type: 'manual'
+        });
+
+      if (error && error.code !== '23505') { // Ignore duplicate key error
+        throw error;
+      }
+
+      toast({
+        title: "Success",
+        description: "Access granted to client"
+      });
+
+    } catch (error) {
+      console.error('Error granting access:', error);
+      toast({
+        title: "Error",
+        description: "Failed to grant access",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const revokeClientAccess = async (clientId: string, materialId: string) => {
+    try {
+      const { error } = await supabase
+        .from('client_training_access')
+        .delete()
+        .eq('client_id', clientId)
+        .eq('training_material_id', materialId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Access revoked from client"
+      });
+
+    } catch (error) {
+      console.error('Error revoking access:', error);
+      toast({
+        title: "Error",
+        description: "Failed to revoke access",
+        variant: "destructive"
+      });
+    }
+  };
+
   const formatFileSize = (bytes: number) => {
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     if (bytes === 0) return '0 Bytes';
@@ -250,12 +394,21 @@ export default function TrainingMaterialUpload() {
             </div>
             <div>
               <Label htmlFor="type">Type</Label>
-              <Input
-                id="type"
+              <Select
                 value={formData.type}
-                onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-                placeholder="e.g., PDF Guide"
-              />
+                onValueChange={(value) => setFormData({ ...formData, type: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select file type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {FILE_TYPES.map((type) => (
+                    <SelectItem key={type} value={type}>
+                      {type}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
           
@@ -271,16 +424,29 @@ export default function TrainingMaterialUpload() {
           </div>
 
           <div>
-            <Label htmlFor="file">PDF File</Label>
+            <Label htmlFor="file">Training File</Label>
             <Input
               id="file"
               type="file"
-              accept=".pdf"
+              accept={ACCEPTED_FILE_TYPES[formData.type as keyof typeof ACCEPTED_FILE_TYPES] || '*'}
               onChange={handleFileUpload}
               disabled={uploading}
             />
             <p className="text-sm text-muted-foreground mt-1">
-              Only PDF files are accepted. Max size: 10MB
+              Accepted formats: {ACCEPTED_FILE_TYPES[formData.type as keyof typeof ACCEPTED_FILE_TYPES] || 'All files'}. Max size: 50MB
+            </p>
+          </div>
+
+          <div>
+            <Label htmlFor="thumbnail">Thumbnail Image (Optional)</Label>
+            <Input
+              id="thumbnail"
+              type="file"
+              accept=".jpg,.jpeg,.png,.gif"
+              disabled={uploading}
+            />
+            <p className="text-sm text-muted-foreground mt-1">
+              Upload a thumbnail image for better visual representation
             </p>
           </div>
 
@@ -307,10 +473,18 @@ export default function TrainingMaterialUpload() {
               {materials.map((material) => (
                 <div key={material.id} className="flex items-center justify-between p-4 border rounded-lg">
                   <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-                      <FileText className="w-5 h-5 text-primary" />
+                    <div className="w-16 h-16 bg-primary/10 rounded-lg flex items-center justify-center overflow-hidden">
+                      {material.thumbnail_url ? (
+                        <img 
+                          src={material.thumbnail_url} 
+                          alt={material.name}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <FileText className="w-8 h-8 text-primary" />
+                      )}
                     </div>
-                    <div>
+                    <div className="flex-1">
                       <div className="flex items-center gap-2">
                         <h4 className="font-medium">{material.name}</h4>
                         <Badge variant={material.is_active ? "default" : "secondary"}>
@@ -336,6 +510,20 @@ export default function TrainingMaterialUpload() {
                       onClick={() => window.open(material.content_url, '_blank')}
                     >
                       <Download className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setEditingMaterial(material)}
+                    >
+                      <Edit className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowAccessDialog(material)}
+                    >
+                      <Users className="w-4 h-4" />
                     </Button>
                     <Button
                       variant="outline"
@@ -375,13 +563,118 @@ export default function TrainingMaterialUpload() {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-2 text-sm text-muted-foreground">
-          <p>• Upload your training PDF files here to make them available to clients</p>
+          <p>• Upload your training files here to make them available to clients</p>
           <p>• Only active materials will be visible to clients in their Training tab</p>
-          <p>• Materials are only visible to clients with "active" status</p>
-          <p>• Supported format: PDF files only (max 10MB)</p>
-          <p>• You can deactivate materials temporarily without deleting them</p>
+          <p>• Use the access control to grant specific clients access to materials</p>
+          <p>• Supported formats: PDF, Word, Video, Audio, PowerPoint, Excel, Images (max 50MB)</p>
+          <p>• Upload thumbnail images for better visual representation</p>
+          <p>• You can edit, deactivate, or delete materials as needed</p>
         </CardContent>
       </Card>
+
+      {/* Edit Material Dialog */}
+      <Dialog open={editingMaterial !== null} onOpenChange={() => setEditingMaterial(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Training Material</DialogTitle>
+          </DialogHeader>
+          {editingMaterial && (
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="edit-name">Name</Label>
+                <Input
+                  id="edit-name"
+                  value={editingMaterial.name}
+                  onChange={(e) => setEditingMaterial({ ...editingMaterial, name: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label htmlFor="edit-description">Description</Label>
+                <Textarea
+                  id="edit-description"
+                  value={editingMaterial.description}
+                  onChange={(e) => setEditingMaterial({ ...editingMaterial, description: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label htmlFor="edit-type">Type</Label>
+                <Select
+                  value={editingMaterial.type}
+                  onValueChange={(value) => setEditingMaterial({ ...editingMaterial, type: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {FILE_TYPES.map((type) => (
+                      <SelectItem key={type} value={type}>
+                        {type}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setEditingMaterial(null)}>
+                  Cancel
+                </Button>
+                <Button onClick={() => handleEdit(editingMaterial.id, {
+                  name: editingMaterial.name,
+                  description: editingMaterial.description,
+                  type: editingMaterial.type
+                })}>
+                  Save Changes
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Access Control Dialog */}
+      <Dialog open={showAccessDialog !== null} onOpenChange={() => setShowAccessDialog(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Manage Client Access - {showAccessDialog?.name}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Grant or revoke access to this training material for specific clients.
+            </p>
+            <div className="max-h-64 overflow-y-auto space-y-2">
+              {clients.map((client) => (
+                <div key={client.id} className="flex items-center justify-between p-2 border rounded">
+                  <div>
+                    <p className="font-medium">{client.name}</p>
+                    <p className="text-sm text-muted-foreground">{client.email}</p>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => grantClientAccess(client.id, showAccessDialog!.id)}
+                    >
+                      Grant Access
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => revokeClientAccess(client.id, showAccessDialog!.id)}
+                    >
+                      Revoke Access
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="flex justify-end">
+              <Button variant="outline" onClick={() => setShowAccessDialog(null)}>
+                Close
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
