@@ -181,6 +181,48 @@ export type Database = {
           },
         ]
       }
+      daily_digest_preferences: {
+        Row: {
+          created_at: string
+          enabled: boolean
+          id: string
+          include_due_today: boolean
+          include_due_tomorrow: boolean
+          include_new_uploads: boolean
+          include_overdue: boolean
+          send_time: string
+          timezone: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          include_due_today?: boolean
+          include_due_tomorrow?: boolean
+          include_new_uploads?: boolean
+          include_overdue?: boolean
+          send_time?: string
+          timezone?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          include_due_today?: boolean
+          include_due_tomorrow?: boolean
+          include_new_uploads?: boolean
+          include_overdue?: boolean
+          send_time?: string
+          timezone?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       document_collaborators: {
         Row: {
           accepted_at: string | null
@@ -557,6 +599,42 @@ export type Database = {
           },
         ]
       }
+      reminder_templates: {
+        Row: {
+          created_at: string
+          delay_hours: number
+          id: string
+          is_active: boolean
+          message_template: string
+          name: string
+          subject_template: string
+          trigger_type: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          delay_hours?: number
+          id?: string
+          is_active?: boolean
+          message_template: string
+          name: string
+          subject_template: string
+          trigger_type: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          delay_hours?: number
+          id?: string
+          is_active?: boolean
+          message_template?: string
+          name?: string
+          subject_template?: string
+          trigger_type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       resume_analyses: {
         Row: {
           analysis_results: Json | null
@@ -752,6 +830,42 @@ export type Database = {
           selected_skills?: Json
           updated_at?: string
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      scheduled_reminders: {
+        Row: {
+          client_id: string
+          created_at: string
+          id: string
+          reminder_data: Json
+          scheduled_for: string
+          sent_at: string | null
+          status: string
+          template_id: string
+          updated_at: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          id?: string
+          reminder_data?: Json
+          scheduled_for: string
+          sent_at?: string | null
+          status?: string
+          template_id: string
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          id?: string
+          reminder_data?: Json
+          scheduled_for?: string
+          sent_at?: string | null
+          status?: string
+          template_id?: string
+          updated_at?: string
         }
         Relationships: []
       }

@@ -2,13 +2,15 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ClientManager } from "@/components/ClientManager";
 import { ServiceTypeAdmin } from "@/components/ServiceTypeAdmin";
+import { ReminderManager } from "@/components/ReminderManager";
+import { DailyDigest } from "@/components/DailyDigest";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/components/AuthProvider";
 import { LogOut, User } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
 const Index = () => {
-  const [activeTab, setActiveTab] = useState<'clients' | 'services'>('clients');
+  const [activeTab, setActiveTab] = useState<'digest' | 'clients' | 'reminders' | 'services'>('digest');
   const { user, loading, signOut } = useAuth();
   const navigate = useNavigate();
 
@@ -61,10 +63,22 @@ const Index = () => {
             </div>
             <div className="flex gap-2">
               <Button 
+                variant={activeTab === 'digest' ? 'default' : 'outline'}
+                onClick={() => setActiveTab('digest')}
+              >
+                Daily Digest
+              </Button>
+              <Button 
                 variant={activeTab === 'clients' ? 'default' : 'outline'}
                 onClick={() => setActiveTab('clients')}
               >
                 Client Management
+              </Button>
+              <Button 
+                variant={activeTab === 'reminders' ? 'default' : 'outline'}
+                onClick={() => setActiveTab('reminders')}
+              >
+                Reminders
               </Button>
               <Button 
                 variant={activeTab === 'services' ? 'default' : 'outline'}
@@ -85,7 +99,10 @@ const Index = () => {
           </div>
         </div>
         
-        {activeTab === 'clients' ? <ClientManager /> : <ServiceTypeAdmin />}
+        {activeTab === 'digest' && <DailyDigest />}
+        {activeTab === 'clients' && <ClientManager />}
+        {activeTab === 'reminders' && <ReminderManager />}
+        {activeTab === 'services' && <ServiceTypeAdmin />}
       </div>
     </div>
   );
