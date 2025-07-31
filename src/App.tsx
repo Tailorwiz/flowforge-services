@@ -6,6 +6,9 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./components/AuthProvider";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
+import LoginSelect from "./pages/LoginSelect";
+import CustomerAuth from "./pages/CustomerAuth";
+import AdminAuth from "./pages/AdminAuth";
 import ClientDashboard from "./pages/ClientDashboard";
 import ClientPortal from "./pages/ClientPortal";
 import SMSOptInPolicy from "./pages/SMSOptInPolicy";
@@ -22,6 +25,9 @@ const App = () => (
         <Routes>
           {/* Public routes */}
           <Route path="/sms-policy" element={<SMSOptInPolicy />} />
+          <Route path="/login" element={<LoginSelect />} />
+          <Route path="/customer/login" element={<CustomerAuth />} />
+          <Route path="/admin/login" element={<AdminAuth />} />
           
           {/* Protected routes */}
           <Route path="/*" element={
