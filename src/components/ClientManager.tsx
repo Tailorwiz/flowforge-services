@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
-import { Plus, Calendar, CheckCircle } from "lucide-react";
+import { Plus, Calendar, CheckCircle, Search, ArrowUpDown } from "lucide-react";
 import { DocumentUploadParser } from "./DocumentUploadParser";
 import { DocumentUploadModal } from "./DocumentUploadModal";
 
@@ -37,6 +37,9 @@ export function ClientManager() {
   const [serviceTypes, setServiceTypes] = useState<ServiceType[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
   const [isAddingClient, setIsAddingClient] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sortBy, setSortBy] = useState<'name' | 'email' | 'created_at' | 'estimated_delivery_date' | 'service_type' | 'status' | 'payment_status'>('created_at');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [newClient, setNewClient] = useState({
     name: "",
     email: "",
@@ -161,6 +164,62 @@ export function ClientManager() {
     }
   };
 
+  const filteredAndSortedClients = useMemo(() => {
+    let filtered = clients.filter(client => {
+      const searchLower = searchQuery.toLowerCase();
+      return (
+        client.name.toLowerCase().includes(searchLower) ||
+        client.email.toLowerCase().includes(searchLower) ||
+        client.status.toLowerCase().includes(searchLower) ||
+        client.payment_status.toLowerCase().includes(searchLower) ||
+        client.service_types.name.toLowerCase().includes(searchLower) ||
+        (client.phone && client.phone.toLowerCase().includes(searchLower))
+      );
+    });
+
+    return filtered.sort((a, b) => {
+      let aValue: any;
+      let bValue: any;
+
+      switch (sortBy) {
+        case 'name':
+          aValue = a.name.toLowerCase();
+          bValue = b.name.toLowerCase();
+          break;
+        case 'email':
+          aValue = a.email.toLowerCase();
+          bValue = b.email.toLowerCase();
+          break;
+        case 'created_at':
+          aValue = new Date(a.created_at);
+          bValue = new Date(b.created_at);
+          break;
+        case 'estimated_delivery_date':
+          aValue = a.estimated_delivery_date ? new Date(a.estimated_delivery_date) : new Date(0);
+          bValue = b.estimated_delivery_date ? new Date(b.estimated_delivery_date) : new Date(0);
+          break;
+        case 'service_type':
+          aValue = a.service_types.name.toLowerCase();
+          bValue = b.service_types.name.toLowerCase();
+          break;
+        case 'status':
+          aValue = a.status.toLowerCase();
+          bValue = b.status.toLowerCase();
+          break;
+        case 'payment_status':
+          aValue = a.payment_status.toLowerCase();
+          bValue = b.payment_status.toLowerCase();
+          break;
+        default:
+          return 0;
+      }
+
+      if (aValue < bValue) return sortOrder === 'asc' ? -1 : 1;
+      if (aValue > bValue) return sortOrder === 'asc' ? 1 : -1;
+      return 0;
+    });
+  }, [clients, searchQuery, sortBy, sortOrder]);
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -179,6 +238,52 @@ export function ClientManager() {
           </Button>
         </div>
       </div>
+
+      {/* Search and Sort Controls */}
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex flex-col md:flex-row gap-4 items-center">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search by name, email, status, service type..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            <div className="flex gap-2 items-center">
+              <Label className="text-sm font-medium whitespace-nowrap">Sort by:</Label>
+              <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="name">Name</SelectItem>
+                  <SelectItem value="email">Email</SelectItem>
+                  <SelectItem value="created_at">Date Created</SelectItem>
+                  <SelectItem value="estimated_delivery_date">Delivery Date</SelectItem>
+                  <SelectItem value="service_type">Service Type</SelectItem>
+                  <SelectItem value="status">Status</SelectItem>
+                  <SelectItem value="payment_status">Payment Status</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+                className="px-3"
+              >
+                <ArrowUpDown className="h-4 w-4" />
+                {sortOrder === 'asc' ? 'Asc' : 'Desc'}
+              </Button>
+            </div>
+          </div>
+          <div className="mt-2 text-sm text-muted-foreground">
+            Showing {filteredAndSortedClients.length} of {clients.length} clients
+          </div>
+        </CardContent>
+      </Card>
 
       <DocumentUploadParser 
         serviceTypes={serviceTypes} 
@@ -243,7 +348,7 @@ export function ClientManager() {
       )}
 
       <div className="grid gap-4">
-        {clients.map((client) => (
+        {filteredAndSortedClients.map((client) => (
           <Card key={client.id}>
             <CardContent className="p-6">
               <div className="flex justify-between items-start mb-4">
