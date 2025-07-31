@@ -516,15 +516,15 @@ export default function ClientDashboard() {
                         <Card key={material.id} className="group hover:shadow-md transition-shadow">
                           <CardContent className="p-6">
                   <div className="flex flex-col gap-4">
-                    <div className="w-full h-48 bg-primary/10 rounded-lg flex items-center justify-center overflow-hidden">
+                    <div className="w-full aspect-[2/3] bg-primary/10 rounded-lg flex items-center justify-center overflow-hidden shadow-lg max-w-48 mx-auto">
                       {material.thumbnail_url ? (
                         <img 
                           src={material.thumbnail_url} 
                           alt={material.name}
-                          className="w-full h-full object-cover"
+                          className="w-full h-full object-cover rounded-lg"
                         />
                       ) : (
-                        <FileText className="w-20 h-20 text-primary" />
+                        <FileText className="w-16 h-16 text-primary" />
                       )}
                     </div>
                               <div className="flex-1 min-w-0">

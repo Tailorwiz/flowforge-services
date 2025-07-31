@@ -541,15 +541,15 @@ export default function TrainingMaterialUpload() {
               {materials.map((material) => (
                 <div key={material.id} className="flex items-center justify-between p-4 border rounded-lg">
                   <div className="flex items-start gap-4">
-                    <div className="w-48 h-36 bg-primary/10 rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0">
+                    <div className="w-32 h-44 bg-primary/10 rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0 shadow-md">
                       {material.thumbnail_url ? (
                         <img 
                           src={material.thumbnail_url} 
                           alt={material.name}
-                          className="w-full h-full object-cover"
+                          className="w-full h-full object-cover rounded-lg"
                         />
                       ) : (
-                        <FileText className="w-16 h-16 text-primary" />
+                        <FileText className="w-12 h-12 text-primary" />
                       )}
                     </div>
                     <div className="flex-1">
@@ -687,11 +687,11 @@ export default function TrainingMaterialUpload() {
               {editingMaterial.thumbnail_url && (
                 <div>
                   <Label>Current Thumbnail</Label>
-                  <div className="w-48 h-36 bg-primary/10 rounded-lg flex items-center justify-center overflow-hidden mt-2">
+                  <div className="w-32 h-44 bg-primary/10 rounded-lg flex items-center justify-center overflow-hidden mt-2 shadow-md">
                     <img 
                       src={editingMaterial.thumbnail_url} 
                       alt="Current thumbnail"
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover rounded-lg"
                     />
                   </div>
                 </div>
