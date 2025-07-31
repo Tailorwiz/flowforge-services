@@ -50,8 +50,29 @@ const Index = () => {
   useEffect(() => {
     if (!loading && !user) {
       navigate("/auth");
+    } else if (user) {
+      // Check if user is admin, if not redirect to customer portal
+      checkUserRole();
     }
   }, [user, loading, navigate]);
+
+  const checkUserRole = async () => {
+    try {
+      const { data: userRole } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user?.id)
+        .single();
+      
+      if (userRole?.role !== 'admin') {
+        navigate("/portal");
+      }
+    } catch (error) {
+      console.error('Error checking user role:', error);
+      // If can't determine role, redirect to portal for safety
+      navigate("/portal");
+    }
+  };
 
   useEffect(() => {
     if (user) {
