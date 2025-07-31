@@ -18,6 +18,7 @@ interface DigestData {
   dueToday: any[];
   dueTomorrow: any[];
   overdue: any[];
+  rushClients: any[];
   newUploads: any[];
   totalClients: number;
   activeProjects: number;
@@ -28,6 +29,7 @@ export function DailyDigest() {
     dueToday: [],
     dueTomorrow: [],
     overdue: [],
+    rushClients: [],
     newUploads: [],
     totalClients: 0,
     activeProjects: 0
@@ -44,7 +46,16 @@ export function DailyDigest() {
       const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0];
       const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
 
-      // Fetch due today
+      // Fetch RUSH clients first (highest priority)
+      const { data: rushClients } = await supabase
+        .from("clients")
+        .select(`
+          id, name, email, estimated_delivery_date, is_rush, rush_deadline,
+          service_types (name)
+        `)
+        .eq("is_rush", true)
+        .eq("status", "active");
+      // Fetch due today (excluding RUSH clients to avoid duplication)
       const { data: dueToday } = await supabase
         .from("clients")
         .select(`
@@ -52,9 +63,10 @@ export function DailyDigest() {
           service_types (name)
         `)
         .eq("estimated_delivery_date", today)
-        .eq("status", "active");
+        .eq("status", "active")
+        .eq("is_rush", false);
 
-      // Fetch due tomorrow
+      // Fetch due tomorrow (excluding RUSH clients)
       const { data: dueTomorrow } = await supabase
         .from("clients")
         .select(`
@@ -62,9 +74,10 @@ export function DailyDigest() {
           service_types (name)
         `)
         .eq("estimated_delivery_date", tomorrow)
-        .eq("status", "active");
+        .eq("status", "active")
+        .eq("is_rush", false);
 
-      // Fetch overdue
+      // Fetch overdue (excluding RUSH clients)
       const { data: overdue } = await supabase
         .from("clients")
         .select(`
@@ -72,7 +85,8 @@ export function DailyDigest() {
           service_types (name)
         `)
         .lt("estimated_delivery_date", today)
-        .eq("status", "active");
+        .eq("status", "active")
+        .eq("is_rush", false);
 
       // Fetch new uploads (last 24 hours)
       const { data: newUploads } = await supabase
@@ -98,6 +112,7 @@ export function DailyDigest() {
         dueToday: dueToday || [],
         dueTomorrow: dueTomorrow || [],
         overdue: overdue || [],
+        rushClients: rushClients || [],
         newUploads: newUploads || [],
         totalClients: totalClients || 0,
         activeProjects: activeProjects || 0
@@ -143,7 +158,7 @@ export function DailyDigest() {
     );
   }
 
-  const { dueToday, dueTomorrow, overdue, newUploads, totalClients, activeProjects } = digestData;
+  const { dueToday, dueTomorrow, overdue, rushClients, newUploads, totalClients, activeProjects } = digestData;
 
   return (
     <div className="space-y-6">
@@ -166,7 +181,19 @@ export function DailyDigest() {
       </div>
 
       {/* Overview Stats */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center">
+              <AlertTriangle className="h-8 w-8 text-red-500" />
+              <div className="ml-4">
+                <p className="text-sm font-medium text-muted-foreground">RUSH Orders</p>
+                <p className="text-2xl font-bold text-red-600">{rushClients.length}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center">
@@ -215,6 +242,52 @@ export function DailyDigest() {
           </CardContent>
         </Card>
       </div>
+
+      {/* RUSH Orders - Highest Priority */}
+      {rushClients.length > 0 && (
+        <Card className="border-red-500 bg-red-50">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-red-600">
+              <AlertTriangle className="w-5 h-5 animate-pulse" />
+              🚨 RUSH ORDERS - IMMEDIATE ATTENTION ({rushClients.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {rushClients.map((client) => {
+                const hoursUntilRushDeadline = client.rush_deadline ? 
+                  Math.ceil((new Date(client.rush_deadline).getTime() - new Date().getTime()) / (1000 * 60 * 60)) : null;
+                
+                return (
+                  <div key={client.id} className="p-3 bg-red-100 border-2 border-red-300 rounded-lg">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <p className="font-bold text-red-800">{client.name}</p>
+                        <p className="text-sm text-red-700">{client.service_types?.name}</p>
+                        {client.rush_deadline && (
+                          <p className="text-xs text-red-600 font-semibold">
+                            Rush Deadline: {new Date(client.rush_deadline).toLocaleString()}
+                          </p>
+                        )}
+                      </div>
+                      <div className="text-right">
+                        <Badge variant="destructive" className="animate-pulse font-bold">
+                          🚨 RUSH
+                        </Badge>
+                        {hoursUntilRushDeadline !== null && (
+                          <p className="text-xs text-red-600 font-bold mt-1">
+                            {hoursUntilRushDeadline > 0 ? `${hoursUntilRushDeadline}h remaining` : 'OVERDUE!'}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Urgent Items */}
       {(overdue.length > 0 || dueToday.length > 0) && (
@@ -337,7 +410,7 @@ export function DailyDigest() {
       )}
 
       {/* All Clear Message */}
-      {overdue.length === 0 && dueToday.length === 0 && dueTomorrow.length === 0 && newUploads.length === 0 && (
+      {rushClients.length === 0 && overdue.length === 0 && dueToday.length === 0 && dueTomorrow.length === 0 && newUploads.length === 0 && (
         <Card className="border-green-200">
           <CardContent className="p-8 text-center">
             <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />

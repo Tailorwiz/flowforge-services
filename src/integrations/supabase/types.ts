@@ -134,9 +134,11 @@ export type Database = {
           email: string
           estimated_delivery_date: string | null
           id: string
+          is_rush: boolean
           name: string
           payment_status: string | null
           phone: string | null
+          rush_deadline: string | null
           service_type_id: string | null
           status: string | null
           stripe_customer_id: string | null
@@ -148,9 +150,11 @@ export type Database = {
           email: string
           estimated_delivery_date?: string | null
           id?: string
+          is_rush?: boolean
           name: string
           payment_status?: string | null
           phone?: string | null
+          rush_deadline?: string | null
           service_type_id?: string | null
           status?: string | null
           stripe_customer_id?: string | null
@@ -162,9 +166,11 @@ export type Database = {
           email?: string
           estimated_delivery_date?: string | null
           id?: string
+          is_rush?: boolean
           name?: string
           payment_status?: string | null
           phone?: string | null
+          rush_deadline?: string | null
           service_type_id?: string | null
           status?: string | null
           stripe_customer_id?: string | null

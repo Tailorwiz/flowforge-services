@@ -31,6 +31,8 @@ interface Client {
   phone: string | null;
   estimated_delivery_date: string | null;
   created_at: string;
+  is_rush: boolean;
+  rush_deadline: string | null;
   service_types: ServiceType;
 }
 
@@ -75,6 +77,7 @@ export function ClientManager() {
         *,
         service_types (*)
       `)
+      .order("is_rush", { ascending: false })
       .order("created_at", { ascending: false });
 
     if (error) {
@@ -166,6 +169,23 @@ export function ClientManager() {
     }
   };
 
+  const toggleRushStatus = async (clientId: string, currentRushStatus: boolean) => {
+    const { error } = await supabase
+      .from("clients")
+      .update({ is_rush: !currentRushStatus })
+      .eq("id", clientId);
+
+    if (error) {
+      toast({ title: "Error", description: "Failed to update rush status", variant: "destructive" });
+    } else {
+      toast({ 
+        title: "Success", 
+        description: !currentRushStatus ? "Client marked as RUSH (72-hour delivery)" : "RUSH status removed" 
+      });
+      fetchClients();
+    }
+  };
+
   const filteredAndSortedClients = useMemo(() => {
     let filtered = clients.filter(client => {
       const searchLower = searchQuery.toLowerCase();
@@ -180,6 +200,10 @@ export function ClientManager() {
     });
 
     return filtered.sort((a, b) => {
+      // Always prioritize RUSH clients first
+      if (a.is_rush && !b.is_rush) return -1;
+      if (!a.is_rush && b.is_rush) return 1;
+      
       let aValue: any;
       let bValue: any;
 
@@ -355,11 +379,17 @@ export function ClientManager() {
             Math.ceil((new Date(client.estimated_delivery_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)) : null;
           const isUrgent = daysUntilDelivery !== null && daysUntilDelivery <= 3;
           const isOverdue = daysUntilDelivery !== null && daysUntilDelivery < 0;
+          const isRushUrgent = client.is_rush && client.rush_deadline && 
+            new Date(client.rush_deadline).getTime() - new Date().getTime() < 24 * 60 * 60 * 1000;
           
           return (
             <Card 
               key={client.id} 
-              className={`cursor-pointer hover:shadow-md transition-shadow ${isOverdue ? 'ring-2 ring-destructive' : isUrgent ? 'ring-2 ring-orange-400' : ''}`}
+              className={`cursor-pointer hover:shadow-md transition-shadow ${
+                client.is_rush ? 'ring-2 ring-red-500 bg-red-50' : 
+                isOverdue ? 'ring-2 ring-destructive' : 
+                isUrgent ? 'ring-2 ring-orange-400' : ''
+              }`}
               onClick={() => navigate(`/client/${client.id}`)}
             >
               <CardContent className="p-6">
@@ -370,20 +400,44 @@ export function ClientManager() {
                         {client.name}
                       </h3>
                       <ExternalLink className="w-4 h-4 text-muted-foreground" />
-                      {isOverdue && (
+                      {client.is_rush && (
+                        <Badge variant="destructive" className="text-xs font-bold animate-pulse">
+                          🚨 RUSH
+                        </Badge>
+                      )}
+                      {isOverdue && !client.is_rush && (
                         <Badge variant="destructive" className="text-xs">
                           OVERDUE
                         </Badge>
                       )}
-                      {isUrgent && !isOverdue && (
+                      {isUrgent && !isOverdue && !client.is_rush && (
                         <Badge variant="secondary" className="text-xs bg-orange-100 text-orange-800">
                           URGENT
+                        </Badge>
+                      )}
+                      {isRushUrgent && (
+                        <Badge variant="destructive" className="text-xs bg-red-600 text-white">
+                          RUSH URGENT
                         </Badge>
                       )}
                     </div>
                     <p className="text-muted-foreground">{client.email}</p>
                   </div>
                   <div className="flex items-center gap-2">
+                    <label className="flex items-center gap-2 text-sm">
+                      <input
+                        type="checkbox"
+                        checked={client.is_rush}
+                        onChange={(e) => {
+                          e.stopPropagation();
+                          toggleRushStatus(client.id, client.is_rush);
+                        }}
+                        className="rounded border-gray-300"
+                      />
+                      <span className={client.is_rush ? "text-red-600 font-semibold" : ""}>
+                        RUSH (72h)
+                      </span>
+                    </label>
                     <Badge variant={client.status === 'active' ? 'default' : 'secondary'}>
                       {client.status}
                     </Badge>
@@ -414,11 +468,15 @@ export function ClientManager() {
                 </div>
                 
                 <div>
-                  <Label className="text-sm font-medium">Estimated Delivery</Label>
+                  <Label className="text-sm font-medium">
+                    {client.is_rush ? "Rush Deadline" : "Estimated Delivery"}
+                  </Label>
                   <div className="flex items-center mt-1">
                     <Calendar className="w-4 h-4 mr-2 text-muted-foreground" />
-                    <span className="text-sm">
-                      {client.estimated_delivery_date ? 
+                    <span className={`text-sm ${client.is_rush ? 'text-red-600 font-semibold' : ''}`}>
+                      {client.is_rush && client.rush_deadline ? 
+                        new Date(client.rush_deadline).toLocaleString() :
+                        client.estimated_delivery_date ? 
                         new Date(client.estimated_delivery_date).toLocaleDateString() : 
                         'Not set'
                       }
@@ -440,8 +498,11 @@ export function ClientManager() {
               
               <div className="text-sm text-muted-foreground">
                 Created: {new Date(client.created_at).toLocaleDateString()} • 
-                Timeline: {client.service_types.default_timeline_days} days • 
+                Timeline: {client.is_rush ? '72 hours (RUSH)' : `${client.service_types.default_timeline_days} days`} • 
                 Payment: {client.payment_status}
+                {client.is_rush && (
+                  <span className="text-red-600 font-semibold"> • 🚨 RUSH ORDER</span>
+                )}
               </div>
               </CardContent>
             </Card>
