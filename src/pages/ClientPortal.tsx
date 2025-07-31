@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/components/AuthProvider";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -65,7 +66,8 @@ const PROGRESS_STEPS = [
 ];
 
 export default function ClientPortal() {
-  const { user, signOut } = useAuth();
+  const { user, signOut, loading: authLoading } = useAuth();
+  const navigate = useNavigate();
   const [profile, setProfile] = useState<ClientProfile | null>(null);
   const [needsPhotoUpload, setNeedsPhotoUpload] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -75,6 +77,13 @@ export default function ClientPortal() {
   const [alerts, setAlerts] = useState<any[]>([]);
   const [timeRemaining, setTimeRemaining] = useState({ days: 0, hours: 0, minutes: 0 });
   const [actionItems, setActionItems] = useState<any[]>([]);
+
+  // Handle authentication redirect
+  useEffect(() => {
+    if (!authLoading && !user) {
+      navigate('/login');
+    }
+  }, [user, authLoading, navigate]);
 
   useEffect(() => {
     if (user) {
@@ -421,7 +430,7 @@ export default function ClientPortal() {
     ));
   };
 
-  if (loading) {
+  if (authLoading || loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
         <div className="text-center">
