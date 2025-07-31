@@ -258,7 +258,7 @@ export function AdminCommandCenter() {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-4xl font-bold">Master View of All Clients and Projects</h2>
+          <h2 className="text-2xl font-bold">Master View of All Clients and Projects</h2>
         </div>
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <TrendingUp className="w-4 h-4" />
