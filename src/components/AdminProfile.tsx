@@ -11,7 +11,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "@/hooks/use-toast";
-import { User, Mail, Phone, Bell, MessageSquare } from "lucide-react";
+import { User, Mail, Phone, Bell, MessageSquare, Camera, Upload } from "lucide-react";
+import AvatarUpload from "@/components/AvatarUpload";
 
 const profileSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
@@ -146,19 +147,61 @@ export function AdminProfile() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-6">
       <div>
-        <h2 className="text-3xl font-bold tracking-tight">RDR Project Portal - Admin Profile</h2>
-        <p className="text-muted-foreground">
-          Manage your admin profile and notification preferences
+        <h2 className="text-3xl font-bold tracking-tight text-rdr-navy font-heading">Admin Profile</h2>
+        <p className="text-rdr-medium-gray">
+          Manage your profile information and notification preferences
         </p>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2">
-        {/* Profile Information */}
-        <Card>
+      <div className="grid gap-6 lg:grid-cols-3">
+        {/* Profile Photo Section */}
+        <Card className="lg:col-span-1">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 text-rdr-navy">
+              <Camera className="w-5 h-5" />
+              Profile Photo
+            </CardTitle>
+            <CardDescription>
+              Upload or change your profile picture
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex flex-col items-center gap-4">
+              <AvatarUpload 
+                currentAvatarUrl={profile?.avatar_url}
+                onAvatarUpdate={(url) => {
+                  setProfile(prev => ({...prev, avatar_url: url}));
+                  toast({
+                    title: "Success",
+                    description: "Profile photo updated successfully!",
+                  });
+                }}
+                size="lg"
+                showUploadButton={true}
+              />
+              <div className="text-center">
+                <p className="text-sm font-medium text-rdr-navy">
+                  {profile?.display_name || profile?.first_name || 'Admin User'}
+                </p>
+                <p className="text-xs text-rdr-medium-gray">Administrator</p>
+              </div>
+              <div className="text-center">
+                <p className="text-xs text-rdr-medium-gray mb-2">
+                  Click your photo to upload a new one
+                </p>
+                <p className="text-xs text-rdr-medium-gray">
+                  Recommended: Square image, at least 200x200px
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        {/* Profile Information */}
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-rdr-navy">
               <User className="w-5 h-5" />
               Profile Information
             </CardTitle>
@@ -233,17 +276,19 @@ export function AdminProfile() {
                 />
               </div>
 
-              <Button type="submit" disabled={loading} className="w-full">
+              <Button type="submit" disabled={loading} className="w-full bg-rdr-navy hover:bg-rdr-navy/90">
                 {loading ? "Updating..." : "Update Profile"}
               </Button>
             </form>
           </CardContent>
         </Card>
+      </div>
 
+      <div className="grid gap-6 md:grid-cols-2">
         {/* Notification Preferences */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 text-rdr-navy">
               <Bell className="w-5 h-5" />
               Notification Preferences
             </CardTitle>
@@ -320,7 +365,7 @@ export function AdminProfile() {
                 </div>
               </div>
 
-              <Button type="submit" className="w-full">
+              <Button type="submit" className="w-full bg-rdr-navy hover:bg-rdr-navy/90">
                 Save Notification Preferences
               </Button>
             </form>
@@ -334,25 +379,44 @@ export function AdminProfile() {
             )}
           </CardContent>
         </Card>
-      </div>
 
-      {/* Current Profile Summary */}
-      {profile && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Current Settings Summary</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-2 text-sm">
-              <div><strong>Email:</strong> {user?.email}</div>
-              <div><strong>Name:</strong> {profile.first_name} {profile.last_name}</div>
-              <div><strong>Display Name:</strong> {profile.display_name}</div>
-              <div><strong>Phone:</strong> {profile.phone || "Not set"}</div>
-              <div><strong>Bio:</strong> {profile.bio || "Not set"}</div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+        {/* Current Profile Summary */}
+        {profile && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-rdr-navy">Current Settings Summary</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-3 text-sm">
+                <div className="flex justify-between">
+                  <span className="font-medium text-rdr-medium-gray">Email:</span>
+                  <span className="text-rdr-navy">{user?.email}</span>
+                </div>
+                <Separator />
+                <div className="flex justify-between">
+                  <span className="font-medium text-rdr-medium-gray">Name:</span>
+                  <span className="text-rdr-navy">{profile.first_name} {profile.last_name}</span>
+                </div>
+                <Separator />
+                <div className="flex justify-between">
+                  <span className="font-medium text-rdr-medium-gray">Display Name:</span>
+                  <span className="text-rdr-navy">{profile.display_name}</span>
+                </div>
+                <Separator />
+                <div className="flex justify-between">
+                  <span className="font-medium text-rdr-medium-gray">Phone:</span>
+                  <span className="text-rdr-navy">{profile.phone || "Not set"}</span>
+                </div>
+                <Separator />
+                <div className="flex justify-between">
+                  <span className="font-medium text-rdr-medium-gray">Bio:</span>
+                  <span className="text-rdr-navy">{profile.bio || "Not set"}</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+      </div>
     </div>
   );
 }
