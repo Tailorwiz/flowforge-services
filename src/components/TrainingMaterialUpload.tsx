@@ -546,7 +546,7 @@ export default function TrainingMaterialUpload() {
                         <img 
                           src={material.thumbnail_url} 
                           alt={material.name}
-                          className="w-full h-full object-cover rounded-lg"
+                          className="w-full h-full object-contain rounded-lg"
                         />
                       ) : (
                         <FileText className="w-12 h-12 text-primary" />
@@ -691,7 +691,7 @@ export default function TrainingMaterialUpload() {
                     <img 
                       src={editingMaterial.thumbnail_url} 
                       alt="Current thumbnail"
-                      className="w-full h-full object-cover rounded-lg"
+                      className="w-full h-full object-contain rounded-lg"
                     />
                   </div>
                 </div>

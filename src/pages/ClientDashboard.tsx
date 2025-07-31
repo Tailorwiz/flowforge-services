@@ -521,7 +521,7 @@ export default function ClientDashboard() {
                         <img 
                           src={material.thumbnail_url} 
                           alt={material.name}
-                          className="w-full h-full object-cover rounded-lg"
+                          className="w-full h-full object-contain rounded-lg"
                         />
                       ) : (
                         <FileText className="w-16 h-16 text-primary" />
