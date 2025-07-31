@@ -56,6 +56,7 @@ export default function ClientPortal() {
   const [documents, setDocuments] = useState<any[]>([]);
   const [trainingMaterials, setTrainingMaterials] = useState<any[]>([]);
   const [alerts, setAlerts] = useState<any[]>([]);
+  const [timeRemaining, setTimeRemaining] = useState({ days: 0, hours: 0, minutes: 0 });
 
   useEffect(() => {
     if (user) {
@@ -66,6 +67,32 @@ export default function ClientPortal() {
       fetchAlerts();
     }
   }, [user]);
+
+  // Countdown timer effect
+  useEffect(() => {
+    if (!profile?.estimated_delivery_date) return;
+
+    const updateTimer = () => {
+      const deliveryDate = new Date(profile.estimated_delivery_date);
+      const now = new Date();
+      const timeDiff = deliveryDate.getTime() - now.getTime();
+      
+      if (timeDiff > 0) {
+        const days = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((timeDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
+        
+        setTimeRemaining({ days, hours, minutes });
+      } else {
+        setTimeRemaining({ days: 0, hours: 0, minutes: 0 });
+      }
+    };
+
+    updateTimer();
+    const interval = setInterval(updateTimer, 60000); // Update every minute
+
+    return () => clearInterval(interval);
+  }, [profile?.estimated_delivery_date]);
 
   const fetchClientProfile = async () => {
     try {
@@ -369,6 +396,11 @@ export default function ClientPortal() {
                     <p className="text-2xl font-bold">
                       {daysUntilDelivery > 0 ? `${daysUntilDelivery} days` : 'Due now'}
                     </p>
+                    {daysUntilDelivery > 0 && (
+                      <p className="text-xs text-white/70 mt-1">
+                        {timeRemaining.days} Days, {timeRemaining.hours} hours, {timeRemaining.minutes} Minutes
+                      </p>
+                    )}
                   </div>
                 )}
               </div>
