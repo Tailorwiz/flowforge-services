@@ -642,106 +642,110 @@ export default function TrainingMaterialUpload() {
 
       {/* Edit Material Dialog */}
       <Dialog open={editingMaterial !== null} onOpenChange={() => setEditingMaterial(null)}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden flex flex-col">
+          <DialogHeader className="flex-shrink-0">
             <DialogTitle>Edit Training Material</DialogTitle>
           </DialogHeader>
           {editingMaterial && (
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="edit-name">Name</Label>
-                <Input
-                  id="edit-name"
-                  value={editingMaterial.name}
-                  onChange={(e) => setEditingMaterial({ ...editingMaterial, name: e.target.value })}
-                />
-              </div>
-              <div>
-                <Label htmlFor="edit-description">Description</Label>
-                <Textarea
-                  id="edit-description"
-                  value={editingMaterial.description}
-                  onChange={(e) => setEditingMaterial({ ...editingMaterial, description: e.target.value })}
-                />
-              </div>
-              <div>
-                <Label htmlFor="edit-type">Type</Label>
-                <Select
-                  value={editingMaterial.type}
-                  onValueChange={(value) => setEditingMaterial({ ...editingMaterial, type: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {FILE_TYPES.map((type) => (
-                      <SelectItem key={type} value={type}>
-                        {type}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              {/* Current Thumbnail Preview */}
-              {editingMaterial.thumbnail_url && (
+            <div className="flex-1 overflow-y-auto pr-2">
+              <div className="space-y-6 pb-4">
                 <div>
-                  <Label>Current Thumbnail</Label>
-                  <div className="w-64 h-80 bg-primary/10 rounded-lg flex items-center justify-center overflow-hidden mt-2 shadow-md">
-                    <img 
-                      src={editingMaterial.thumbnail_url} 
-                      alt="Current thumbnail"
-                      className="w-full h-full object-contain rounded-lg"
-                    />
-                  </div>
+                  <Label htmlFor="edit-name">Name</Label>
+                  <Input
+                    id="edit-name"
+                    value={editingMaterial.name}
+                    onChange={(e) => setEditingMaterial({ ...editingMaterial, name: e.target.value })}
+                  />
                 </div>
-              )}
-              
-              {/* New Thumbnail Upload */}
-              <div>
-                <Label htmlFor="edit-thumbnail">Update Thumbnail (Optional)</Label>
-                <Input
-                  id="edit-thumbnail"
-                  type="file"
-                  accept=".jpg,.jpeg,.png,.gif"
-                />
-                <p className="text-sm text-muted-foreground mt-1">
-                  Upload a new thumbnail image to replace the current one
-                </p>
-              </div>
+                <div>
+                  <Label htmlFor="edit-description">Description</Label>
+                  <Textarea
+                    id="edit-description"
+                    value={editingMaterial.description}
+                    onChange={(e) => setEditingMaterial({ ...editingMaterial, description: e.target.value })}
+                    className="min-h-[200px] resize-y"
+                    placeholder="Enter a detailed description of this training material..."
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="edit-type">Type</Label>
+                  <Select
+                    value={editingMaterial.type}
+                    onValueChange={(value) => setEditingMaterial({ ...editingMaterial, type: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="z-50">
+                      {FILE_TYPES.map((type) => (
+                        <SelectItem key={type} value={type}>
+                          {type}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                {/* Current Thumbnail Preview */}
+                {editingMaterial.thumbnail_url && (
+                  <div>
+                    <Label>Current Thumbnail</Label>
+                    <div className="w-64 h-80 bg-primary/10 rounded-lg flex items-center justify-center overflow-hidden mt-2 shadow-md mx-auto">
+                      <img 
+                        src={editingMaterial.thumbnail_url} 
+                        alt="Current thumbnail"
+                        className="w-full h-full object-contain rounded-lg"
+                      />
+                    </div>
+                  </div>
+                )}
+                
+                {/* New Thumbnail Upload */}
+                <div>
+                  <Label htmlFor="edit-thumbnail">Update Thumbnail (Optional)</Label>
+                  <Input
+                    id="edit-thumbnail"
+                    type="file"
+                    accept=".jpg,.jpeg,.png,.gif"
+                  />
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Upload a new thumbnail image to replace the current one
+                  </p>
+                </div>
 
-              {/* Replace Training Material File */}
-              <div>
-                <Label htmlFor="edit-file">Replace Training Material File (Optional)</Label>
-                <Input
-                  id="edit-file"
-                  type="file"
-                  accept={ACCEPTED_FILE_TYPES[editingMaterial.type as keyof typeof ACCEPTED_FILE_TYPES] || '*'}
-                />
-                <p className="text-sm text-muted-foreground mt-1">
-                  Upload a new file to replace the current training material. 
-                  Accepted: {ACCEPTED_FILE_TYPES[editingMaterial.type as keyof typeof ACCEPTED_FILE_TYPES] || 'All files'}
-                </p>
-              </div>
-              
-              <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => setEditingMaterial(null)}>
-                  Cancel
-                </Button>
-                <Button onClick={() => {
-                  const thumbnailInput = document.getElementById('edit-thumbnail') as HTMLInputElement;
-                  const fileInput = document.getElementById('edit-file') as HTMLInputElement;
-                  const newThumbnail = thumbnailInput?.files?.[0];
-                  const newFile = fileInput?.files?.[0];
-                  
-                  handleEdit(editingMaterial.id, {
-                    name: editingMaterial.name,
-                    description: editingMaterial.description,
-                    type: editingMaterial.type
-                  }, newThumbnail, newFile);
-                }}>
-                  Save Changes
-                </Button>
+                {/* Replace Training Material File */}
+                <div>
+                  <Label htmlFor="edit-file">Replace Training Material File (Optional)</Label>
+                  <Input
+                    id="edit-file"
+                    type="file"
+                    accept={ACCEPTED_FILE_TYPES[editingMaterial.type as keyof typeof ACCEPTED_FILE_TYPES] || '*'}
+                  />
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Upload a new file to replace the current training material. 
+                    Accepted: {ACCEPTED_FILE_TYPES[editingMaterial.type as keyof typeof ACCEPTED_FILE_TYPES] || 'All files'}
+                  </p>
+                </div>
+                
+                <div className="flex justify-end gap-2 pt-4 border-t bg-background sticky bottom-0">
+                  <Button variant="outline" onClick={() => setEditingMaterial(null)}>
+                    Cancel
+                  </Button>
+                  <Button onClick={() => {
+                    const thumbnailInput = document.getElementById('edit-thumbnail') as HTMLInputElement;
+                    const fileInput = document.getElementById('edit-file') as HTMLInputElement;
+                    const newThumbnail = thumbnailInput?.files?.[0];
+                    const newFile = fileInput?.files?.[0];
+                    
+                    handleEdit(editingMaterial.id, {
+                      name: editingMaterial.name,
+                      description: editingMaterial.description,
+                      type: editingMaterial.type
+                    }, newThumbnail, newFile);
+                  }}>
+                    Save Changes
+                  </Button>
+                </div>
               </div>
             </div>
           )}
