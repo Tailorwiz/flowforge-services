@@ -7,6 +7,9 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Separator } from "@/components/ui/separator";
+import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
 import { 
   User, 
@@ -23,7 +26,12 @@ import {
   Eye,
   TrendingUp,
   Download,
-  File
+  File,
+  Phone,
+  Mail,
+  MapPin,
+  CreditCard,
+  History
 } from "lucide-react";
 
 interface Client {
@@ -45,7 +53,7 @@ interface Client {
   };
 }
 
-interface ClientHistory {
+interface ClientActivityHistory {
   id: string;
   client_id: string;
   action_type: string;
@@ -69,6 +77,14 @@ interface ClientFile {
   metadata: any;
 }
 
+interface ClientHistory {
+  id: string;
+  action_type: string;
+  description: string;
+  created_at: string;
+  metadata: any;
+}
+
 export function AdminCommandCenter() {
   const [clients, setClients] = useState<ExtendedClient[]>([]);
   const [loading, setLoading] = useState(true);
@@ -78,9 +94,10 @@ export function AdminCommandCenter() {
   const [packageFilter, setPackageFilter] = useState<string>("all");
   const [urgencyFilter, setUrgencyFilter] = useState<string>("all");
   const [actionNeededFilter, setActionNeededFilter] = useState<boolean>(false);
-  const [viewingClientFiles, setViewingClientFiles] = useState<ExtendedClient | null>(null);
+  const [viewingClient, setViewingClient] = useState<ExtendedClient | null>(null);
   const [clientFiles, setClientFiles] = useState<ClientFile[]>([]);
-  const [loadingFiles, setLoadingFiles] = useState(false);
+  const [clientHistory, setClientHistory] = useState<ClientHistory[]>([]);
+  const [loadingClientData, setLoadingClientData] = useState(false);
 
   useEffect(() => {
     fetchClientsData();
@@ -129,14 +146,14 @@ export function AdminCommandCenter() {
         }
 
         // Get last activity
-        const clientHistory = historyData?.filter(h => h.client_id === client.id) || [];
-        const lastActivity = clientHistory[0];
+        const clientHistoryData = historyData?.filter(h => h.client_id === client.id) || [];
+        const lastActivity = clientHistoryData[0];
         
         // Determine next action based on status and history
         let nextAction = "Review client status";
         if (client.status === "active" && client.payment_status === "pending") {
           nextAction = "Follow up on payment";
-        } else if (client.status === "active" && !clientHistory.some(h => h.action_type === "intake_form_completed")) {
+        } else if (client.status === "active" && !clientHistoryData.some(h => h.action_type === "intake_form_completed")) {
           nextAction = "Send intake form";
         } else if (urgency === 'overdue') {
           nextAction = "Urgent: Deliver project";
@@ -147,7 +164,7 @@ export function AdminCommandCenter() {
         }
 
         // Count files (placeholder - could be enhanced with actual file count)
-        const filesCount = clientHistory.filter(h => h.action_type === 'file_uploaded').length;
+        const filesCount = clientHistoryData.filter(h => h.action_type === 'file_uploaded').length;
 
         return {
           ...client,
@@ -256,7 +273,6 @@ export function AdminCommandCenter() {
   };
 
   const fetchClientFiles = async (clientId: string) => {
-    setLoadingFiles(true);
     try {
       const { data, error } = await supabase
         .from("client_history")
@@ -269,20 +285,46 @@ export function AdminCommandCenter() {
       setClientFiles(data || []);
     } catch (error) {
       console.error("Error fetching client files:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load client files",
-        variant: "destructive"
-      });
       setClientFiles([]);
-    } finally {
-      setLoadingFiles(false);
+    }
+  };
+
+  const fetchClientHistory = async (clientId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from("client_history")
+        .select("id, action_type, description, created_at, metadata")
+        .eq("client_id", clientId)
+        .order("created_at", { ascending: false })
+        .limit(50);
+
+      if (error) throw error;
+      setClientHistory(data || []);
+    } catch (error) {
+      console.error("Error fetching client history:", error);
+      setClientHistory([]);
     }
   };
 
   const handleViewClient = async (client: ExtendedClient) => {
-    setViewingClientFiles(client);
-    await fetchClientFiles(client.id);
+    setViewingClient(client);
+    setLoadingClientData(true);
+    
+    try {
+      await Promise.all([
+        fetchClientFiles(client.id),
+        fetchClientHistory(client.id)
+      ]);
+    } catch (error) {
+      console.error("Error loading client data:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load client information",
+        variant: "destructive"
+      });
+    } finally {
+      setLoadingClientData(false);
+    }
   };
 
   const handleDownloadFile = (file: ClientFile) => {
@@ -305,6 +347,23 @@ export function AdminCommandCenter() {
         variant: "destructive"
       });
     }
+  };
+
+  const getActionTypeIcon = (actionType: string) => {
+    switch (actionType) {
+      case 'file_uploaded': return <File className="w-4 h-4" />;
+      case 'client_created_via_upload': return <User className="w-4 h-4" />;
+      case 'onboarding_triggered': return <MessageSquare className="w-4 h-4" />;
+      case 'rush_enabled': return <AlertTriangle className="w-4 h-4 text-red-500" />;
+      case 'rush_disabled': return <Clock className="w-4 h-4" />;
+      default: return <History className="w-4 h-4" />;
+    }
+  };
+
+  const formatActionType = (actionType: string) => {
+    return actionType.split('_').map(word => 
+      word.charAt(0).toUpperCase() + word.slice(1)
+    ).join(' ');
   };
 
   if (loading) {
@@ -608,62 +667,270 @@ export function AdminCommandCenter() {
         </CardContent>
       </Card>
 
-      {/* Client Files Dialog */}
-      <Dialog open={viewingClientFiles !== null} onOpenChange={() => setViewingClientFiles(null)}>
-        <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden flex flex-col">
+      {/* Client Overview Dialog */}
+      <Dialog open={viewingClient !== null} onOpenChange={() => setViewingClient(null)}>
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden flex flex-col">
           <DialogHeader>
-            <DialogTitle>
-              Client Files - {viewingClientFiles?.name}
+            <DialogTitle className="flex items-center gap-2">
+              <User className="w-5 h-5" />
+              {viewingClient?.name} - Client Overview
             </DialogTitle>
           </DialogHeader>
           
-          <div className="flex-1 overflow-y-auto">
-            {loadingFiles ? (
-              <div className="flex items-center justify-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                <p className="ml-2">Loading files...</p>
-              </div>
-            ) : clientFiles.length > 0 ? (
-              <div className="space-y-4">
-                {clientFiles.map((file) => (
-                  <div key={file.id} className="border rounded-lg p-4">
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-start gap-3 flex-1">
-                        <File className="w-5 h-5 text-primary mt-1 flex-shrink-0" />
-                        <div className="space-y-2 flex-1">
-                          <h4 className="font-medium">{file.description}</h4>
-                          <div className="text-sm text-muted-foreground">
-                            <p>Uploaded: {new Date(file.created_at).toLocaleString()}</p>
-                            {file.metadata?.fileName && (
-                              <p>File: {file.metadata.fileName}</p>
-                            )}
-                            {file.metadata?.fileSize && (
-                              <p>Size: {(file.metadata.fileSize / 1024 / 1024).toFixed(2)} MB</p>
-                            )}
-                          </div>
-                        </div>
+          {viewingClient && (
+            <div className="flex-1 overflow-hidden">
+              <Tabs defaultValue="overview" className="h-full flex flex-col">
+                <TabsList className="grid w-full grid-cols-4">
+                  <TabsTrigger value="overview">Overview</TabsTrigger>
+                  <TabsTrigger value="files">Files ({clientFiles.length})</TabsTrigger>
+                  <TabsTrigger value="history">Activity History</TabsTrigger>
+                  <TabsTrigger value="details">Service Details</TabsTrigger>
+                </TabsList>
+                
+                <div className="flex-1 overflow-y-auto mt-4">
+                  {/* Overview Tab */}
+                  <TabsContent value="overview" className="space-y-6">
+                    {loadingClientData ? (
+                      <div className="flex items-center justify-center py-8">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                        <p className="ml-2">Loading client information...</p>
                       </div>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleDownloadFile(file)}
-                        disabled={!file.metadata?.fileUrl}
-                      >
-                        <Download className="w-4 h-4 mr-2" />
-                        Download
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-8">
-                <FileText className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                <p className="text-muted-foreground">No files uploaded yet</p>
-                <p className="text-sm text-muted-foreground">Files will appear here once the client uploads them</p>
-              </div>
-            )}
-          </div>
+                    ) : (
+                      <>
+                        {/* Client Basic Info */}
+                        <Card>
+                          <CardHeader>
+                            <CardTitle className="flex items-center gap-2">
+                              <User className="w-5 h-5" />
+                              Contact Information
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent className="grid grid-cols-2 gap-4">
+                            <div className="space-y-3">
+                              <div className="flex items-center gap-2">
+                                <User className="w-4 h-4 text-muted-foreground" />
+                                <span className="font-medium">Name:</span>
+                                <span>{viewingClient.name}</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Mail className="w-4 h-4 text-muted-foreground" />
+                                <span className="font-medium">Email:</span>
+                                <span>{viewingClient.email}</span>
+                              </div>
+                              {viewingClient.phone && (
+                                <div className="flex items-center gap-2">
+                                  <Phone className="w-4 h-4 text-muted-foreground" />
+                                  <span className="font-medium">Phone:</span>
+                                  <span>{viewingClient.phone}</span>
+                                </div>
+                              )}
+                            </div>
+                            <div className="space-y-3">
+                              <div className="flex items-center gap-2">
+                                <Calendar className="w-4 h-4 text-muted-foreground" />
+                                <span className="font-medium">Client Since:</span>
+                                <span>{new Date(viewingClient.created_at).toLocaleDateString()}</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <CreditCard className="w-4 h-4 text-muted-foreground" />
+                                <span className="font-medium">Payment Status:</span>
+                                <Badge variant={viewingClient.payment_status === 'paid' ? 'default' : 'secondary'}>
+                                  {viewingClient.payment_status}
+                                </Badge>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+
+                        {/* Status & Urgency */}
+                        <Card>
+                          <CardHeader>
+                            <CardTitle className="flex items-center gap-2">
+                              <AlertTriangle className="w-5 h-5" />
+                              Status & Priority
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent className="grid grid-cols-3 gap-4">
+                            <div>
+                              <Label className="text-sm font-medium">Current Status</Label>
+                              <div className="mt-1">
+                                {getStatusBadge(viewingClient.status)}
+                              </div>
+                            </div>
+                            <div>
+                              <Label className="text-sm font-medium">Urgency Level</Label>
+                              <div className="mt-1">
+                                {getUrgencyBadge(viewingClient.urgency)}
+                              </div>
+                            </div>
+                            <div>
+                              <Label className="text-sm font-medium">Next Action</Label>
+                              <p className="text-sm mt-1">{viewingClient.next_action}</p>
+                            </div>
+                          </CardContent>
+                        </Card>
+
+                        {/* Timeline */}
+                        <Card>
+                          <CardHeader>
+                            <CardTitle className="flex items-center gap-2">
+                              <Clock className="w-5 h-5" />
+                              Project Timeline
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent className="grid grid-cols-2 gap-4">
+                            <div>
+                              <Label className="text-sm font-medium">Due Date</Label>
+                              <div className="flex items-center gap-2 mt-1">
+                                <Calendar className="w-4 h-4 text-muted-foreground" />
+                                <span>
+                                  {viewingClient.estimated_delivery_date ? 
+                                    new Date(viewingClient.estimated_delivery_date).toLocaleDateString() : 
+                                    'Not set'
+                                  }
+                                </span>
+                              </div>
+                            </div>
+                            <div>
+                              <Label className="text-sm font-medium">Days Until Due</Label>
+                              <div className="flex items-center gap-2 mt-1">
+                                <Clock className="w-4 h-4 text-muted-foreground" />
+                                <span className={viewingClient.days_until_due < 0 ? 'text-red-600 font-medium' : ''}>
+                                  {viewingClient.days_until_due} days
+                                  {viewingClient.days_until_due < 0 && ' (Overdue)'}
+                                </span>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </>
+                    )}
+                  </TabsContent>
+
+                  {/* Files Tab */}
+                  <TabsContent value="files" className="space-y-4">
+                    {loadingClientData ? (
+                      <div className="flex items-center justify-center py-8">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                        <p className="ml-2">Loading files...</p>
+                      </div>
+                    ) : clientFiles.length > 0 ? (
+                      <div className="space-y-4">
+                        {clientFiles.map((file) => (
+                          <Card key={file.id}>
+                            <CardContent className="p-4">
+                              <div className="flex items-start justify-between">
+                                <div className="flex items-start gap-3 flex-1">
+                                  <File className="w-5 h-5 text-primary mt-1 flex-shrink-0" />
+                                  <div className="space-y-2 flex-1">
+                                    <h4 className="font-medium">{file.description}</h4>
+                                    <div className="text-sm text-muted-foreground">
+                                      <p>Uploaded: {new Date(file.created_at).toLocaleString()}</p>
+                                      {file.metadata?.fileName && (
+                                        <p>File: {file.metadata.fileName}</p>
+                                      )}
+                                      {file.metadata?.fileSize && (
+                                        <p>Size: {(file.metadata.fileSize / 1024 / 1024).toFixed(2)} MB</p>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleDownloadFile(file)}
+                                  disabled={!file.metadata?.fileUrl}
+                                >
+                                  <Download className="w-4 h-4 mr-2" />
+                                  Download
+                                </Button>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-8">
+                        <FileText className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                        <p className="text-muted-foreground">No files uploaded yet</p>
+                        <p className="text-sm text-muted-foreground">Files will appear here once the client uploads them</p>
+                      </div>
+                    )}
+                  </TabsContent>
+
+                  {/* Activity History Tab */}
+                  <TabsContent value="history" className="space-y-4">
+                    {loadingClientData ? (
+                      <div className="flex items-center justify-center py-8">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                        <p className="ml-2">Loading activity history...</p>
+                      </div>
+                    ) : clientHistory.length > 0 ? (
+                      <div className="space-y-3">
+                        {clientHistory.map((activity) => (
+                          <Card key={activity.id}>
+                            <CardContent className="p-4">
+                              <div className="flex items-start gap-3">
+                                {getActionTypeIcon(activity.action_type)}
+                                <div className="flex-1">
+                                  <div className="flex items-center justify-between">
+                                    <h4 className="font-medium">{formatActionType(activity.action_type)}</h4>
+                                    <span className="text-sm text-muted-foreground">
+                                      {new Date(activity.created_at).toLocaleString()}
+                                    </span>
+                                  </div>
+                                  <p className="text-sm text-muted-foreground mt-1">{activity.description}</p>
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-8">
+                        <History className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                        <p className="text-muted-foreground">No activity history yet</p>
+                      </div>
+                    )}
+                  </TabsContent>
+
+                  {/* Service Details Tab */}
+                  <TabsContent value="details" className="space-y-4">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <Package className="w-5 h-5" />
+                          Service Package
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div>
+                          <Label className="text-sm font-medium">Package Name</Label>
+                          <p className="text-lg font-semibold mt-1">{viewingClient.service_types.name}</p>
+                        </div>
+                        <div>
+                          <Label className="text-sm font-medium">Default Timeline</Label>
+                          <p className="mt-1">{viewingClient.service_types.default_timeline_days} days</p>
+                        </div>
+                        {viewingClient.service_types.tags && viewingClient.service_types.tags.length > 0 && (
+                          <div>
+                            <Label className="text-sm font-medium">Service Tags</Label>
+                            <div className="flex flex-wrap gap-1 mt-1">
+                              {viewingClient.service_types.tags.map((tag) => (
+                                <Badge key={tag} variant="outline" className="text-xs">
+                                  {tag}
+                                </Badge>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  </TabsContent>
+                </div>
+              </Tabs>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>
