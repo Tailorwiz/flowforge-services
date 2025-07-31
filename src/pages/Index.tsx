@@ -5,13 +5,14 @@ import { ServiceTypeAdmin } from "@/components/ServiceTypeAdmin";
 import { ReminderManager } from "@/components/ReminderManager";
 import { DailyDigest } from "@/components/DailyDigest";
 import { AdminProfile } from "@/components/AdminProfile";
+import { AdminCommandCenter } from "@/components/AdminCommandCenter";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/components/AuthProvider";
 import { LogOut, User } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
 const Index = () => {
-  const [activeTab, setActiveTab] = useState<'digest' | 'clients' | 'reminders' | 'services' | 'profile'>('digest');
+  const [activeTab, setActiveTab] = useState<'digest' | 'command' | 'clients' | 'reminders' | 'services' | 'profile'>('digest');
   const { user, loading, signOut } = useAuth();
   const navigate = useNavigate();
 
@@ -70,6 +71,12 @@ const Index = () => {
                 Daily Digest
               </Button>
               <Button 
+                variant={activeTab === 'command' ? 'default' : 'outline'}
+                onClick={() => setActiveTab('command')}
+              >
+                Command Center
+              </Button>
+              <Button 
                 variant={activeTab === 'clients' ? 'default' : 'outline'}
                 onClick={() => setActiveTab('clients')}
               >
@@ -107,6 +114,7 @@ const Index = () => {
         </div>
         
         {activeTab === 'digest' && <DailyDigest />}
+        {activeTab === 'command' && <AdminCommandCenter />}
         {activeTab === 'clients' && <ClientManager />}
         {activeTab === 'reminders' && <ReminderManager />}
         {activeTab === 'services' && <ServiceTypeAdmin />}
