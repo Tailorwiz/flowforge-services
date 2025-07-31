@@ -22,6 +22,7 @@ export type Database = {
           created_by: string | null
           description: string | null
           id: string
+          metadata: Json | null
           new_value: Json | null
           old_value: Json | null
         }
@@ -32,6 +33,7 @@ export type Database = {
           created_by?: string | null
           description?: string | null
           id?: string
+          metadata?: Json | null
           new_value?: Json | null
           old_value?: Json | null
         }
@@ -42,6 +44,7 @@ export type Database = {
           created_by?: string | null
           description?: string | null
           id?: string
+          metadata?: Json | null
           new_value?: Json | null
           old_value?: Json | null
         }
