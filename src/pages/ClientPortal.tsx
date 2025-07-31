@@ -65,7 +65,7 @@ export default function ClientPortal() {
         .from('profiles')
         .select('*')
         .eq('id', user?.id)
-        .single();
+        .maybeSingle();
 
       // Check if user exists as a client
       const { data: clientData } = await supabase
@@ -75,7 +75,7 @@ export default function ClientPortal() {
           service_types (name)
         `)
         .eq('email', user?.email)
-        .single();
+        .maybeSingle();
 
       if (clientData) {
         setProfile({

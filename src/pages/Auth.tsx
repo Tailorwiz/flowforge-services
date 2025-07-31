@@ -29,7 +29,7 @@ export default function Auth() {
           .from('user_roles')
           .select('role')
           .eq('user_id', session.user.id)
-          .single();
+          .maybeSingle();
         
         if (userRole?.role === 'admin') {
           navigate("/");
@@ -48,7 +48,7 @@ export default function Auth() {
           .from('user_roles')
           .select('role')
           .eq('user_id', session.user.id)
-          .single();
+          .maybeSingle();
         
         if (userRole?.role === 'admin') {
           navigate("/");
