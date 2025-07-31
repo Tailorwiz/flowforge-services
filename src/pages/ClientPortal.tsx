@@ -586,33 +586,33 @@ export default function ClientPortal() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
                   {trainingMaterials.length > 0 ? trainingMaterials.map((material) => (
                     <Card key={material.id} className="border border-slate-200 hover:shadow-lg transition-shadow overflow-hidden">
-                      <div className="relative">
+                      <div className="relative bg-white">
                         {material.thumbnail_url ? (
                           <img 
                             src={material.thumbnail_url} 
                             alt={material.name} 
-                            className="w-full h-64 md:h-80 object-cover"
+                            className="w-full h-auto object-contain"
+                            style={{ maxHeight: '400px' }}
                           />
                         ) : (
-                          <div className="w-full h-64 md:h-80 bg-slate-100 flex items-center justify-center">
+                          <div className="w-full h-64 bg-slate-100 flex items-center justify-center">
                             <FileText className="w-16 h-16 text-slate-400" />
                           </div>
                         )}
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
-                        <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
-                          <h3 className="text-xl font-bold mb-2">{material.name}</h3>
-                          <p className="text-sm text-white/90 mb-4">{material.description}</p>
-                          <Button size="lg" className="w-full bg-white text-black hover:bg-white/90" asChild>
-                            <a href={material.content_url} target="_blank" rel="noopener noreferrer">
-                              <BookOpen className="w-5 h-5 mr-2" />
-                              Start Learning
-                            </a>
-                          </Button>
-                        </div>
                       </div>
+                      <CardContent className="p-4">
+                        <h3 className="text-lg font-bold mb-2 text-center">{material.name}</h3>
+                        <p className="text-sm text-slate-600 mb-4 text-center">{material.description}</p>
+                        <Button size="lg" className="w-full" asChild>
+                          <a href={material.content_url} target="_blank" rel="noopener noreferrer">
+                            <BookOpen className="w-5 h-5 mr-2" />
+                            Start Reading
+                          </a>
+                        </Button>
+                      </CardContent>
                     </Card>
                   )) : (
                     <div className="col-span-full text-center py-12">
