@@ -173,40 +173,17 @@ const Index = () => {
           </div>
         </nav>
 
-        {/* User Section */}
+        {/* User Section - Simplified */}
         <div className="p-4 border-t border-border">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="w-full p-3 h-auto justify-start">
-                <div className="flex items-center gap-3 w-full">
-                  <AvatarUpload 
-                    currentAvatarUrl={userProfile?.avatar_url}
-                    onAvatarUpdate={(url) => setUserProfile({...userProfile, avatar_url: url})}
-                    size="md"
-                    showUploadButton={true}
-                  />
-                  <div className="flex-1 min-w-0 text-left">
-                    <p className="text-sm font-medium text-rdr-navy truncate">
-                      {userProfile?.display_name || user.email}
-                    </p>
-                    <p className="text-xs text-rdr-medium-gray">Administrator</p>
-                  </div>
-                  <ChevronDown className="w-4 h-4 text-rdr-medium-gray" />
-                </div>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuItem onClick={() => setActiveTab('profile')}>
-                <User className="w-4 h-4 mr-2" />
-                Profile Settings
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleSignOut} className="text-red-600">
-                <LogOut className="w-4 h-4 mr-2" />
-                Sign Out
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <Button 
+            onClick={handleSignOut} 
+            variant="outline" 
+            size="sm"
+            className="w-full flex items-center gap-2 text-rdr-medium-gray hover:text-rdr-navy border-border"
+          >
+            <LogOut className="w-4 h-4" />
+            Sign Out
+          </Button>
         </div>
       </div>
 
@@ -214,10 +191,48 @@ const Index = () => {
       <div className="flex-1 overflow-auto">
         <div className="p-6">
           {/* Header */}
-          <div className="mb-6">
-            <h1 className="text-3xl font-bold text-rdr-navy font-heading">
-              {sidebarItems.find(item => item.id === activeTab)?.label || 'Dashboard'}
-            </h1>
+          <div className="mb-6 flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-rdr-navy font-heading">
+                {sidebarItems.find(item => item.id === activeTab)?.label || 'Dashboard'}
+              </h1>
+            </div>
+            
+            {/* User Profile Section - Top Right */}
+            <div className="flex items-center gap-4">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="p-3 h-auto">
+                    <div className="flex items-center gap-3">
+                      <AvatarUpload 
+                        currentAvatarUrl={userProfile?.avatar_url}
+                        onAvatarUpdate={(url) => setUserProfile({...userProfile, avatar_url: url})}
+                        size="lg"
+                        showUploadButton={true}
+                      />
+                      <div className="text-left">
+                        <p className="text-sm font-medium text-rdr-navy">
+                          {userProfile?.display_name || user.email}
+                        </p>
+                        <p className="text-xs text-rdr-medium-gray">Administrator</p>
+                      </div>
+                      <ChevronDown className="w-4 h-4 text-rdr-medium-gray ml-2" />
+                    </div>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuItem onClick={() => setActiveTab('profile')}>
+                    <User className="w-4 h-4 mr-2" />
+                    Profile Settings
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleSignOut} className="text-red-600">
+                    <LogOut className="w-4 h-4 mr-2" />
+                    Sign Out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </div>
 
           {/* Content */}
