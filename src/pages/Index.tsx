@@ -27,7 +27,7 @@ import { toast } from "@/hooks/use-toast";
 import RDRLogo from "@/components/RDRLogo";
 
 const Index = () => {
-  const [activeTab, setActiveTab] = useState<'digest' | 'command' | 'clients' | 'training' | 'reminders' | 'notifications' | 'services' | 'profile'>('command');
+  const [activeTab, setActiveTab] = useState<'digest' | 'command' | 'clients' | 'training' | 'reminders' | 'notifications' | 'services' | 'profile'>('digest');
   const { user, loading, signOut } = useAuth();
   const navigate = useNavigate();
 
@@ -172,16 +172,13 @@ const Index = () => {
         <div className="p-6">
           {/* Header */}
           <div className="mb-6">
-            <h1 className="text-3xl font-bold text-rdr-navy font-heading mb-2">
-              RDR Project Portal
-            </h1>
-            <p className="text-rdr-medium-gray">
+            <h1 className="text-3xl font-bold text-rdr-navy font-heading">
               {sidebarItems.find(item => item.id === activeTab)?.label || 'Dashboard'}
-            </p>
+            </h1>
           </div>
 
           {/* Content */}
-          <div className="bg-white rounded-xl shadow-lg border border-border min-h-[600px]">
+          <div className="bg-white rounded-xl shadow-lg border border-border min-h-[600px] p-6">
             {activeTab === 'digest' && <DailyDigest />}
             {activeTab === 'command' && <AdminCommandCenter />}
             {activeTab === 'clients' && <ClientManager />}
