@@ -515,18 +515,18 @@ export default function ClientDashboard() {
                       trainingMaterials.map((material) => (
                         <Card key={material.id} className="group hover:shadow-md transition-shadow">
                           <CardContent className="p-6">
-                            <div className="flex flex-col gap-4">
-                              <div className="w-full h-32 bg-primary/10 rounded-lg flex items-center justify-center overflow-hidden">
-                                {material.thumbnail_url ? (
-                                  <img 
-                                    src={material.thumbnail_url} 
-                                    alt={material.name}
-                                    className="w-full h-full object-cover"
-                                  />
-                                ) : (
-                                  <FileText className="w-12 h-12 text-primary" />
-                                )}
-                              </div>
+                  <div className="flex flex-col gap-4">
+                    <div className="w-full h-48 bg-primary/10 rounded-lg flex items-center justify-center overflow-hidden">
+                      {material.thumbnail_url ? (
+                        <img 
+                          src={material.thumbnail_url} 
+                          alt={material.name}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <FileText className="w-20 h-20 text-primary" />
+                      )}
+                    </div>
                               <div className="flex-1 min-w-0">
                                 <h3 className="font-semibold text-base mb-2 line-clamp-2">
                                   {material.name}

@@ -274,9 +274,41 @@ export default function TrainingMaterialUpload() {
     }
   };
 
-  const handleEdit = async (materialId: string, updatedData: Partial<TrainingMaterial>, newThumbnail?: File) => {
+  const handleEdit = async (materialId: string, updatedData: Partial<TrainingMaterial>, newThumbnail?: File, newFile?: File) => {
     try {
       let thumbnailUrl = updatedData.thumbnail_url;
+      let contentUrl = updatedData.content_url;
+      let filePath = updatedData.file_path;
+      let fileSize = updatedData.file_size;
+
+      const material = materials.find(m => m.id === materialId);
+
+      // Handle new file upload if provided
+      if (newFile) {
+        // Delete old file if it exists
+        if (material?.file_path) {
+          await supabase.storage
+            .from('training-materials')
+            .remove([material.file_path]);
+        }
+
+        // Upload new file
+        const fileExt = newFile.name.split('.').pop();
+        const fileName = `${Date.now()}_${updatedData.name?.replace(/[^a-zA-Z0-9]/g, '_')}.${fileExt}`;
+        
+        const { error: fileUploadError } = await supabase.storage
+          .from('training-materials')
+          .upload(fileName, newFile);
+
+        if (!fileUploadError) {
+          const { data: { publicUrl } } = supabase.storage
+            .from('training-materials')
+            .getPublicUrl(fileName);
+          contentUrl = publicUrl;
+          filePath = fileName;
+          fileSize = newFile.size;
+        }
+      }
 
       // Handle thumbnail upload if a new one is provided
       if (newThumbnail) {
@@ -284,7 +316,6 @@ export default function TrainingMaterialUpload() {
         const thumbFileName = `thumb_${Date.now()}_${updatedData.name?.replace(/[^a-zA-Z0-9]/g, '_')}.${thumbExt}`;
         
         // Delete old thumbnail if it exists
-        const material = materials.find(m => m.id === materialId);
         if (material?.thumbnail_url) {
           const oldThumbPath = material.thumbnail_url.split('/').pop();
           if (oldThumbPath) {
@@ -309,7 +340,13 @@ export default function TrainingMaterialUpload() {
 
       const { error } = await supabase
         .from('training_materials')
-        .update({ ...updatedData, thumbnail_url: thumbnailUrl })
+        .update({ 
+          ...updatedData, 
+          thumbnail_url: thumbnailUrl,
+          content_url: contentUrl,
+          file_path: filePath,
+          file_size: fileSize
+        })
         .eq('id', materialId);
 
       if (error) throw error;
@@ -503,8 +540,8 @@ export default function TrainingMaterialUpload() {
             <div className="space-y-4">
               {materials.map((material) => (
                 <div key={material.id} className="flex items-center justify-between p-4 border rounded-lg">
-                  <div className="flex items-start gap-3">
-                    <div className="w-16 h-16 bg-primary/10 rounded-lg flex items-center justify-center overflow-hidden">
+                  <div className="flex items-start gap-4">
+                    <div className="w-48 h-36 bg-primary/10 rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0">
                       {material.thumbnail_url ? (
                         <img 
                           src={material.thumbnail_url} 
@@ -512,7 +549,7 @@ export default function TrainingMaterialUpload() {
                           className="w-full h-full object-cover"
                         />
                       ) : (
-                        <FileText className="w-8 h-8 text-primary" />
+                        <FileText className="w-16 h-16 text-primary" />
                       )}
                     </div>
                     <div className="flex-1">
@@ -650,7 +687,7 @@ export default function TrainingMaterialUpload() {
               {editingMaterial.thumbnail_url && (
                 <div>
                   <Label>Current Thumbnail</Label>
-                  <div className="w-32 h-24 bg-primary/10 rounded-lg flex items-center justify-center overflow-hidden mt-2">
+                  <div className="w-48 h-36 bg-primary/10 rounded-lg flex items-center justify-center overflow-hidden mt-2">
                     <img 
                       src={editingMaterial.thumbnail_url} 
                       alt="Current thumbnail"
@@ -672,6 +709,20 @@ export default function TrainingMaterialUpload() {
                   Upload a new thumbnail image to replace the current one
                 </p>
               </div>
+
+              {/* Replace Training Material File */}
+              <div>
+                <Label htmlFor="edit-file">Replace Training Material File (Optional)</Label>
+                <Input
+                  id="edit-file"
+                  type="file"
+                  accept={ACCEPTED_FILE_TYPES[editingMaterial.type as keyof typeof ACCEPTED_FILE_TYPES] || '*'}
+                />
+                <p className="text-sm text-muted-foreground mt-1">
+                  Upload a new file to replace the current training material. 
+                  Accepted: {ACCEPTED_FILE_TYPES[editingMaterial.type as keyof typeof ACCEPTED_FILE_TYPES] || 'All files'}
+                </p>
+              </div>
               
               <div className="flex justify-end gap-2">
                 <Button variant="outline" onClick={() => setEditingMaterial(null)}>
@@ -679,13 +730,15 @@ export default function TrainingMaterialUpload() {
                 </Button>
                 <Button onClick={() => {
                   const thumbnailInput = document.getElementById('edit-thumbnail') as HTMLInputElement;
+                  const fileInput = document.getElementById('edit-file') as HTMLInputElement;
                   const newThumbnail = thumbnailInput?.files?.[0];
+                  const newFile = fileInput?.files?.[0];
                   
                   handleEdit(editingMaterial.id, {
                     name: editingMaterial.name,
                     description: editingMaterial.description,
                     type: editingMaterial.type
-                  }, newThumbnail);
+                  }, newThumbnail, newFile);
                 }}>
                   Save Changes
                 </Button>
