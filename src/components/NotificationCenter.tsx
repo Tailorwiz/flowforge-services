@@ -317,7 +317,7 @@ export function NotificationCenter() {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-lg font-bold">All Your Notifications in One Place</h2>
+          <h2 className="text-2xl font-bold">All Your Notifications in One Place</h2>
           <p className="text-muted-foreground">
             Manage your alerts and stay informed about client activities
           </p>
