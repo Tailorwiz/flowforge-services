@@ -118,7 +118,7 @@ export default function Auth() {
           <CardHeader className="space-y-1 text-center">
             <CardTitle className="text-2xl font-bold">RDR Project Portal</CardTitle>
             <p className="text-muted-foreground">
-              Sign in to your admin account or create a new one
+              Sign in to your customer account or create a new one
             </p>
           </CardHeader>
           <CardContent>
