@@ -23,7 +23,9 @@ import {
   Phone,
   Bell,
   BookOpen,
-  AlertCircle
+  AlertCircle,
+  ListTodo,
+  UserCheck
 } from "lucide-react";
 import RDRLogo from "@/components/RDRLogo";
 import AvatarUpload from "@/components/AvatarUpload";
@@ -57,6 +59,7 @@ export default function ClientPortal() {
   const [trainingMaterials, setTrainingMaterials] = useState<any[]>([]);
   const [alerts, setAlerts] = useState<any[]>([]);
   const [timeRemaining, setTimeRemaining] = useState({ days: 0, hours: 0, minutes: 0 });
+  const [actionItems, setActionItems] = useState<any[]>([]);
 
   useEffect(() => {
     if (user) {
@@ -65,6 +68,7 @@ export default function ClientPortal() {
       fetchDocuments();
       fetchTrainingMaterials();
       fetchAlerts();
+      fetchActionItems();
     }
   }, [user]);
 
@@ -239,6 +243,62 @@ export default function ClientPortal() {
         read: true
       }
     ]);
+  };
+
+  const fetchActionItems = async () => {
+    try {
+      if (!profile?.id) return;
+      
+      const { data } = await supabase
+        .from('client_tasks')
+        .select('*')
+        .eq('client_id', profile.id)
+        .order('task_order', { ascending: true });
+      
+      // Add sample action items if no data
+      const sampleItems = data && data.length > 0 ? data : [
+        {
+          id: 1,
+          name: 'Complete Intake Questionnaire',
+          description: 'Please fill out the detailed questionnaire about your career goals and experience.',
+          status: 'pending',
+          due_date: new Date(Date.now() + 86400000 * 2).toISOString().split('T')[0], // 2 days from now
+          task_order: 1,
+          assigned_date: new Date().toISOString().split('T')[0]
+        },
+        {
+          id: 2,
+          name: 'Upload Current Resume',
+          description: 'Upload your existing resume so we can review and improve it.',
+          status: 'pending',
+          due_date: new Date(Date.now() + 86400000 * 3).toISOString().split('T')[0], // 3 days from now
+          task_order: 2,
+          assigned_date: new Date().toISOString().split('T')[0]
+        },
+        {
+          id: 3,
+          name: 'Initial Draft Review',
+          description: 'We are preparing your initial resume draft based on your requirements.',
+          status: 'waiting_admin',
+          due_date: new Date(Date.now() + 86400000 * 5).toISOString().split('T')[0], // 5 days from now
+          task_order: 3,
+          assigned_date: new Date().toISOString().split('T')[0]
+        },
+        {
+          id: 4,
+          name: 'Review and Provide Feedback',
+          description: 'Review the initial draft and provide any feedback or revision requests.',
+          status: 'blocked',
+          due_date: new Date(Date.now() + 86400000 * 6).toISOString().split('T')[0], // 6 days from now
+          task_order: 4,
+          assigned_date: new Date().toISOString().split('T')[0]
+        }
+      ];
+      
+      setActionItems(sampleItems);
+    } catch (error) {
+      console.error('Error fetching action items:', error);
+    }
   };
 
   const determineProgressStep = (clientData: any) => {
@@ -509,10 +569,14 @@ export default function ClientPortal() {
 
         {/* Main Content Tabs */}
         <Tabs defaultValue="documents" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6 bg-white shadow-sm border">
+          <TabsList className="grid w-full grid-cols-7 bg-white shadow-sm border">
             <TabsTrigger value="documents" className="flex items-center gap-2">
               <FileText className="w-4 h-4" />
               Documents
+            </TabsTrigger>
+            <TabsTrigger value="action-items" className="flex items-center gap-2">
+              <ListTodo className="w-4 h-4" />
+              Action Items
             </TabsTrigger>
             <TabsTrigger value="training" className="flex items-center gap-2">
               <BookOpen className="w-4 h-4" />
@@ -571,6 +635,116 @@ export default function ClientPortal() {
                       </Card>
                     );
                   })}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Action Items Tab */}
+          <TabsContent value="action-items">
+            <Card className="shadow-lg border-0">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <ListTodo className="w-5 h-5 text-primary" />
+                  Action Items & Next Steps
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {actionItems.map((item) => {
+                    const getStatusIcon = (status: string) => {
+                      switch (status) {
+                        case 'completed':
+                          return <CheckCircle className="w-5 h-5 text-green-600" />;
+                        case 'pending':
+                          return <Clock className="w-5 h-5 text-orange-600" />;
+                        case 'waiting_admin':
+                          return <UserCheck className="w-5 h-5 text-blue-600" />;
+                        case 'blocked':
+                          return <AlertCircle className="w-5 h-5 text-red-600" />;
+                        default:
+                          return <Clock className="w-5 h-5 text-slate-400" />;
+                      }
+                    };
+
+                    const getStatusBadge = (status: string) => {
+                      switch (status) {
+                        case 'completed':
+                          return <Badge variant="default" className="bg-green-500">Completed</Badge>;
+                        case 'pending':
+                          return <Badge variant="default" className="bg-orange-500">Action Required</Badge>;
+                        case 'waiting_admin':
+                          return <Badge variant="default" className="bg-blue-500">Waiting for Us</Badge>;
+                        case 'blocked':
+                          return <Badge variant="secondary">Blocked</Badge>;
+                        default:
+                          return <Badge variant="secondary">Unknown</Badge>;
+                      }
+                    };
+
+                    const getStatusColor = (status: string) => {
+                      switch (status) {
+                        case 'completed':
+                          return 'border-green-200 bg-green-50';
+                        case 'pending':
+                          return 'border-orange-200 bg-orange-50';
+                        case 'waiting_admin':
+                          return 'border-blue-200 bg-blue-50';
+                        case 'blocked':
+                          return 'border-red-200 bg-red-50';
+                        default:
+                          return 'border-slate-200 bg-slate-50';
+                      }
+                    };
+
+                    return (
+                      <Card key={item.id} className={`border ${getStatusColor(item.status)} transition-shadow hover:shadow-md`}>
+                        <CardContent className="p-6">
+                          <div className="flex items-start gap-4">
+                            <div className="flex-shrink-0 mt-1">
+                              {getStatusIcon(item.status)}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-start justify-between gap-4 mb-2">
+                                <h3 className="text-lg font-semibold text-slate-800">{item.name}</h3>
+                                {getStatusBadge(item.status)}
+                              </div>
+                              <p className="text-slate-600 mb-3">{item.description}</p>
+                              <div className="flex items-center gap-6 text-sm text-slate-500">
+                                {item.due_date && (
+                                  <div className="flex items-center gap-1">
+                                    <Calendar className="w-4 h-4" />
+                                    <span>Due: {new Date(item.due_date).toLocaleDateString()}</span>
+                                  </div>
+                                )}
+                                {item.assigned_date && (
+                                  <div className="flex items-center gap-1">
+                                    <Clock className="w-4 h-4" />
+                                    <span>Assigned: {new Date(item.assigned_date).toLocaleDateString()}</span>
+                                  </div>
+                                )}
+                              </div>
+                              {item.status === 'pending' && (
+                                <div className="mt-4">
+                                  <Button size="sm" className="w-full sm:w-auto">
+                                    Start Task
+                                  </Button>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                  
+                  {actionItems.length === 0 && (
+                    <div className="text-center py-12">
+                      <ListTodo className="w-16 h-16 text-slate-300 mx-auto mb-4" />
+                      <p className="text-slate-500 text-lg">No action items at this time.</p>
+                      <p className="text-slate-400 text-sm">Check back later for updates on your project.</p>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
