@@ -177,7 +177,43 @@ export default function ClientPortal() {
         .select('*')
         .eq('is_active', true);
       
-      setTrainingMaterials(data || []);
+      // Add sample training programs with full-size photos if no data
+      const sampleMaterials = data && data.length > 0 ? data : [
+        {
+          id: 1,
+          name: 'Java Programming Fundamentals',
+          description: 'Learn the basics of Java programming with hands-on exercises and real-world examples.',
+          content_url: '#',
+          thumbnail_url: 'https://images.unsplash.com/photo-1461749280684-dccba630e2f6?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80',
+          is_active: true
+        },
+        {
+          id: 2,
+          name: 'Web Development Bootcamp',
+          description: 'Complete guide to modern web development covering HTML, CSS, JavaScript, and frameworks.',
+          content_url: '#',
+          thumbnail_url: 'https://images.unsplash.com/photo-1487058792275-0ad4aaf24ca7?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80',
+          is_active: true
+        },
+        {
+          id: 3,
+          name: 'Advanced MacBook Development',
+          description: 'Master development workflows on MacBook with professional coding environments and tools.',
+          content_url: '#',
+          thumbnail_url: 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80',
+          is_active: true
+        },
+        {
+          id: 4,
+          name: 'UI/UX Design Principles',
+          description: 'Learn design fundamentals for creating beautiful and functional user interfaces.',
+          content_url: '#',
+          thumbnail_url: 'https://images.unsplash.com/photo-1483058712412-4245e9b90334?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80',
+          is_active: true
+        }
+      ];
+      
+      setTrainingMaterials(sampleMaterials);
     } catch (error) {
       console.error('Error fetching training materials:', error);
     }
@@ -550,31 +586,38 @@ export default function ClientPortal() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {trainingMaterials.length > 0 ? trainingMaterials.map((material) => (
-                    <Card key={material.id} className="border border-slate-200 hover:shadow-md transition-shadow">
-                      <CardContent className="p-4">
-                        <div className="aspect-video bg-slate-100 rounded-lg mb-3 flex items-center justify-center">
-                          {material.thumbnail_url ? (
-                            <img src={material.thumbnail_url} alt={material.name} className="w-full h-full object-cover rounded-lg" />
-                          ) : (
-                            <FileText className="w-8 h-8 text-slate-400" />
-                          )}
+                    <Card key={material.id} className="border border-slate-200 hover:shadow-lg transition-shadow overflow-hidden">
+                      <div className="relative">
+                        {material.thumbnail_url ? (
+                          <img 
+                            src={material.thumbnail_url} 
+                            alt={material.name} 
+                            className="w-full h-64 md:h-80 object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-64 md:h-80 bg-slate-100 flex items-center justify-center">
+                            <FileText className="w-16 h-16 text-slate-400" />
+                          </div>
+                        )}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
+                        <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
+                          <h3 className="text-xl font-bold mb-2">{material.name}</h3>
+                          <p className="text-sm text-white/90 mb-4">{material.description}</p>
+                          <Button size="lg" className="w-full bg-white text-black hover:bg-white/90" asChild>
+                            <a href={material.content_url} target="_blank" rel="noopener noreferrer">
+                              <BookOpen className="w-5 h-5 mr-2" />
+                              Start Learning
+                            </a>
+                          </Button>
                         </div>
-                        <h3 className="font-semibold text-sm mb-2">{material.name}</h3>
-                        <p className="text-xs text-slate-600 mb-3">{material.description}</p>
-                        <Button size="sm" className="w-full" asChild>
-                          <a href={material.content_url} target="_blank" rel="noopener noreferrer">
-                            <BookOpen className="w-4 h-4 mr-2" />
-                            Access
-                          </a>
-                        </Button>
-                      </CardContent>
+                      </div>
                     </Card>
                   )) : (
-                    <div className="col-span-full text-center py-8">
-                      <BookOpen className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-                      <p className="text-slate-500">No training materials available yet.</p>
+                    <div className="col-span-full text-center py-12">
+                      <BookOpen className="w-16 h-16 text-slate-300 mx-auto mb-4" />
+                      <p className="text-slate-500 text-lg">No training materials available yet.</p>
                     </div>
                   )}
                 </div>
