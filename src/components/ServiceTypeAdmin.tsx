@@ -7,8 +7,10 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "@/hooks/use-toast";
-import { Plus, Edit, Copy, Trash2 } from "lucide-react";
+import { Plus, Edit, Copy, Trash2, FileText } from "lucide-react";
 
 interface ServiceType {
   id: string;
@@ -21,14 +23,25 @@ interface ServiceType {
   created_at: string;
 }
 
+interface TrainingMaterial {
+  id: string;
+  name: string;
+  description: string;
+  type: string;
+  is_active: boolean;
+}
+
 export function ServiceTypeAdmin() {
   const [serviceTypes, setServiceTypes] = useState<ServiceType[]>([]);
+  const [trainingMaterials, setTrainingMaterials] = useState<TrainingMaterial[]>([]);
+  const [selectedMaterials, setSelectedMaterials] = useState<string[]>([]);
   const [isEditing, setIsEditing] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [editForm, setEditForm] = useState<Partial<ServiceType>>({});
 
   useEffect(() => {
     fetchServiceTypes();
+    fetchTrainingMaterials();
   }, []);
 
   const fetchServiceTypes = async () => {
@@ -44,16 +57,49 @@ export function ServiceTypeAdmin() {
     }
   };
 
-  const startEditing = (serviceType: ServiceType) => {
+  const startEditing = async (serviceType: ServiceType) => {
     setIsEditing(serviceType.id);
     setEditForm({
       ...serviceType,
       tags: serviceType.tags || []
     });
+    
+    // Fetch assigned training materials for this service type
+    const assignedMaterials = await fetchServiceTrainingMaterials(serviceType.id);
+    setSelectedMaterials(assignedMaterials);
+  };
+
+  const fetchTrainingMaterials = async () => {
+    const { data, error } = await supabase
+      .from("training_materials")
+      .select("id, name, description, type, is_active")
+      .eq("is_active", true)
+      .order("name");
+
+    if (error) {
+      toast({ title: "Error", description: "Failed to load training materials", variant: "destructive" });
+    } else {
+      setTrainingMaterials(data || []);
+    }
+  };
+
+  const fetchServiceTrainingMaterials = async (serviceTypeId: string) => {
+    const { data, error } = await supabase
+      .from("service_training_materials")
+      .select("training_material_id")
+      .eq("service_type_id", serviceTypeId);
+
+    if (error) {
+      console.error("Error fetching service training materials:", error);
+      return [];
+    }
+    
+    return data?.map(item => item.training_material_id) || [];
   };
 
   const startCreating = () => {
     setIsCreating(true);
+    setSelectedMaterials([]);
     setEditForm({
       name: "",
       description: "",
@@ -64,13 +110,17 @@ export function ServiceTypeAdmin() {
     });
   };
 
-  const duplicateService = (serviceType: ServiceType) => {
+  const duplicateService = async (serviceType: ServiceType) => {
     setIsCreating(true);
     setEditForm({
       ...serviceType,
       name: `${serviceType.name} (Copy)`,
       id: undefined
     });
+    
+    // Copy training materials assignment
+    const assignedMaterials = await fetchServiceTrainingMaterials(serviceType.id);
+    setSelectedMaterials(assignedMaterials);
   };
 
   const saveServiceType = async () => {
@@ -89,12 +139,16 @@ export function ServiceTypeAdmin() {
     };
 
     let error;
+    let serviceId = isEditing;
     
     if (isCreating) {
-      const { error: insertError } = await supabase
+      const { data, error: insertError } = await supabase
         .from("service_types")
-        .insert([serviceData]);
+        .insert([serviceData])
+        .select()
+        .single();
       error = insertError;
+      serviceId = data?.id;
     } else if (isEditing) {
       const { error: updateError } = await supabase
         .from("service_types")
@@ -105,12 +159,44 @@ export function ServiceTypeAdmin() {
 
     if (error) {
       toast({ title: "Error", description: "Failed to save service type", variant: "destructive" });
-    } else {
-      toast({ title: "Success", description: "Service type saved successfully" });
-      setIsEditing(null);
-      setIsCreating(false);
-      setEditForm({});
-      fetchServiceTypes();
+      return;
+    }
+
+    // Save training materials assignments
+    if (serviceId) {
+      await saveTrainingMaterialAssignments(serviceId);
+    }
+
+    toast({ title: "Success", description: "Service type saved successfully" });
+    setIsEditing(null);
+    setIsCreating(false);
+    setEditForm({});
+    setSelectedMaterials([]);
+    fetchServiceTypes();
+  };
+
+  const saveTrainingMaterialAssignments = async (serviceTypeId: string) => {
+    // First, delete existing assignments
+    await supabase
+      .from("service_training_materials")
+      .delete()
+      .eq("service_type_id", serviceTypeId);
+
+    // Then insert new assignments
+    if (selectedMaterials.length > 0) {
+      const assignments = selectedMaterials.map(materialId => ({
+        service_type_id: serviceTypeId,
+        training_material_id: materialId
+      }));
+
+      const { error } = await supabase
+        .from("service_training_materials")
+        .insert(assignments);
+
+      if (error) {
+        console.error("Error saving training material assignments:", error);
+        toast({ title: "Warning", description: "Service saved but training materials assignment failed", variant: "destructive" });
+      }
     }
   };
 
@@ -131,6 +217,14 @@ export function ServiceTypeAdmin() {
   const handleTagsChange = (tagsString: string) => {
     const tags = tagsString.split(',').map(tag => tag.trim()).filter(tag => tag);
     setEditForm({ ...editForm, tags });
+  };
+
+  const toggleMaterialSelection = (materialId: string) => {
+    setSelectedMaterials(prev => 
+      prev.includes(materialId) 
+        ? prev.filter(id => id !== materialId)
+        : [...prev, materialId]
+    );
   };
 
   return (
@@ -206,20 +300,72 @@ export function ServiceTypeAdmin() {
               <Label>Active Service</Label>
             </div>
 
+            {/* Training Materials Selection */}
+            <div className="space-y-3">
+              <Label className="text-base font-medium">Training Materials Included</Label>
+              <p className="text-sm text-muted-foreground">
+                Select which training materials will be automatically available to clients who purchase this service.
+              </p>
+              
+              {trainingMaterials.length > 0 ? (
+                <ScrollArea className="h-48 w-full border rounded-md p-4">
+                  <div className="space-y-3">
+                    {trainingMaterials.map((material) => (
+                      <div key={material.id} className="flex items-start space-x-3">
+                        <Checkbox
+                          id={`material-${material.id}`}
+                          checked={selectedMaterials.includes(material.id)}
+                          onCheckedChange={() => toggleMaterialSelection(material.id)}
+                        />
+                        <div className="flex items-start gap-2 flex-1">
+                          <FileText className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
+                          <div className="space-y-1 flex-1">
+                            <Label 
+                              htmlFor={`material-${material.id}`}
+                              className="text-sm font-medium cursor-pointer"
+                            >
+                              {material.name}
+                            </Label>
+                            <p className="text-xs text-muted-foreground">
+                              {material.description}
+                            </p>
+                            <Badge variant="outline" className="text-xs">
+                              {material.type}
+                            </Badge>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </ScrollArea>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground border rounded-md">
+                  <FileText className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                  <p className="text-sm">No training materials available</p>
+                  <p className="text-xs">Upload training materials first to assign them to services</p>
+                </div>
+              )}
+              
+              <p className="text-xs text-muted-foreground">
+                Selected: {selectedMaterials.length} of {trainingMaterials.length} materials
+              </p>
+            </div>
+
             <div className="flex gap-2">
               <Button onClick={saveServiceType}>
                 {isCreating ? 'Create' : 'Save Changes'}
               </Button>
-              <Button 
-                variant="outline" 
-                onClick={() => {
-                  setIsEditing(null);
-                  setIsCreating(false);
-                  setEditForm({});
-                }}
-              >
-                Cancel
-              </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    setIsEditing(null);
+                    setIsCreating(false);
+                    setEditForm({});
+                    setSelectedMaterials([]);
+                  }}
+                >
+                  Cancel
+                </Button>
             </div>
           </CardContent>
         </Card>
