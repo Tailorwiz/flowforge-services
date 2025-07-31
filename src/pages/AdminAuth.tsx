@@ -102,9 +102,9 @@ export default function AdminAuth() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 to-slate-800 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 p-4">
       <div className="w-full max-w-md">
-        <Card className="shadow-2xl border-slate-700 bg-slate-800/50 backdrop-blur">
+        <Card className="shadow-2xl border-red-200 bg-white">
           <CardHeader className="space-y-4 text-center bg-gradient-to-r from-red-600 to-orange-600 text-white rounded-t-lg">
             <div className="flex justify-center">
               <RDRLogo className="text-white" />
@@ -119,7 +119,7 @@ export default function AdminAuth() {
               </p>
             </div>
           </CardHeader>
-          <CardContent className="mt-6 text-white">
+          <CardContent className="mt-6">
             {error && (
               <Alert variant="destructive" className="mb-4">
                 <AlertDescription>{error}</AlertDescription>
@@ -128,7 +128,7 @@ export default function AdminAuth() {
 
             <form onSubmit={handleSignIn} className="space-y-6">
               <div className="space-y-2">
-                <Label htmlFor="admin-email" className="flex items-center gap-2 text-slate-200">
+                <Label htmlFor="admin-email" className="flex items-center gap-2 text-gray-700">
                   <Mail className="w-4 h-4" />
                   Administrator Email
                 </Label>
@@ -140,12 +140,12 @@ export default function AdminAuth() {
                   onChange={(e) => setEmail(e.target.value)}
                   required
                   disabled={loading}
-                  className="bg-slate-700/50 border-slate-600 text-white placeholder:text-slate-400 focus:ring-red-500 focus:border-red-500"
+                  className="bg-white border-gray-300 text-gray-900 placeholder:text-gray-500 focus:ring-red-500 focus:border-red-500"
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="admin-password" className="flex items-center gap-2 text-slate-200">
+                <Label htmlFor="admin-password" className="flex items-center gap-2 text-gray-700">
                   <Lock className="w-4 h-4" />
                   Administrator Password
                 </Label>
@@ -158,13 +158,13 @@ export default function AdminAuth() {
                     onChange={(e) => setPassword(e.target.value)}
                     required
                     disabled={loading}
-                    className="pr-10 bg-slate-700/50 border-slate-600 text-white placeholder:text-slate-400 focus:ring-red-500 focus:border-red-500"
+                    className="pr-10 bg-white border-gray-300 text-gray-900 placeholder:text-gray-500 focus:ring-red-500 focus:border-red-500"
                   />
                   <Button
                     type="button"
                     variant="ghost"
                     size="sm"
-                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent text-slate-400 hover:text-white"
+                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent text-gray-500 hover:text-gray-700"
                     onClick={() => setShowPassword(!showPassword)}
                     disabled={loading}
                   >
@@ -193,12 +193,12 @@ export default function AdminAuth() {
               </Button>
             </form>
 
-            <div className="mt-6 pt-4 border-t border-slate-600 text-center">
-              <p className="text-sm text-slate-400">
+            <div className="mt-6 pt-4 border-t border-gray-200 text-center">
+              <p className="text-sm text-gray-500">
                 Need customer access?{" "}
                 <Button 
                   variant="link" 
-                  className="p-0 h-auto text-blue-400 hover:text-blue-300"
+                  className="p-0 h-auto text-blue-600 hover:text-blue-700"
                   onClick={() => navigate("/customer/login")}
                 >
                   Customer Portal
@@ -206,12 +206,12 @@ export default function AdminAuth() {
               </p>
             </div>
 
-            <div className="mt-4 p-3 bg-amber-900/20 border border-amber-700/50 rounded-lg">
-              <div className="flex items-center gap-2 text-amber-200 text-xs">
+            <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+              <div className="flex items-center gap-2 text-amber-700 text-xs">
                 <Shield className="w-3 h-3" />
                 <span className="font-medium">Security Notice:</span>
               </div>
-              <p className="text-amber-100/80 text-xs mt-1">
+              <p className="text-amber-600 text-xs mt-1">
                 Administrator access is restricted and monitored. Only authorized personnel should access this area.
               </p>
             </div>
