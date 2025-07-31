@@ -516,7 +516,7 @@ export default function ClientDashboard() {
                         <Card key={material.id} className="group hover:shadow-md transition-shadow">
                           <CardContent className="p-6">
                   <div className="flex flex-col gap-4">
-                    <div className="w-full aspect-[2/3] bg-primary/10 rounded-lg flex items-center justify-center overflow-hidden shadow-lg max-w-60 mx-auto">
+                    <div className="w-full aspect-[2/3] bg-primary/10 rounded-lg flex items-center justify-center overflow-hidden shadow-lg max-w-80 mx-auto">
                       {material.thumbnail_url ? (
                         <img 
                           src={material.thumbnail_url} 
