@@ -595,61 +595,64 @@ export default function ClientPortal() {
                     
                     {/* Show intake form directly under Step 1 when it's current */}
                     {step.id === 1 && isCurrent && (
-                      <div className="mt-4">
+                      <div className="mt-4 col-span-full">
                         <Collapsible open={showIntakeForm} onOpenChange={setShowIntakeForm}>
                           <CollapsibleTrigger asChild>
                             <Button 
                               variant="outline" 
                               size="sm"
                               onClick={handleIntakeFormClick}
-                              className="w-full"
+                              className="w-full max-w-xs mx-auto"
                             >
                               {showIntakeForm ? 'Hide Questionnaire' : 'Start Questionnaire'}
                             </Button>
                           </CollapsibleTrigger>
                           <CollapsibleContent className="mt-4">
-                            <Card className="border shadow-sm">
+                            <Card className="border shadow-sm max-w-4xl mx-auto">
                               <CardHeader>
-                                <CardTitle className="text-lg">Intake Questionnaire</CardTitle>
+                                <CardTitle className="text-lg text-center">Intake Questionnaire</CardTitle>
+                                <p className="text-sm text-slate-600 text-center">Please provide detailed information to help us create your perfect resume</p>
                               </CardHeader>
                               <CardContent>
-                                <form onSubmit={handleIntakeSubmit} className="space-y-4">
-                                  <div>
-                                    <Label htmlFor="currentJobTitle">Current Job Title</Label>
-                                    <Input
+                                <form onSubmit={handleIntakeSubmit} className="space-y-6">
+                                  <div className="grid gap-6 md:grid-cols-2">
+                                    <div>
+                                      <Label htmlFor="currentJobTitle">Current Job Title</Label>
+                                      <Input
                                       id="currentJobTitle"
                                       value={formData.currentJobTitle}
                                       onChange={(e) => handleInputChange('currentJobTitle', e.target.value)}
                                       placeholder="e.g., Marketing Coordinator"
                                       required
                                     />
+                                    </div>
                                   </div>
 
                                   <div>
-                                    <Label htmlFor="targetJobTitle">Target Job Title</Label>
-                                    <Input
+                                      <Label htmlFor="targetJobTitle">Target Job Title</Label>
+                                      <Input
                                       id="targetJobTitle"
                                       value={formData.targetJobTitle}
                                       onChange={(e) => handleInputChange('targetJobTitle', e.target.value)}
                                       placeholder="e.g., Marketing Manager"
                                       required
                                     />
-                                  </div>
+                                    </div>
 
-                                  <div>
-                                    <Label htmlFor="industry">Industry</Label>
-                                    <Input
+                                    <div>
+                                      <Label htmlFor="industry">Industry</Label>
+                                      <Input
                                       id="industry"
                                       value={formData.industry}
                                       onChange={(e) => handleInputChange('industry', e.target.value)}
                                       placeholder="e.g., Technology, Healthcare, Finance"
                                       required
                                     />
-                                  </div>
+                                    </div>
 
-                                  <div>
-                                    <Label htmlFor="experience">Years of Experience</Label>
-                                    <Input
+                                    <div>
+                                      <Label htmlFor="experience">Years of Experience</Label>
+                                      <Input
                                       id="experience"
                                       value={formData.experience}
                                       onChange={(e) => handleInputChange('experience', e.target.value)}
@@ -692,11 +695,11 @@ export default function ClientPortal() {
                                     />
                                   </div>
 
-                                  <div className="flex gap-3 pt-4">
-                                    <Button type="submit" className="flex-1" disabled={formLoading}>
+                                  <div className="flex gap-4 pt-6">
+                                    <Button type="submit" className="flex-1 max-w-xs" disabled={formLoading}>
                                       {formLoading ? "Submitting..." : "Submit Questionnaire"}
                                     </Button>
-                                    <Button type="button" variant="outline" onClick={() => setShowIntakeForm(false)}>
+                                    <Button type="button" variant="outline" className="max-w-xs" onClick={() => setShowIntakeForm(false)}>
                                       Cancel
                                     </Button>
                                   </div>
