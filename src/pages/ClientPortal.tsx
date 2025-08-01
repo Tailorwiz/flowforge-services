@@ -38,6 +38,7 @@ import { Textarea } from "@/components/ui/textarea";
 import RDRLogo from "@/components/RDRLogo";
 import AvatarUpload from "@/components/AvatarUpload";
 import { ClientDeliveries } from "@/components/ClientDeliveries";
+import InteractiveProgressTracker from "@/components/InteractiveProgressTracker";
 
 interface ClientProfile {
   id: string;
@@ -78,6 +79,7 @@ export default function ClientPortal() {
   const [alerts, setAlerts] = useState<any[]>([]);
   const [timeRemaining, setTimeRemaining] = useState({ days: 0, hours: 0, minutes: 0 });
   const [actionItems, setActionItems] = useState<any[]>([]);
+  const [progressPercentage, setProgressPercentage] = useState(0);
 
   // Handle authentication redirect
   useEffect(() => {
@@ -371,9 +373,23 @@ export default function ClientPortal() {
     return 2; // Example: currently on step 2
   };
 
-  const getProgressPercentage = () => {
-    if (!profile) return 0;
-    return (profile.progress_step / PROGRESS_STEPS.length) * 100;
+  const getProgressPercentage = async () => {
+    if (!profile?.id) return 0;
+    
+    try {
+      const { data, error } = await supabase
+        .from('client_progress')
+        .select('status')
+        .eq('client_id', profile.id);
+      
+      if (error || !data) return 0;
+      
+      const completedSteps = data.filter(step => step.status === 'completed').length;
+      return (completedSteps / data.length) * 100;
+    } catch (error) {
+      console.error('Error calculating progress:', error);
+      return 0;
+    }
   };
 
   const getDaysUntilDelivery = () => {
@@ -548,7 +564,18 @@ export default function ClientPortal() {
   }
 
   const daysUntilDelivery = getDaysUntilDelivery();
-  const progressPercentage = getProgressPercentage();
+  
+  // Update progress percentage when profile changes
+  useEffect(() => {
+    const updateProgress = async () => {
+      const progress = await getProgressPercentage();
+      setProgressPercentage(progress);
+    };
+    
+    if (profile?.id) {
+      updateProgress();
+    }
+  }, [profile?.id]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
@@ -655,47 +682,10 @@ export default function ClientPortal() {
                 <Progress value={progressPercentage} className="h-3" />
               </div>
               
-              <div className="grid gap-4">
-                {PROGRESS_STEPS.map((step, index) => {
-                  const isCompleted = profile.progress_step > step.id;
-                  const isCurrent = profile.progress_step === step.id;
-                  const IconComponent = step.icon;
-                  
-                  return (
-                    <div key={step.id} className={`flex items-center gap-4 p-4 rounded-lg border ${
-                      isCompleted ? 'bg-green-50 border-green-200' :
-                      isCurrent ? 'bg-primary/5 border-primary/20' :
-                      'bg-slate-50 border-slate-200'
-                    }`}>
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                        isCompleted ? 'bg-green-500 text-white' :
-                        isCurrent ? 'bg-primary text-white' :
-                        'bg-slate-300 text-slate-600'
-                      }`}>
-                        {isCompleted ? (
-                          <CheckCircle className="w-5 h-5" />
-                        ) : (
-                          <IconComponent className="w-5 h-5" />
-                        )}
-                      </div>
-                      <div className="flex-1">
-                        <h4 className="font-semibold text-slate-800">{step.title}</h4>
-                        <p className="text-sm text-slate-600">{step.description}</p>
-                      </div>
-                      {isCompleted && (
-                        <Badge variant="default" className="bg-green-500">
-                          Complete
-                        </Badge>
-                      )}
-                      {isCurrent && (
-                        <Badge variant="default">
-                          In Progress
-                        </Badge>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
+              <InteractiveProgressTracker 
+                clientId={profile.id} 
+                onProgressUpdate={fetchClientProfile}
+              />
             </div>
           </CardContent>
         </Card>

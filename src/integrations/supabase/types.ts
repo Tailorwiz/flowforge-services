@@ -103,6 +103,50 @@ export type Database = {
           },
         ]
       }
+      client_progress: {
+        Row: {
+          client_id: string
+          completed_at: string | null
+          created_at: string
+          id: string
+          metadata: Json | null
+          status: string
+          step_name: string
+          step_number: number
+          updated_at: string
+        }
+        Insert: {
+          client_id: string
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          status?: string
+          step_name: string
+          step_number: number
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          status?: string
+          step_name?: string
+          step_number?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_progress_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       client_tasks: {
         Row: {
           assigned_date: string | null
@@ -212,12 +256,15 @@ export type Database = {
           email: string
           estimated_delivery_date: string | null
           id: string
+          intake_form_submitted: boolean | null
           is_rush: boolean
           name: string
           payment_status: string | null
           phone: string | null
+          resume_uploaded: boolean | null
           rush_deadline: string | null
           service_type_id: string | null
+          session_booked: boolean | null
           status: string | null
           stripe_customer_id: string | null
           updated_at: string
@@ -228,12 +275,15 @@ export type Database = {
           email: string
           estimated_delivery_date?: string | null
           id?: string
+          intake_form_submitted?: boolean | null
           is_rush?: boolean
           name: string
           payment_status?: string | null
           phone?: string | null
+          resume_uploaded?: boolean | null
           rush_deadline?: string | null
           service_type_id?: string | null
+          session_booked?: boolean | null
           status?: string | null
           stripe_customer_id?: string | null
           updated_at?: string
@@ -244,12 +294,15 @@ export type Database = {
           email?: string
           estimated_delivery_date?: string | null
           id?: string
+          intake_form_submitted?: boolean | null
           is_rush?: boolean
           name?: string
           payment_status?: string | null
           phone?: string | null
+          resume_uploaded?: boolean | null
           rush_deadline?: string | null
           service_type_id?: string | null
+          session_booked?: boolean | null
           status?: string | null
           stripe_customer_id?: string | null
           updated_at?: string
