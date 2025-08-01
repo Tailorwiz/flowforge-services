@@ -92,7 +92,7 @@ export function DocumentManager({
   const fetchDocuments = async () => {
     try {
       setLoading(true);
-      let query = supabase
+      let query = (supabase as any)
         .from('document_uploads')
         .select(`
           *,
@@ -160,26 +160,26 @@ export function DocumentManager({
     });
   };
 
-  const downloadDocument = async (document: DocumentUpload) => {
+  const downloadDocument = async (doc: DocumentUpload) => {
     try {
       const { data, error } = await supabase.storage
-        .from(document.bucket_name)
-        .download(document.file_path);
+        .from(doc.bucket_name)
+        .download(doc.file_path);
 
       if (error) throw error;
 
       const url = URL.createObjectURL(data);
-      const a = document.createElement('a');
+      const a = globalThis.document.createElement('a');
       a.href = url;
-      a.download = document.original_name;
-      document.body.appendChild(a);
+      a.download = doc.original_name;
+      globalThis.document.body.appendChild(a);
       a.click();
-      document.body.removeChild(a);
+      globalThis.document.body.removeChild(a);
       URL.revokeObjectURL(url);
 
       toast({
         title: "Download Started",
-        description: `Downloading ${document.original_name}`,
+        description: `Downloading ${doc.original_name}`,
       });
     } catch (error: any) {
       console.error('Download error:', error);
@@ -193,7 +193,7 @@ export function DocumentManager({
 
   const archiveDocument = async (documentId: string) => {
     try {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('document_uploads')
         .update({ status: 'archived' })
         .eq('id', documentId);

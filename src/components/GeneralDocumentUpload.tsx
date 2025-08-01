@@ -117,7 +117,7 @@ export function GeneralDocumentUpload({
         };
 
         // Using RPC call to insert since table might not be in types
-        const { data: dbData, error: dbError } = await supabase.rpc('create_document_upload', {
+        const { data: dbData, error: dbError } = await (supabase as any).rpc('create_document_upload', {
           p_client_id: clientId || null,
           p_intake_form_id: intakeFormId || null,
           p_file_name: fileName,
