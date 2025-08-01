@@ -152,7 +152,9 @@ const ProgressTracker: React.FC<ProgressTrackerProps> = ({
 
   const openIntakeForm = () => {
     console.log('Opening intake form...');
+    console.log('Current showIntakeForm state:', showIntakeForm);
     setShowIntakeForm(!showIntakeForm);
+    console.log('Setting showIntakeForm to:', !showIntakeForm);
   };
 
   const handleInputChange = (field: string, value: string) => {
