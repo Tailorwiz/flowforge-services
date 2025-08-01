@@ -85,6 +85,13 @@ export default function ClientPortal() {
     }
   }, [user, authLoading, navigate]);
 
+  // Handle case where user is authenticated but has no client profile
+  useEffect(() => {
+    if (!authLoading && !loading && user && !profile) {
+      navigate('/login');
+    }
+  }, [user, authLoading, loading, profile, navigate]);
+
   useEffect(() => {
     if (user) {
       fetchClientProfile();
