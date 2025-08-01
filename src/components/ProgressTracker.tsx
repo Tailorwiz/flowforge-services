@@ -134,15 +134,30 @@ const ProgressTracker: React.FC<ProgressTrackerProps> = ({
   };
 
   const openIntakeForm = () => {
-    toast({
-      title: "Intake Form",
-      description: "Opening intake questionnaire...",
-    });
-    
-    // Simulate form completion after 2 seconds
-    setTimeout(() => {
-      markStepCompleted(1);
-    }, 2000);
+    console.log('Opening intake form...');
+    if (clientData?.id) {
+      const intakeFormUrl = `/intake-form?client=${clientData.id}`;
+      const popup = window.open(intakeFormUrl, 'intakeForm', 'width=800,height=900,scrollbars=yes,resizable=yes');
+      
+      if (!popup) {
+        // Fallback if popup is blocked
+        window.location.href = intakeFormUrl;
+      } else {
+        // Listen for the popup to close and refresh data
+        const checkClosed = setInterval(() => {
+          if (popup.closed) {
+            clearInterval(checkClosed);
+            window.location.reload(); // Refresh to update progress
+          }
+        }, 1000);
+      }
+    } else {
+      toast({
+        title: "Error",
+        description: "Client information not loaded. Please refresh the page.",
+        variant: "destructive",
+      });
+    }
   };
 
   const openResumeUpload = () => {
