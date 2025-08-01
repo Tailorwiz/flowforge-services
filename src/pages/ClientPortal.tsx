@@ -38,6 +38,7 @@ import { Textarea } from "@/components/ui/textarea";
 import RDRLogo from "@/components/RDRLogo";
 import AvatarUpload from "@/components/AvatarUpload";
 import { ClientDeliveries } from "@/components/ClientDeliveries";
+import ProgressTracker from "@/components/ProgressTracker";
 
 interface ClientProfile {
   id: string;
@@ -637,68 +638,13 @@ export default function ClientPortal() {
           </CardContent>
         </Card>
 
-        {/* Progress Tracker */}
-        <Card className="mb-8 shadow-lg border-0">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <CheckCircle className="w-5 h-5 text-primary" />
-              Your Progress
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-6">
-              <div>
-                <div className="flex justify-between text-sm mb-2">
-                  <span className="font-medium">Overall Progress</span>
-                  <span className="text-primary font-semibold">{Math.round(progressPercentage)}% Complete</span>
-                </div>
-                <Progress value={progressPercentage} className="h-3" />
-              </div>
-              
-              <div className="grid gap-4">
-                {PROGRESS_STEPS.map((step, index) => {
-                  const isCompleted = profile.progress_step > step.id;
-                  const isCurrent = profile.progress_step === step.id;
-                  const IconComponent = step.icon;
-                  
-                  return (
-                    <div key={step.id} className={`flex items-center gap-4 p-4 rounded-lg border ${
-                      isCompleted ? 'bg-green-50 border-green-200' :
-                      isCurrent ? 'bg-primary/5 border-primary/20' :
-                      'bg-slate-50 border-slate-200'
-                    }`}>
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                        isCompleted ? 'bg-green-500 text-white' :
-                        isCurrent ? 'bg-primary text-white' :
-                        'bg-slate-300 text-slate-600'
-                      }`}>
-                        {isCompleted ? (
-                          <CheckCircle className="w-5 h-5" />
-                        ) : (
-                          <IconComponent className="w-5 h-5" />
-                        )}
-                      </div>
-                      <div className="flex-1">
-                        <h4 className="font-semibold text-slate-800">{step.title}</h4>
-                        <p className="text-sm text-slate-600">{step.description}</p>
-                      </div>
-                      {isCompleted && (
-                        <Badge variant="default" className="bg-green-500">
-                          Complete
-                        </Badge>
-                      )}
-                      {isCurrent && (
-                        <Badge variant="default">
-                          In Progress
-                        </Badge>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Progress Tracker - Functional Version */}
+        <ProgressTracker 
+          clientId={profile?.id}
+          onProgressUpdate={(newStep) => {
+            setProfile(prev => prev ? { ...prev, progress_step: newStep } : null);
+          }}
+        />
 
         {/* Main Content Tabs */}
         <Tabs defaultValue="deliveries" className="space-y-6">
