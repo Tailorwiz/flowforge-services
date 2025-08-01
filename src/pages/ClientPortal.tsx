@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/components/AuthProvider";
 import { supabase } from "@/integrations/supabase/client";
@@ -771,230 +771,170 @@ export default function ClientPortal() {
                   
                   console.log(`Step ${step.id}: progress_step=${profile.progress_step}, isCompleted=${isCompleted}, isClickable=${isClickable}`);
                   
-                  return (
-                    <div 
-                      key={step.id} 
-                      className={`flex items-center gap-4 p-4 rounded-lg border transition-all ${
-                        isCompleted ? 'bg-green-50 border-green-200' :
-                        isCurrent ? 'bg-primary/5 border-primary/20' :
-                        'bg-slate-50 border-slate-200'
-                      } ${isClickable ? 'cursor-pointer hover:shadow-md hover:border-primary/40' : ''}`}
-                      onClick={() => isClickable && handleIntakeFormClick()}
-                    >
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                        isCompleted ? 'bg-green-500 text-white' :
-                        isCurrent ? 'bg-primary text-white' :
-                        'bg-slate-300 text-slate-600'
-                      }`}>
-                        {isCompleted ? (
-                          <CheckCircle className="w-5 h-5" />
-                        ) : (
-                          <IconComponent className="w-5 h-5" />
-                        )}
-                      </div>
-                      <div className="flex-1">
-                        <h4 className="font-semibold text-slate-800">{step.title}</h4>
-                        <p className="text-sm text-slate-600">{step.description}</p>
-                      </div>
-                      {isCompleted && (
-                        <Badge variant="default" className="bg-green-500">
-                          Complete
-                        </Badge>
-                      )}
-                      {isCurrent && (
-                        <Badge variant="default">
-                          In Progress
-                        </Badge>
-                      )}
-                      {(isClickable || step.id === 1) && (
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (step.id === 1) {
-                              handleIntakeFormClick();
-                            }
-                          }}
-                        >
+                   return (
+                     <div 
+                       key={step.id} 
+                       className={`flex items-center gap-4 p-4 rounded-lg border transition-all ${
+                         isCompleted ? 'bg-green-50 border-green-200' :
+                         isCurrent ? 'bg-primary/5 border-primary/20' :
+                         'bg-slate-50 border-slate-200'
+                       } ${isClickable ? 'cursor-pointer hover:shadow-md hover:border-primary/40' : ''}`}
+                       onClick={() => isClickable && handleIntakeFormClick()}
+                     >
+                       <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                         isCompleted ? 'bg-green-500 text-white' :
+                         isCurrent ? 'bg-primary text-white' :
+                         'bg-slate-300 text-slate-600'
+                       }`}>
+                         {isCompleted ? (
+                           <CheckCircle className="w-5 h-5" />
+                         ) : (
+                           <IconComponent className="w-5 h-5" />
+                         )}
+                       </div>
+                       <div className="flex-1">
+                         <h4 className="font-semibold text-slate-800">{step.title}</h4>
+                         <p className="text-sm text-slate-600">{step.description}</p>
+                       </div>
+                       {isCompleted && (
+                         <Badge variant="default" className="bg-green-500">
+                           Completed
+                         </Badge>
+                       )}
+                       {isCurrent && !isCompleted && (
+                         <Badge variant="secondary" className="bg-primary/10 text-primary">
+                           In Progress
+                         </Badge>
+                       )}
+                       {(isClickable || step.id === 1) && (
+                         <Button 
+                           variant="outline" 
+                           size="sm"
+                           onClick={(e) => {
+                             e.stopPropagation();
+                             if (step.id === 1) {
+                               handleIntakeFormClick();
+                             }
+                           }}
+                         >
                            {isCompleted && step.id === 1 ? 'Update' : 'Start'} →
                          </Button>
-                        )}
-                      </div>
-                      
-                      {/* Intake Form Collapsible - appears directly after step 1 */}
-                      {step.id === 1 && showIntakeForm && (
-                        <div className="mt-4">
-                          <div className="bg-slate-50 p-6 rounded-lg border border-slate-200">
-                            <h4 className="text-lg font-semibold text-slate-800 mb-4">Intake Questionnaire</h4>
-                            <form onSubmit={handleIntakeSubmit} className="space-y-4">
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                  <Label htmlFor="currentJobTitle">Current Job Title</Label>
-                                  <Input
-                                    id="currentJobTitle"
-                                    value={formData.currentJobTitle}
-                                    onChange={(e) => handleInputChange('currentJobTitle', e.target.value)}
-                                    placeholder="e.g., Senior Software Engineer"
-                                    required
-                                  />
-                                </div>
-                                <div>
-                                  <Label htmlFor="targetJobTitle">Target Job Title</Label>
-                                  <Input
-                                    id="targetJobTitle"
-                                    value={formData.targetJobTitle}
-                                    onChange={(e) => handleInputChange('targetJobTitle', e.target.value)}
-                                    placeholder="e.g., Lead Software Engineer"
-                                    required
-                                  />
-                                </div>
-                              </div>
-
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                  <Label htmlFor="industry">Industry</Label>
-                                  <Input
-                                    id="industry"
-                                    value={formData.industry}
-                                    onChange={(e) => handleInputChange('industry', e.target.value)}
-                                    placeholder="e.g., Technology, Healthcare, Finance"
-                                    required
-                                  />
-                                </div>
-                                <div>
-                                  <Label htmlFor="experience">Years of Experience</Label>
-                                  <Input
-                                    id="experience"
-                                    value={formData.experience}
-                                    onChange={(e) => handleInputChange('experience', e.target.value)}
-                                    placeholder="e.g., 5-7 years"
-                                    required
-                                  />
-                                </div>
-                              </div>
-
-                              <div>
-                                <Label htmlFor="careerGoals">Career Goals</Label>
-                                <Textarea
-                                  id="careerGoals"
-                                  value={formData.careerGoals}
-                                  onChange={(e) => handleInputChange('careerGoals', e.target.value)}
-                                  placeholder="What are your short-term and long-term career goals?"
-                                  rows={3}
-                                  required
-                                />
-                              </div>
-
-                              <div>
-                                <Label htmlFor="challenges">Current Challenges</Label>
-                                <Textarea
-                                  id="challenges"
-                                  value={formData.challenges}
-                                  onChange={(e) => handleInputChange('challenges', e.target.value)}
-                                  placeholder="What challenges are you facing in your job search or career?"
-                                  rows={3}
-                                />
-                              </div>
-
-                              <div>
-                                <Label htmlFor="additionalInfo">Additional Information</Label>
-                                <Textarea
-                                  id="additionalInfo"
-                                  value={formData.additionalInfo}
-                                  onChange={(e) => handleInputChange('additionalInfo', e.target.value)}
-                                  placeholder="Any additional information you'd like us to know?"
-                                  rows={2}
-                                />
-                              </div>
-
-                              <div className="flex gap-4 pt-4">
-                                <Button 
-                                  type="submit" 
-                                  disabled={formLoading}
-                                  className="flex-1"
-                                >
-                                  {formLoading ? 'Submitting...' : 'Submit Intake Form'}
-                                </Button>
-                                <Button 
-                                  type="button" 
-                                  variant="outline"
-                                  onClick={() => setShowIntakeForm(false)}
-                                  disabled={formLoading}
-                                >
-                                  Cancel
-                                </Button>
-                              </div>
-                            </form>
-                          </div>
-                         </div>
                        )}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+                     </div>
+                   );
+                 })}
+               </div>
+               
+               {/* Intake Form Collapsible */}
+               {showIntakeForm && (
+                 <div className="mt-6">
+                   <div className="bg-slate-50 p-6 rounded-lg border border-slate-200">
+                     <h4 className="text-lg font-semibold text-slate-800 mb-4">Intake Questionnaire</h4>
+                     <form onSubmit={handleIntakeSubmit} className="space-y-4">
+                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                         <div>
+                           <Label htmlFor="currentJobTitle">Current Job Title</Label>
+                           <Input
+                             id="currentJobTitle"
+                             value={formData.currentJobTitle}
+                             onChange={(e) => handleInputChange('currentJobTitle', e.target.value)}
+                             placeholder="e.g., Senior Software Engineer"
+                             required
+                           />
+                         </div>
+                         <div>
+                           <Label htmlFor="targetJobTitle">Target Job Title</Label>
+                           <Input
+                             id="targetJobTitle"
+                             value={formData.targetJobTitle}
+                             onChange={(e) => handleInputChange('targetJobTitle', e.target.value)}
+                             placeholder="e.g., Lead Software Engineer"
+                             required
+                           />
+                         </div>
+                       </div>
 
-        {/* Main Content Tabs */}
-        <Tabs defaultValue="deliveries" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-8 bg-white shadow-sm border">
-            <TabsTrigger value="deliveries" className="flex items-center gap-2">
-              <Package className="w-4 h-4" />
-              Deliveries
-            </TabsTrigger>
-            <TabsTrigger value="documents" className="flex items-center gap-2">
-              <FileText className="w-4 h-4" />
-              Documents
-            </TabsTrigger>
-            <TabsTrigger value="action-items" className="flex items-center gap-2">
-              <ListTodo className="w-4 h-4" />
-              Action Items
-            </TabsTrigger>
-            <TabsTrigger value="training" className="flex items-center gap-2">
-              <BookOpen className="w-4 h-4" />
-              Training
-            </TabsTrigger>
-            <TabsTrigger value="messages" className="flex items-center gap-2">
-              <MessageCircle className="w-4 h-4" />
-              Messages
-            </TabsTrigger>
-            <TabsTrigger value="alerts" className="flex items-center gap-2">
-              <Bell className="w-4 h-4" />
-              Alerts
-              {alerts.filter(a => !a.read).length > 0 && (
-                <span className="bg-orange-500 text-white text-xs rounded-full px-1.5 py-0.5 ml-1">
-                  {alerts.filter(a => !a.read).length}
-                </span>
-              )}
-            </TabsTrigger>
-            <TabsTrigger value="profile" className="flex items-center gap-2">
-              <User className="w-4 h-4" />
-              Profile
-            </TabsTrigger>
-            <TabsTrigger value="help" className="flex items-center gap-2">
-              <HelpCircle className="w-4 h-4" />
-              Help
-            </TabsTrigger>
-          </TabsList>
+                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                         <div>
+                           <Label htmlFor="industry">Industry</Label>
+                           <Input
+                             id="industry"
+                             value={formData.industry}
+                             onChange={(e) => handleInputChange('industry', e.target.value)}
+                             placeholder="e.g., Technology, Healthcare, Finance"
+                             required
+                           />
+                         </div>
+                         <div>
+                           <Label htmlFor="experience">Years of Experience</Label>
+                           <Input
+                             id="experience"
+                             value={formData.experience}
+                             onChange={(e) => handleInputChange('experience', e.target.value)}
+                             placeholder="e.g., 5-7 years"
+                             required
+                           />
+                         </div>
+                       </div>
 
-          {/* Deliveries Tab */}
-          <TabsContent value="deliveries">
-            <ClientDeliveries />
-          </TabsContent>
+                       <div>
+                         <Label htmlFor="careerGoals">Career Goals</Label>
+                         <Textarea
+                           id="careerGoals"
+                           value={formData.careerGoals}
+                           onChange={(e) => handleInputChange('careerGoals', e.target.value)}
+                           placeholder="What are your short-term and long-term career goals?"
+                           rows={3}
+                           required
+                         />
+                       </div>
 
-          {/* Documents Tab */}
-          <TabsContent value="documents">
-            <Card className="shadow-lg border-0">
-              <CardHeader>
-                <CardTitle>Your Documents</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {documents.map((doc) => {
-                    const IconComponent = doc.icon;
-                    return (
+                       <div>
+                         <Label htmlFor="challenges">Current Challenges</Label>
+                         <Textarea
+                           id="challenges"
+                           value={formData.challenges}
+                           onChange={(e) => handleInputChange('challenges', e.target.value)}
+                           placeholder="What challenges are you facing in your job search or career?"
+                           rows={3}
+                         />
+                       </div>
+
+                       <div>
+                         <Label htmlFor="additionalInfo">Additional Information</Label>
+                         <Textarea
+                           id="additionalInfo"
+                           value={formData.additionalInfo}
+                           onChange={(e) => handleInputChange('additionalInfo', e.target.value)}
+                           placeholder="Any additional information you'd like us to know?"
+                           rows={2}
+                         />
+                       </div>
+
+                       <div className="flex gap-4 pt-4">
+                         <Button 
+                           type="submit" 
+                           disabled={formLoading}
+                           className="flex-1"
+                         >
+                           {formLoading ? 'Submitting...' : 'Submit Intake Form'}
+                         </Button>
+                         <Button 
+                           type="button" 
+                           variant="outline"
+                           onClick={() => setShowIntakeForm(false)}
+                           disabled={formLoading}
+                         >
+                           Cancel
+                         </Button>
+                       </div>
+                     </form>
+                   </div>
+                 </div>
+               )}
+             </div>
+           </CardContent>
+         </Card>
                       <Card key={doc.id} className="border border-slate-200 hover:shadow-md transition-shadow">
                         <CardContent className="p-6 text-center">
                           <div className="w-16 h-16 mx-auto mb-4 bg-primary/10 rounded-full flex items-center justify-center">
@@ -1012,15 +952,143 @@ export default function ClientPortal() {
                           )}
                         </CardContent>
                       </Card>
-                    );
-                  })}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
+                     );
+                   })}
+                 </div>
+               </CardContent>
+             </Card>
+           </TabsContent>
 
-          {/* Action Items Tab */}
-          <TabsContent value="action-items">
+           {/* Main Content Tabs */}
+           <Tabs defaultValue="deliveries" className="space-y-6">
+             <TabsList className="grid w-full grid-cols-8 bg-white shadow-sm border">
+               <TabsTrigger value="deliveries" className="flex items-center gap-2">
+                 <Package className="w-4 h-4" />
+                 Deliveries
+               </TabsTrigger>
+               <TabsTrigger value="documents" className="flex items-center gap-2">
+                 <FileText className="w-4 h-4" />
+                 Documents
+               </TabsTrigger>
+               <TabsTrigger value="action-items" className="flex items-center gap-2">
+                 <ListTodo className="w-4 h-4" />
+                 Action Items
+               </TabsTrigger>
+               <TabsTrigger value="training" className="flex items-center gap-2">
+                 <BookOpen className="w-4 h-4" />
+                 Training
+               </TabsTrigger>
+               <TabsTrigger value="messages" className="flex items-center gap-2">
+                 <MessageSquare className="w-4 h-4" />
+                 Messages
+               </TabsTrigger>
+               <TabsTrigger value="alerts" className="flex items-center gap-2">
+                 <AlertCircle className="w-4 h-4" />
+                 Alerts
+               </TabsTrigger>
+               <TabsTrigger value="profile" className="flex items-center gap-2">
+                 <Settings className="w-4 h-4" />
+                 Profile
+               </TabsTrigger>
+               <TabsTrigger value="help" className="flex items-center gap-2">
+                 <HelpCircle className="w-4 h-4" />
+                 Help
+               </TabsTrigger>
+             </TabsList>
+
+             {/* Deliveries Tab */}
+             <TabsContent value="deliveries">
+               <Card className="shadow-lg border-0">
+                 <CardHeader>
+                   <CardTitle className="flex items-center gap-2">
+                     <Package className="w-5 h-5 text-primary" />
+                     Your Deliveries
+                   </CardTitle>
+                 </CardHeader>
+                 <CardContent>
+                   <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                     {documents.map((doc) => {
+                       const getIcon = (type: string) => {
+                         switch (type.toLowerCase()) {
+                           case 'resume': return FileText;
+                           case 'cover letter': return MessageSquare;
+                           case 'linkedin': return User;
+                           default: return FileText;
+                         }
+                       };
+                       const IconComponent = getIcon(doc.type);
+                       
+                       return (
+                         <Card key={doc.id} className="hover:shadow-md transition-shadow">
+                           <CardContent className="p-4">
+                             <div className="flex items-center gap-3 mb-3">
+                               <IconComponent className="w-8 h-8 text-primary" />
+                             </div>
+                             <h3 className="font-semibold text-slate-800 mb-2">{doc.name}</h3>
+                             <Badge variant={doc.status === 'in_progress' ? 'default' : 'secondary'}>
+                               {doc.status === 'in_progress' ? 'In Progress' : 'Pending'}
+                             </Badge>
+                             {doc.status === 'completed' && (
+                               <Button className="w-full mt-4" variant="outline">
+                                 <Download className="w-4 h-4 mr-2" />
+                                 Download
+                               </Button>
+                             )}
+                           </CardContent>
+                         </Card>
+                       );
+                     })}
+                   </div>
+                 </CardContent>
+               </Card>
+             </TabsContent>
+
+             {/* Documents Tab */}
+             <TabsContent value="documents">
+               <Card className="shadow-lg border-0">
+                 <CardHeader>
+                   <CardTitle className="flex items-center gap-2">
+                     <FileText className="w-5 h-5 text-primary" />
+                     Document Library
+                   </CardTitle>
+                 </CardHeader>
+                 <CardContent>
+                   <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                     {documents.map((doc) => {
+                       const getIcon = (type: string) => {
+                         switch (type.toLowerCase()) {
+                           case 'resume': return FileText;
+                           case 'cover letter': return MessageSquare;
+                           case 'linkedin': return User;
+                           default: return FileText;
+                         }
+                       };
+                       const IconComponent = getIcon(doc.type);
+                       
+                       return (
+                         <Card key={doc.id} className="hover:shadow-md transition-shadow">
+                           <CardContent className="p-4">
+                             <div className="flex items-center gap-3 mb-3">
+                               <IconComponent className="w-8 h-8 text-primary" />
+                             </div>
+                             <h3 className="font-semibold text-slate-800 mb-2">{doc.name}</h3>
+                             <Badge variant={doc.status === 'in_progress' ? 'default' : 'secondary'}>
+                               {doc.status === 'in_progress' ? 'In Progress' : 'Pending'}
+                             </Badge>
+                             {doc.status === 'completed' && (
+                               <Button className="w-full mt-4" variant="outline">
+                                 <Download className="w-4 h-4 mr-2" />
+                                 Download
+                               </Button>
+                             )}
+                           </CardContent>
+                         </Card>
+                       );
+                     })}
+                   </div>
+                 </CardContent>
+               </Card>
+             </TabsContent>
             <Card className="shadow-lg border-0">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
