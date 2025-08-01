@@ -1,8 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { Check, Clock, Upload, Calendar, Eye, FileText, ChevronRight } from 'lucide-react';
+import { Check, Clock, Upload, Calendar, Eye, FileText, ChevronRight, ChevronDown, ChevronUp } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './AuthProvider';
 import { Button } from './ui/button';
+import { Input } from './ui/input';
+import { Label } from './ui/label';
+import { Textarea } from './ui/textarea';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './ui/collapsible';
 import { toast } from '@/hooks/use-toast';
 
 interface Step {
@@ -39,6 +43,19 @@ const ProgressTracker: React.FC<ProgressTrackerProps> = ({
   const [currentStep, setCurrentStep] = useState(1);
   // Local storage for demo progress tracking
   const [localProgress, setLocalProgress] = useState<Record<number, boolean>>({});
+  
+  // Intake form state
+  const [showIntakeForm, setShowIntakeForm] = useState(false);
+  const [formLoading, setFormLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    currentJobTitle: '',
+    targetJobTitle: '',
+    industry: '',
+    experience: '',
+    careerGoals: '',
+    challenges: '',
+    additionalInfo: ''
+  });
 
   // Fetch client data from database
   useEffect(() => {
@@ -135,28 +152,92 @@ const ProgressTracker: React.FC<ProgressTrackerProps> = ({
 
   const openIntakeForm = () => {
     console.log('Opening intake form...');
-    if (clientData?.id) {
-      const intakeFormUrl = `/intake-form?client=${clientData.id}`;
-      const popup = window.open(intakeFormUrl, 'intakeForm', 'width=800,height=900,scrollbars=yes,resizable=yes');
-      
-      if (!popup) {
-        // Fallback if popup is blocked
-        window.location.href = intakeFormUrl;
-      } else {
-        // Listen for the popup to close and refresh data
-        const checkClosed = setInterval(() => {
-          if (popup.closed) {
-            clearInterval(checkClosed);
-            window.location.reload(); // Refresh to update progress
-          }
-        }, 1000);
+    setShowIntakeForm(!showIntakeForm);
+  };
+
+  const handleInputChange = (field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleIntakeSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setFormLoading(true);
+
+    try {
+      console.log('=== INTAKE FORM SUBMISSION DEBUG ===');
+      console.log('Form data:', formData);
+      console.log('Client ID:', clientData?.id);
+      console.log('User ID:', user?.id);
+
+      if (!clientData?.id) {
+        throw new Error('Client information not loaded');
       }
-    } else {
+
+      if (!user?.id) {
+        throw new Error('User not authenticated');
+      }
+
+      // Save intake form data to client history
+      const { data: historyData, error: historyError } = await supabase
+        .from('client_history')
+        .insert({
+          client_id: clientData.id,
+          action_type: 'intake_form_completed',
+          description: 'Client completed intake questionnaire',
+          metadata: formData,
+          created_by: user.id
+        })
+        .select();
+
+      if (historyError) {
+        console.error('History insert error:', historyError);
+        throw historyError;
+      }
+
+      // Update client progress
+      const { data: updateData, error: updateError } = await supabase
+        .from('clients')
+        .update({ 
+          intake_form_submitted: true,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', clientData.id)
+        .select();
+
+      if (updateError) {
+        console.error('Client update error:', updateError);
+        throw updateError;
+      }
+
+      // Mark step as completed
+      markStepCompleted(1);
+      setShowIntakeForm(false);
+      
+      toast({
+        title: "Intake Form Submitted!",
+        description: "Thank you for completing your intake questionnaire. We'll review your information and get started on your project.",
+      });
+
+      // Reset form
+      setFormData({
+        currentJobTitle: '',
+        targetJobTitle: '',
+        industry: '',
+        experience: '',
+        careerGoals: '',
+        challenges: '',
+        additionalInfo: ''
+      });
+
+    } catch (error: any) {
+      console.error('Error submitting intake form:', error);
       toast({
         title: "Error",
-        description: "Client information not loaded. Please refresh the page.",
+        description: `Failed to submit intake form: ${error.message || 'Please try again.'}`,
         variant: "destructive",
       });
+    } finally {
+      setFormLoading(false);
     }
   };
 
@@ -357,6 +438,116 @@ const ProgressTracker: React.FC<ProgressTrackerProps> = ({
                       </Button>
                     )}
                   </div>
+                  
+                  {/* Intake Form Collapsible */}
+                  {step.id === 1 && showIntakeForm && (
+                    <Collapsible open={showIntakeForm} onOpenChange={setShowIntakeForm}>
+                      <CollapsibleContent className="mt-4">
+                        <div className="bg-slate-50 p-6 rounded-lg border border-slate-200">
+                          <h4 className="text-lg font-semibold text-rdr-navy mb-4">Intake Questionnaire</h4>
+                          <form onSubmit={handleIntakeSubmit} className="space-y-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <div>
+                                <Label htmlFor="currentJobTitle">Current Job Title</Label>
+                                <Input
+                                  id="currentJobTitle"
+                                  value={formData.currentJobTitle}
+                                  onChange={(e) => handleInputChange('currentJobTitle', e.target.value)}
+                                  placeholder="e.g., Senior Software Engineer"
+                                  required
+                                />
+                              </div>
+                              <div>
+                                <Label htmlFor="targetJobTitle">Target Job Title</Label>
+                                <Input
+                                  id="targetJobTitle"
+                                  value={formData.targetJobTitle}
+                                  onChange={(e) => handleInputChange('targetJobTitle', e.target.value)}
+                                  placeholder="e.g., Lead Software Engineer"
+                                  required
+                                />
+                              </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <div>
+                                <Label htmlFor="industry">Industry</Label>
+                                <Input
+                                  id="industry"
+                                  value={formData.industry}
+                                  onChange={(e) => handleInputChange('industry', e.target.value)}
+                                  placeholder="e.g., Technology, Healthcare, Finance"
+                                  required
+                                />
+                              </div>
+                              <div>
+                                <Label htmlFor="experience">Years of Experience</Label>
+                                <Input
+                                  id="experience"
+                                  value={formData.experience}
+                                  onChange={(e) => handleInputChange('experience', e.target.value)}
+                                  placeholder="e.g., 5-7 years"
+                                  required
+                                />
+                              </div>
+                            </div>
+
+                            <div>
+                              <Label htmlFor="careerGoals">Career Goals</Label>
+                              <Textarea
+                                id="careerGoals"
+                                value={formData.careerGoals}
+                                onChange={(e) => handleInputChange('careerGoals', e.target.value)}
+                                placeholder="What are your short-term and long-term career goals?"
+                                rows={3}
+                                required
+                              />
+                            </div>
+
+                            <div>
+                              <Label htmlFor="challenges">Current Challenges</Label>
+                              <Textarea
+                                id="challenges"
+                                value={formData.challenges}
+                                onChange={(e) => handleInputChange('challenges', e.target.value)}
+                                placeholder="What challenges are you facing in your job search or career?"
+                                rows={3}
+                              />
+                            </div>
+
+                            <div>
+                              <Label htmlFor="additionalInfo">Additional Information</Label>
+                              <Textarea
+                                id="additionalInfo"
+                                value={formData.additionalInfo}
+                                onChange={(e) => handleInputChange('additionalInfo', e.target.value)}
+                                placeholder="Any additional information you'd like us to know?"
+                                rows={2}
+                              />
+                            </div>
+
+                            <div className="flex gap-4 pt-4">
+                              <Button 
+                                type="submit" 
+                                disabled={formLoading}
+                                className="flex-1"
+                              >
+                                {formLoading ? 'Submitting...' : 'Submit Intake Form'}
+                              </Button>
+                              <Button 
+                                type="button" 
+                                variant="outline"
+                                onClick={() => setShowIntakeForm(false)}
+                                disabled={formLoading}
+                              >
+                                Cancel
+                              </Button>
+                            </div>
+                          </form>
+                        </div>
+                      </CollapsibleContent>
+                    </Collapsible>
+                  )}
                 </div>
               </div>
             );
