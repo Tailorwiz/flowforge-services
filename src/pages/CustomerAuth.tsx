@@ -21,14 +21,19 @@ export default function CustomerAuth() {
   const navigate = useNavigate();
 
   useEffect(() => {
+    console.log('CustomerAuth: Checking existing session...');
     // Check if user is already logged in
     const checkUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
+      console.log('CustomerAuth: Session found:', session ? 'Yes' : 'No');
       if (session) {
+        console.log('CustomerAuth: User email:', session.user.email);
         try {
           // For customer portal, always redirect to customer portal regardless of role
+          console.log('CustomerAuth: Redirecting to /portal');
           navigate("/portal");
         } catch (error) {
+          console.log('CustomerAuth: Error in redirect, going to /portal anyway');
           navigate("/portal");
         }
       }
