@@ -93,9 +93,16 @@ const ProgressTracker: React.FC<ProgressTrackerProps> = ({
   };
 
   const handleStepClick = async (stepId: number) => {
+    console.log('Progress Tracker: Step clicked:', stepId);
     const step = steps.find(s => s.id === stepId);
+    console.log('Progress Tracker: Step found:', step);
+    console.log('Progress Tracker: Step action available:', !!step?.action);
+    
     if (step?.action) {
+      console.log('Progress Tracker: Executing step action');
       step.action();
+    } else {
+      console.log('Progress Tracker: No action available for step');
     }
   };
 
@@ -261,14 +268,24 @@ const ProgressTracker: React.FC<ProgressTrackerProps> = ({
         <div className="space-y-6">
           {steps.map((step) => {
             const isClickable = step.action && (step.status === 'current' || (step.status === 'upcoming' && step.id <= currentStep));
+            console.log(`Progress Tracker: Step ${step.id} - Status: ${step.status}, Current Step: ${currentStep}, Clickable: ${isClickable}`);
             
             return (
               <div 
                 key={step.id} 
                 className={`relative flex items-center group ${
-                  isClickable ? 'cursor-pointer' : ''
+                  isClickable ? 'cursor-pointer border-2 border-dashed border-blue-300 p-2 rounded-lg' : ''
                 }`}
-                onClick={() => isClickable && handleStepClick(step.id)}
+                onClick={(e) => {
+                  console.log('Progress Tracker: Div clicked for step:', step.id);
+                  e.preventDefault();
+                  e.stopPropagation();
+                  if (isClickable) {
+                    handleStepClick(step.id);
+                  } else {
+                    console.log('Progress Tracker: Step not clickable');
+                  }
+                }}
               >
                 {/* Step Icon */}
                 <div className={`
@@ -312,8 +329,10 @@ const ProgressTracker: React.FC<ProgressTrackerProps> = ({
                       <Button 
                         variant="outline" 
                         size="sm"
-                        className="ml-4 opacity-0 group-hover:opacity-100 transition-opacity"
+                        className="ml-4 opacity-100 bg-blue-500 text-white hover:bg-blue-600"
                         onClick={(e) => {
+                          console.log('Progress Tracker: Button clicked for step:', step.id);
+                          e.preventDefault();
                           e.stopPropagation();
                           handleStepClick(step.id);
                         }}
