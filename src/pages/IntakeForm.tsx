@@ -37,32 +37,45 @@ export default function IntakeForm() {
     setLoading(true);
 
      try {
-      console.log('Submitting intake form with data:', formData);
+      console.log('=== INTAKE FORM SUBMISSION DEBUG ===');
+      console.log('Form data:', formData);
       console.log('Client ID from URL:', clientId);
       console.log('Client ID type:', typeof clientId);
+      console.log('User from auth:', user);
       console.log('User ID:', user?.id);
-      console.log('User object:', user);
+      console.log('User email:', user?.email);
 
       if (!clientId) {
         throw new Error('No client ID provided in URL');
       }
 
+      if (!user?.id) {
+        throw new Error('User not authenticated');
+      }
+
+      // Check current auth session
+      const { data: session, error: sessionError } = await supabase.auth.getSession();
+      console.log('Current session:', session);
+      console.log('Session error:', sessionError);
+
       // First verify we can read the client data
-      console.log('Verifying client access...');
+      console.log('=== TESTING CLIENT ACCESS ===');
       
       // Try to find ANY client first to see if RLS is the issue
+      console.log('Testing: Can we see any clients?');
       const { data: allClients, error: allClientsError } = await supabase
         .from('clients')
-        .select('id, user_id, name')
+        .select('id, user_id, name, email')
         .limit(5);
       
       console.log('All accessible clients:', allClients);
       console.log('All clients error:', allClientsError);
       
       // Now try to find the specific client
+      console.log('Testing: Can we see the specific client?');
       const { data: clientCheck, error: clientCheckError } = await supabase
         .from('clients')
-        .select('id, user_id, name')
+        .select('id, user_id, name, email')
         .eq('id', clientId)
         .maybeSingle();
       
@@ -76,10 +89,11 @@ export default function IntakeForm() {
       
       if (!clientCheck) {
         console.error('Client not found with ID:', clientId);
+        console.error('This might be an RLS policy issue');
         throw new Error('Client not found. Please check the URL and try again.');
       }
       
-      console.log('Client data:', clientCheck);
+      console.log('SUCCESS: Found client:', clientCheck);
 
       // Save intake form data to client history
       console.log('Inserting into client_history...');
