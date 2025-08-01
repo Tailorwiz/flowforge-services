@@ -58,13 +58,18 @@ export default function IntakeForm() {
 
       // Save intake form data to client history
       console.log('Inserting into client_history...');
+      
+      // Ensure metadata is properly formatted JSON
+      const metadata = JSON.parse(JSON.stringify(formData));
+      console.log('Metadata to insert:', metadata);
+      
       const { data: historyData, error: historyError } = await supabase
         .from('client_history')
         .insert({
           client_id: clientId,
           action_type: 'intake_form_completed',
           description: 'Client completed intake questionnaire',
-          metadata: formData,
+          metadata: metadata,
           created_by: user?.id
         })
         .select();
