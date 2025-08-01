@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from '@/components/ui/use-toast';
+import { Checkbox } from '@/components/ui/checkbox';
 import { 
   Eye, 
   CheckCircle, 
@@ -45,6 +46,7 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [selectedForm, setSelectedForm] = useState<IntakeFormData | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
+  const [selectedFormIds, setSelectedFormIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     fetchIntakeForms();
@@ -134,60 +136,124 @@ export default function AdminDashboard() {
     }
   };
 
-  const exportClientData = async (format: 'json' | 'csv' = 'json') => {
+  const exportSelectedForms = async (format: 'json' | 'csv' = 'json') => {
+    if (selectedFormIds.size === 0) {
+      toast({
+        title: "No Selection",
+        description: "Please select intake forms to export",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       setActionLoading(true);
       
-      const { data: session } = await supabase.auth.getSession();
-      if (!session.session) {
-        throw new Error('Not authenticated');
+      // Get selected forms data
+      const selectedForms = intakeForms.filter(form => selectedFormIds.has(form.id));
+      const exportData = selectedForms.map(form => ({
+        clientName: form.client.name,
+        clientEmail: form.client.email,
+        clientPhone: form.client.phone || '',
+        submissionDate: formatDate(form.created_at),
+        status: form.client.status,
+        formData: form.metadata || {},
+        // Flatten form data for easier export
+        ...Object.fromEntries(
+          Object.entries(form.metadata || {}).map(([key, value]) => [
+            key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()),
+            Array.isArray(value) ? value.join(', ') : String(value)
+          ])
+        )
+      }));
+
+      if (format === 'csv') {
+        // Create CSV content
+        const allKeys = new Set<string>();
+        exportData.forEach(item => {
+          Object.keys(item).forEach(key => allKeys.add(key));
+        });
+        
+        const headers = Array.from(allKeys);
+        const csvRows = [headers.join(',')];
+        
+        exportData.forEach(item => {
+          const row = headers.map(header => {
+            const value = item[header as keyof typeof item];
+            if (typeof value === 'object') {
+              return `"${JSON.stringify(value).replace(/"/g, '""')}"`;
+            }
+            return `"${String(value || '').replace(/"/g, '""')}"`;
+          });
+          csvRows.push(row.join(','));
+        });
+        
+        const csvContent = csvRows.join('\n');
+        const blob = new Blob([csvContent], { type: 'text/csv' });
+        
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `selected-intake-forms-${new Date().toISOString().split('T')[0]}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+      } else {
+        // JSON export
+        const jsonContent = JSON.stringify({
+          exportDate: new Date().toISOString(),
+          selectedCount: exportData.length,
+          intakeForms: exportData
+        }, null, 2);
+        
+        const blob = new Blob([jsonContent], { type: 'application/json' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `selected-intake-forms-${new Date().toISOString().split('T')[0]}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
       }
-
-      const response = await fetch(`https://gxatnnzwaggcvzzurgsq.supabase.co/functions/v1/export-client-data?format=${format}`, {
-        method: 'GET',
-        headers: {
-          Authorization: `Bearer ${session.session.access_token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Export failed');
-      }
-
-      const data = format === 'csv' ? await response.text() : await response.json();
-
-      
-
-      // Create download link
-      const blob = new Blob([format === 'csv' ? data : JSON.stringify(data, null, 2)], {
-        type: format === 'csv' ? 'text/csv' : 'application/json'
-      });
-      
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `client-data-${new Date().toISOString().split('T')[0]}.${format}`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      window.URL.revokeObjectURL(url);
 
       toast({
         title: "Success",
-        description: `Client data exported as ${format.toUpperCase()}`,
+        description: `${selectedFormIds.size} intake forms exported as ${format.toUpperCase()}`,
       });
+      
+      // Clear selection after export
+      setSelectedFormIds(new Set());
     } catch (error) {
       console.error('Export error:', error);
       toast({
         title: "Error",
-        description: "Failed to export client data",
+        description: "Failed to export selected forms",
         variant: "destructive",
       });
     } finally {
       setActionLoading(false);
     }
+  };
+
+  const toggleFormSelection = (formId: string) => {
+    const newSelection = new Set(selectedFormIds);
+    if (newSelection.has(formId)) {
+      newSelection.delete(formId);
+    } else {
+      newSelection.add(formId);
+    }
+    setSelectedFormIds(newSelection);
+  };
+
+  const selectAllForms = (forms: IntakeFormData[]) => {
+    const formIds = forms.map(f => f.id);
+    setSelectedFormIds(new Set(formIds));
+  };
+
+  const clearSelection = () => {
+    setSelectedFormIds(new Set());
   };
 
   const getStatusBadge = (status: string) => {
@@ -232,24 +298,35 @@ export default function AdminDashboard() {
             <p className="text-slate-600">Review and manage client intake forms</p>
           </div>
           <div className="flex space-x-2">
-            <Button
-              onClick={() => exportClientData('csv')}
-              disabled={actionLoading}
-              variant="outline"
-              className="flex items-center space-x-2"
-            >
-              <FileSpreadsheet className="h-4 w-4" />
-              <span>Export CSV</span>
-            </Button>
-            <Button
-              onClick={() => exportClientData('json')}
-              disabled={actionLoading}
-              variant="outline"
-              className="flex items-center space-x-2"
-            >
-              <Download className="h-4 w-4" />
-              <span>Export JSON</span>
-            </Button>
+            {selectedFormIds.size > 0 && (
+              <>
+                <Button
+                  onClick={() => exportSelectedForms('csv')}
+                  disabled={actionLoading}
+                  className="flex items-center space-x-2"
+                >
+                  <FileSpreadsheet className="h-4 w-4" />
+                  <span>Export Selected ({selectedFormIds.size}) CSV</span>
+                </Button>
+                <Button
+                  onClick={() => exportSelectedForms('json')}
+                  disabled={actionLoading}
+                  variant="outline"
+                  className="flex items-center space-x-2"
+                >
+                  <Download className="h-4 w-4" />
+                  <span>Export Selected ({selectedFormIds.size}) JSON</span>
+                </Button>
+                <Button
+                  onClick={clearSelection}
+                  disabled={actionLoading}
+                  variant="ghost"
+                  size="sm"
+                >
+                  Clear Selection
+                </Button>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -268,6 +345,9 @@ export default function AdminDashboard() {
             onViewForm={setSelectedForm}
             getStatusBadge={getStatusBadge}
             formatDate={formatDate}
+            selectedFormIds={selectedFormIds}
+            onToggleSelection={toggleFormSelection}
+            onSelectAll={selectAllForms}
           />
         </TabsContent>
 
@@ -277,6 +357,9 @@ export default function AdminDashboard() {
             onViewForm={setSelectedForm}
             getStatusBadge={getStatusBadge}
             formatDate={formatDate}
+            selectedFormIds={selectedFormIds}
+            onToggleSelection={toggleFormSelection}
+            onSelectAll={selectAllForms}
           />
         </TabsContent>
 
@@ -286,6 +369,9 @@ export default function AdminDashboard() {
             onViewForm={setSelectedForm}
             getStatusBadge={getStatusBadge}
             formatDate={formatDate}
+            selectedFormIds={selectedFormIds}
+            onToggleSelection={toggleFormSelection}
+            onSelectAll={selectAllForms}
           />
         </TabsContent>
 
@@ -295,6 +381,9 @@ export default function AdminDashboard() {
             onViewForm={setSelectedForm}
             getStatusBadge={getStatusBadge}
             formatDate={formatDate}
+            selectedFormIds={selectedFormIds}
+            onToggleSelection={toggleFormSelection}
+            onSelectAll={selectAllForms}
           />
         </TabsContent>
       </Tabs>
@@ -320,9 +409,20 @@ interface IntakeFormsListProps {
   onViewForm: (form: IntakeFormData) => void;
   getStatusBadge: (status: string) => JSX.Element;
   formatDate: (date: string) => string;
+  selectedFormIds: Set<string>;
+  onToggleSelection: (formId: string) => void;
+  onSelectAll: (forms: IntakeFormData[]) => void;
 }
 
-function IntakeFormsList({ forms, onViewForm, getStatusBadge, formatDate }: IntakeFormsListProps) {
+function IntakeFormsList({ 
+  forms, 
+  onViewForm, 
+  getStatusBadge, 
+  formatDate, 
+  selectedFormIds, 
+  onToggleSelection, 
+  onSelectAll 
+}: IntakeFormsListProps) {
   if (forms.length === 0) {
     return (
       <Card>
@@ -335,51 +435,83 @@ function IntakeFormsList({ forms, onViewForm, getStatusBadge, formatDate }: Inta
   }
 
   return (
-    <div className="grid gap-4">
-      {forms.map((form) => (
-        <Card key={form.id} className="hover:shadow-md transition-shadow">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-4">
-                <div className="bg-blue-100 p-2 rounded-full">
-                  <User className="h-5 w-5 text-blue-600" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-slate-800">{form.client.name}</h3>
-                  <div className="flex items-center space-x-4 text-sm text-slate-600 mt-1">
-                    <div className="flex items-center space-x-1">
-                      <Mail className="h-4 w-4" />
-                      <span>{form.client.email}</span>
-                    </div>
-                    {form.client.phone && (
+    <div className="space-y-4">
+      {forms.length > 0 && (
+        <div className="flex items-center justify-between p-4 bg-slate-50 rounded-lg">
+          <div className="flex items-center space-x-3">
+            <Checkbox
+              checked={forms.every(form => selectedFormIds.has(form.id))}
+              onCheckedChange={(checked) => {
+                if (checked) {
+                  onSelectAll(forms);
+                } else {
+                  // Clear all selections for current forms
+                  const newSelection = new Set(selectedFormIds);
+                  forms.forEach(form => newSelection.delete(form.id));
+                  onSelectAll([...newSelection].map(id => forms.find(f => f.id === id)).filter(Boolean) as IntakeFormData[]);
+                }
+              }}
+            />
+            <span className="text-sm font-medium">
+              Select All ({forms.length})
+            </span>
+          </div>
+          <span className="text-sm text-slate-600">
+            {selectedFormIds.size} selected
+          </span>
+        </div>
+      )}
+      
+      <div className="grid gap-4">
+        {forms.map((form) => (
+          <Card key={form.id} className="hover:shadow-md transition-shadow">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-4">
+                  <Checkbox
+                    checked={selectedFormIds.has(form.id)}
+                    onCheckedChange={() => onToggleSelection(form.id)}
+                  />
+                  <div className="bg-blue-100 p-2 rounded-full">
+                    <User className="h-5 w-5 text-blue-600" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-slate-800">{form.client.name}</h3>
+                    <div className="flex items-center space-x-4 text-sm text-slate-600 mt-1">
                       <div className="flex items-center space-x-1">
-                        <Phone className="h-4 w-4" />
-                        <span>{form.client.phone}</span>
+                        <Mail className="h-4 w-4" />
+                        <span>{form.client.email}</span>
                       </div>
-                    )}
-                    <div className="flex items-center space-x-1">
-                      <Calendar className="h-4 w-4" />
-                      <span>{formatDate(form.created_at)}</span>
+                      {form.client.phone && (
+                        <div className="flex items-center space-x-1">
+                          <Phone className="h-4 w-4" />
+                          <span>{form.client.phone}</span>
+                        </div>
+                      )}
+                      <div className="flex items-center space-x-1">
+                        <Calendar className="h-4 w-4" />
+                        <span>{formatDate(form.created_at)}</span>
+                      </div>
                     </div>
                   </div>
                 </div>
+                <div className="flex items-center space-x-3">
+                  {getStatusBadge(form.client.status)}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => onViewForm(form)}
+                    className="flex items-center space-x-1"
+                  >
+                    <Eye className="h-4 w-4" />
+                    <span>Review</span>
+                  </Button>
+                </div>
               </div>
-              <div className="flex items-center space-x-3">
-                {getStatusBadge(form.client.status)}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => onViewForm(form)}
-                  className="flex items-center space-x-1"
-                >
-                  <Eye className="h-4 w-4" />
-                  <span>Review</span>
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      ))}
+            </CardContent>
+          </Card>
+        ))}
+      </div>
     </div>
   );
 }
