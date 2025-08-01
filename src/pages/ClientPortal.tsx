@@ -716,14 +716,30 @@ export default function ClientPortal() {
 
         {/* Main Content Tabs */}
         <Tabs defaultValue="deliveries" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 bg-white shadow-sm border">
+          <TabsList className="grid w-full grid-cols-8 bg-white shadow-sm border">
             <TabsTrigger value="deliveries" className="flex items-center gap-2">
               <Package className="w-4 h-4" />
               Deliveries
             </TabsTrigger>
+            <TabsTrigger value="documents" className="flex items-center gap-2">
+              <FileText className="w-4 h-4" />
+              Documents
+            </TabsTrigger>
             <TabsTrigger value="action-items" className="flex items-center gap-2">
               <ListTodo className="w-4 h-4" />
               Action Items
+            </TabsTrigger>
+            <TabsTrigger value="training" className="flex items-center gap-2">
+              <BookOpen className="w-4 h-4" />
+              Training
+            </TabsTrigger>
+            <TabsTrigger value="messages" className="flex items-center gap-2">
+              <MessageSquare className="w-4 h-4" />
+              Messages
+            </TabsTrigger>
+            <TabsTrigger value="alerts" className="flex items-center gap-2">
+              <AlertCircle className="w-4 h-4" />
+              Alerts
             </TabsTrigger>
             <TabsTrigger value="profile" className="flex items-center gap-2">
               <Settings className="w-4 h-4" />
@@ -738,6 +754,60 @@ export default function ClientPortal() {
           {/* Deliveries Tab */}
           <TabsContent value="deliveries">
             <ClientDeliveries />
+          </TabsContent>
+
+          {/* Documents Tab */}
+          <TabsContent value="documents">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="w-5 h-5 text-primary" />
+                  Documents
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  {documents.map((doc) => {
+                    const getIcon = (type: string) => {
+                      switch (type.toLowerCase()) {
+                        case 'resume': return FileText;
+                        case 'cover letter': return MessageSquare;
+                        case 'linkedin': return User;
+                        default: return FileText;
+                      }
+                    };
+                    const IconComponent = getIcon(doc.type);
+                    
+                    return (
+                      <Card key={doc.id} className="border border-slate-200">
+                        <CardContent className="p-4">
+                          <div className="flex items-center gap-3 mb-3">
+                            <div className="p-2 bg-primary/10 rounded-lg">
+                              <IconComponent className="w-5 h-5 text-primary" />
+                            </div>
+                            <div className="flex-1">
+                              <h3 className="font-medium text-slate-800">{doc.name}</h3>
+                              <Badge variant={
+                                doc.status === 'completed' ? 'default' :
+                                doc.status === 'in_progress' ? 'secondary' : 'outline'
+                              }>
+                                {doc.status.replace('_', ' ')}
+                              </Badge>
+                            </div>
+                          </div>
+                          {doc.status === 'completed' && (
+                            <Button size="sm" className="w-full">
+                              <Download className="w-4 h-4 mr-2" />
+                              Download
+                            </Button>
+                          )}
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
 
           {/* Action Items Tab */}
@@ -765,6 +835,131 @@ export default function ClientPortal() {
                       </div>
                       <p className="text-slate-600 text-sm mb-2">{item.description}</p>
                       <p className="text-xs text-slate-500">Due: {item.due_date}</p>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Training Tab */}
+          <TabsContent value="training">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <BookOpen className="w-5 h-5 text-primary" />
+                  Training Materials
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                  {trainingMaterials.map((material) => (
+                    <Card key={material.id} className="border border-slate-200 overflow-hidden">
+                      <div className="aspect-video bg-slate-100">
+                        <img 
+                          src={material.thumbnail_url} 
+                          alt={material.name}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <CardContent className="p-4">
+                        <h3 className="font-semibold text-slate-800 mb-2">{material.name}</h3>
+                        <p className="text-sm text-slate-600 mb-4 line-clamp-3">{material.description}</p>
+                        <Button size="sm" className="w-full">
+                          <BookOpen className="w-4 h-4 mr-2" />
+                          Start Learning
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Messages Tab */}
+          <TabsContent value="messages">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <MessageSquare className="w-5 h-5 text-primary" />
+                  Messages
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {messages.map((message) => (
+                    <div key={message.id} className="border rounded-lg p-4">
+                      <div className="flex items-start gap-3">
+                        <Avatar className="h-8 w-8">
+                          <AvatarFallback>
+                            {message.sender === 'admin' ? 'RDR' : 'You'}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <p className="font-medium text-slate-800">{message.sender_name}</p>
+                            <span className="text-xs text-slate-500">
+                              {new Date(message.timestamp).toLocaleDateString()}
+                            </span>
+                          </div>
+                          <p className="text-slate-600">{message.message}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-6 p-4 border border-slate-200 rounded-lg">
+                  <p className="text-sm text-slate-600 mb-3">Send us a message:</p>
+                  <div className="flex gap-2">
+                    <Input placeholder="Type your message..." className="flex-1" />
+                    <Button>Send</Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Alerts Tab */}
+          <TabsContent value="alerts">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <AlertCircle className="w-5 h-5 text-primary" />
+                  Notifications & Alerts
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {alerts.map((alert) => (
+                    <div key={alert.id} className={`border rounded-lg p-4 ${!alert.read ? 'bg-blue-50 border-blue-200' : ''}`}>
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <Badge variant={
+                              alert.type === 'info' ? 'default' :
+                              alert.type === 'warning' ? 'secondary' :
+                              alert.type === 'reminder' ? 'outline' : 'destructive'
+                            }>
+                              {alert.type}
+                            </Badge>
+                            <span className="text-xs text-slate-500">
+                              {new Date(alert.timestamp).toLocaleDateString()}
+                            </span>
+                          </div>
+                          <h3 className="font-medium text-slate-800 mb-1">{alert.title}</h3>
+                          <p className="text-slate-600 text-sm">{alert.message}</p>
+                        </div>
+                        {!alert.read && (
+                          <Button 
+                            size="sm" 
+                            variant="ghost"
+                            onClick={() => markAlertAsRead(alert.id)}
+                          >
+                            Mark as Read
+                          </Button>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -800,11 +995,11 @@ export default function ClientPortal() {
                 <div className="grid gap-4 md:grid-cols-2">
                   <div>
                     <Label htmlFor="firstName">First Name</Label>
-                    <Input id="firstName" value={profile.first_name || ''} />
+                    <Input id="firstName" value={profile.first_name || ''} readOnly />
                   </div>
                   <div>
                     <Label htmlFor="lastName">Last Name</Label>
-                    <Input id="lastName" value={profile.last_name || ''} />
+                    <Input id="lastName" value={profile.last_name || ''} readOnly />
                   </div>
                   <div>
                     <Label htmlFor="email">Email</Label>
@@ -812,7 +1007,7 @@ export default function ClientPortal() {
                   </div>
                   <div>
                     <Label htmlFor="phone">Phone</Label>
-                    <Input id="phone" value={profile.phone || ''} />
+                    <Input id="phone" value={profile.phone || ''} readOnly />
                   </div>
                 </div>
 
