@@ -38,7 +38,6 @@ import { Textarea } from "@/components/ui/textarea";
 import RDRLogo from "@/components/RDRLogo";
 import AvatarUpload from "@/components/AvatarUpload";
 import { ClientDeliveries } from "@/components/ClientDeliveries";
-import InteractiveProgressTracker from "@/components/InteractiveProgressTracker";
 
 interface ClientProfile {
   id: string;
@@ -70,19 +69,6 @@ const PROGRESS_STEPS = [
 export default function ClientPortal() {
   const { user, signOut, loading: authLoading } = useAuth();
   const navigate = useNavigate();
-  
-  // Early returns MUST happen before any hooks
-  if (authLoading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent mx-auto mb-4"></div>
-          <span className="text-lg font-medium text-slate-700">Loading your portal...</span>
-        </div>
-      </div>
-    );
-  }
-
   const [profile, setProfile] = useState<ClientProfile | null>(null);
   const [needsPhotoUpload, setNeedsPhotoUpload] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -92,7 +78,6 @@ export default function ClientPortal() {
   const [alerts, setAlerts] = useState<any[]>([]);
   const [timeRemaining, setTimeRemaining] = useState({ days: 0, hours: 0, minutes: 0 });
   const [actionItems, setActionItems] = useState<any[]>([]);
-  const [progressPercentage, setProgressPercentage] = useState(0);
 
   // Handle authentication redirect
   useEffect(() => {
@@ -139,22 +124,13 @@ export default function ClientPortal() {
       fetchDocuments();
       fetchTrainingMaterials();
       fetchAlerts();
+      fetchActionItems();
     }
   }, [user]);
 
-  // Separate effect for fetchActionItems that depends on profile
-  useEffect(() => {
-    if (profile?.id) {
-      fetchActionItems();
-    }
-  }, [profile?.id]);
-
   // Countdown timer effect
   useEffect(() => {
-    if (!profile?.estimated_delivery_date) {
-      setTimeRemaining({ days: 0, hours: 0, minutes: 0 });
-      return;
-    }
+    if (!profile?.estimated_delivery_date) return;
 
     const updateTimer = () => {
       const deliveryDate = new Date(profile.estimated_delivery_date);
@@ -395,23 +371,9 @@ export default function ClientPortal() {
     return 2; // Example: currently on step 2
   };
 
-  const getProgressPercentage = async () => {
-    if (!profile?.id) return 0;
-    
-    try {
-      const { data, error } = await supabase
-        .from('client_progress')
-        .select('status')
-        .eq('client_id', profile.id);
-      
-      if (error || !data) return 0;
-      
-      const completedSteps = data.filter(step => step.status === 'completed').length;
-      return (completedSteps / data.length) * 100;
-    } catch (error) {
-      console.error('Error calculating progress:', error);
-      return 0;
-    }
+  const getProgressPercentage = () => {
+    if (!profile) return 0;
+    return (profile.progress_step / PROGRESS_STEPS.length) * 100;
   };
 
   const getDaysUntilDelivery = () => {
@@ -500,8 +462,7 @@ export default function ClientPortal() {
     ));
   };
 
-  // Handle remaining loading states and photo upload after hooks are called
-  if (loading) {
+  if (authLoading || loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
         <div className="text-center">
@@ -510,7 +471,7 @@ export default function ClientPortal() {
         </div>
       </div>
     );
-  }
+  };
 
   // Profile photo upload modal
   if (needsPhotoUpload) {
@@ -587,18 +548,7 @@ export default function ClientPortal() {
   }
 
   const daysUntilDelivery = getDaysUntilDelivery();
-  
-  // Update progress percentage when profile changes
-  useEffect(() => {
-    const updateProgress = async () => {
-      const progress = await getProgressPercentage();
-      setProgressPercentage(progress);
-    };
-    
-    if (profile?.id) {
-      updateProgress();
-    }
-  }, [profile?.id]);
+  const progressPercentage = getProgressPercentage();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
@@ -705,10 +655,47 @@ export default function ClientPortal() {
                 <Progress value={progressPercentage} className="h-3" />
               </div>
               
-              <InteractiveProgressTracker 
-                clientId={profile.id} 
-                onProgressUpdate={fetchClientProfile}
-              />
+              <div className="grid gap-4">
+                {PROGRESS_STEPS.map((step, index) => {
+                  const isCompleted = profile.progress_step > step.id;
+                  const isCurrent = profile.progress_step === step.id;
+                  const IconComponent = step.icon;
+                  
+                  return (
+                    <div key={step.id} className={`flex items-center gap-4 p-4 rounded-lg border ${
+                      isCompleted ? 'bg-green-50 border-green-200' :
+                      isCurrent ? 'bg-primary/5 border-primary/20' :
+                      'bg-slate-50 border-slate-200'
+                    }`}>
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                        isCompleted ? 'bg-green-500 text-white' :
+                        isCurrent ? 'bg-primary text-white' :
+                        'bg-slate-300 text-slate-600'
+                      }`}>
+                        {isCompleted ? (
+                          <CheckCircle className="w-5 h-5" />
+                        ) : (
+                          <IconComponent className="w-5 h-5" />
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <h4 className="font-semibold text-slate-800">{step.title}</h4>
+                        <p className="text-sm text-slate-600">{step.description}</p>
+                      </div>
+                      {isCompleted && (
+                        <Badge variant="default" className="bg-green-500">
+                          Complete
+                        </Badge>
+                      )}
+                      {isCurrent && (
+                        <Badge variant="default">
+                          In Progress
+                        </Badge>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </CardContent>
         </Card>

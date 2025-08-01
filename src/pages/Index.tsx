@@ -179,7 +179,7 @@ const Index = () => {
     const handleProfileUpdate = (event: any) => {
       console.log('Profile update event received:', event.detail);
       setUserProfile(prev => ({...prev, ...event.detail}));
-      // Remove the fetchUserProfile call to prevent infinite loops
+      fetchUserProfile(); // Refresh from database
     };
 
     window.addEventListener('profileUpdated', handleProfileUpdate);
@@ -329,6 +329,10 @@ const Index = () => {
                         onAvatarUpdate={(url) => {
                           console.log('Top right avatar updated:', url);
                           setUserProfile(prev => ({...prev, avatar_url: url}));
+                          // Force a profile refresh to sync everywhere
+                          setTimeout(() => {
+                            fetchUserProfile();
+                          }, 500);
                         }}
                         size="lg"
                         showUploadButton={true}
