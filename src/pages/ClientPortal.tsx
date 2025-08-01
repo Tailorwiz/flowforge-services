@@ -608,14 +608,14 @@ export default function ClientPortal() {
                             </Button>
                           </CollapsibleTrigger>
                           <CollapsibleContent className="mt-4">
-                            <Card className="border shadow-sm max-w-4xl mx-auto">
+                            <Card className="border shadow-sm w-full">
                               <CardHeader>
                                 <CardTitle className="text-lg text-center">Intake Questionnaire</CardTitle>
                                 <p className="text-sm text-slate-600 text-center">Please provide detailed information to help us create your perfect resume</p>
                               </CardHeader>
                               <CardContent>
                                 <form onSubmit={handleIntakeSubmit} className="space-y-6">
-                                  <div className="grid gap-6 md:grid-cols-2">
+                                  <div className="grid gap-6 lg:grid-cols-3 md:grid-cols-2">
                                     <div>
                                       <Label htmlFor="currentJobTitle">Current Job Title</Label>
                                       <Input
@@ -661,8 +661,9 @@ export default function ClientPortal() {
                                     />
                                   </div>
 
-                                  <div>
-                                    <Label htmlFor="careerGoals">Career Goals</Label>
+                                  <div className="grid gap-6 lg:grid-cols-2">
+                                    <div>
+                                      <Label htmlFor="careerGoals">Career Goals</Label>
                                     <Textarea
                                       id="careerGoals"
                                       value={formData.careerGoals}
@@ -671,17 +672,18 @@ export default function ClientPortal() {
                                       rows={3}
                                       required
                                     />
-                                  </div>
+                                    </div>
 
-                                  <div>
-                                    <Label htmlFor="challenges">Current Challenges</Label>
-                                    <Textarea
+                                    <div>
+                                      <Label htmlFor="challenges">Current Challenges</Label>
+                                      <Textarea
                                       id="challenges"
                                       value={formData.challenges}
                                       onChange={(e) => handleInputChange('challenges', e.target.value)}
                                       placeholder="What challenges are you facing in your job search or career?"
                                       rows={3}
                                     />
+                                    </div>
                                   </div>
 
                                   <div>
@@ -695,11 +697,11 @@ export default function ClientPortal() {
                                     />
                                   </div>
 
-                                  <div className="flex gap-4 pt-6">
-                                    <Button type="submit" className="flex-1 max-w-xs" disabled={formLoading}>
+                                  <div className="flex justify-center gap-4 pt-6">
+                                    <Button type="submit" className="px-8" disabled={formLoading}>
                                       {formLoading ? "Submitting..." : "Submit Questionnaire"}
                                     </Button>
-                                    <Button type="button" variant="outline" className="max-w-xs" onClick={() => setShowIntakeForm(false)}>
+                                    <Button type="button" variant="outline" className="px-8" onClick={() => setShowIntakeForm(false)}>
                                       Cancel
                                     </Button>
                                   </div>
