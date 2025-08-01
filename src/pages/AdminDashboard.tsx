@@ -337,34 +337,37 @@ export default function AdminDashboard() {
             <h1 className="text-3xl font-bold text-slate-800 mb-2">Admin Dashboard</h1>
             <p className="text-slate-600">Review and manage client intake forms</p>
           </div>
-          <div className="flex space-x-2">
+          <div className="flex flex-wrap gap-2">
             {selectedFormIds.size > 0 && (
               <>
                 <Button
                   onClick={() => exportSelectedForms('text')}
                   disabled={actionLoading}
                   variant="outline"
-                  className="flex items-center space-x-2"
+                  size="sm"
+                  className="flex items-center space-x-1"
                 >
-                  <Type className="h-4 w-4" />
-                  <span>Export Selected ({selectedFormIds.size}) TXT</span>
+                  <Type className="h-3 w-3" />
+                  <span>TXT ({selectedFormIds.size})</span>
                 </Button>
                 <Button
                   onClick={() => exportSelectedForms('csv')}
                   disabled={actionLoading}
-                  className="flex items-center space-x-2"
+                  size="sm"
+                  className="flex items-center space-x-1"
                 >
-                  <FileSpreadsheet className="h-4 w-4" />
-                  <span>Export Selected ({selectedFormIds.size}) CSV</span>
+                  <FileSpreadsheet className="h-3 w-3" />
+                  <span>CSV ({selectedFormIds.size})</span>
                 </Button>
                 <Button
                   onClick={() => exportSelectedForms('json')}
                   disabled={actionLoading}
                   variant="outline"
-                  className="flex items-center space-x-2"
+                  size="sm"
+                  className="flex items-center space-x-1"
                 >
-                  <Download className="h-4 w-4" />
-                  <span>Export Selected ({selectedFormIds.size}) JSON</span>
+                  <Download className="h-3 w-3" />
+                  <span>JSON ({selectedFormIds.size})</span>
                 </Button>
                 <Button
                   onClick={clearSelection}
@@ -372,7 +375,7 @@ export default function AdminDashboard() {
                   variant="ghost"
                   size="sm"
                 >
-                  Clear Selection
+                  Clear
                 </Button>
               </>
             )}
