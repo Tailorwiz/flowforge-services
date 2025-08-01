@@ -490,10 +490,9 @@ export default function ClientPortal() {
             <div className="mb-4">
               <RDRLogo />
             </div>
-            <h2 className="text-xl font-bold mb-2 text-slate-800">Welcome to RDR Project Portal</h2>
+            <h2 className="text-xl font-bold mb-2 text-slate-800">Access Denied</h2>
             <p className="text-slate-600 mb-6">
-              Your account has been created successfully! We're setting up your customer profile. 
-              Please contact us to get started with your project.
+              You don't have access to the customer portal. Please contact support if you believe this is an error.
             </p>
             <div className="space-y-3">
               <Button 
