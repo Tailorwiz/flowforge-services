@@ -48,12 +48,18 @@ export default function IntakeForm() {
         .from('clients')
         .select('id, user_id, name')
         .eq('id', clientId)
-        .single();
+        .maybeSingle();
       
       if (clientCheckError) {
         console.error('Cannot access client:', clientCheckError);
         throw new Error(`Cannot access client: ${clientCheckError.message}`);
       }
+      
+      if (!clientCheck) {
+        console.error('Client not found with ID:', clientId);
+        throw new Error('Client not found. Please check the URL and try again.');
+      }
+      
       console.log('Client data:', clientCheck);
 
       // Save intake form data to client history
