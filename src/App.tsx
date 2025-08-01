@@ -13,6 +13,7 @@ import ClientDashboard from "./pages/ClientDashboard";
 import ClientPortal from "./pages/ClientPortal";
 import IntakeForm from "./pages/IntakeForm";
 import SMSOptInPolicy from "./pages/SMSOptInPolicy";
+import AdminDashboard from "./pages/AdminDashboard";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -36,6 +37,7 @@ const App = () => (
               <Routes>
                 <Route path="/" element={<ClientPortal />} />
                 <Route path="/admin" element={<Index />} />
+                <Route path="/admin/dashboard" element={<AdminDashboard />} />
                 <Route path="/auth" element={<Auth />} />
                 <Route path="/client/:clientId" element={<ClientDashboard />} />
                 <Route path="/portal" element={<ClientPortal />} />

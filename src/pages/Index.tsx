@@ -8,6 +8,7 @@ import { AdminProfile } from "@/components/AdminProfile";
 import { AdminCommandCenter } from "@/components/AdminCommandCenter";
 import { NotificationCenter } from "@/components/NotificationCenter";
 import TrainingMaterialUpload from "@/components/TrainingMaterialUpload";
+import AdminDashboard from "./AdminDashboard";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/components/AuthProvider";
 import { 
@@ -22,7 +23,8 @@ import {
   Zap,
   Clock,
   AlertTriangle,
-  ChevronDown
+  ChevronDown,
+  FileText
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import RDRLogo from "@/components/RDRLogo";
@@ -37,7 +39,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 const Index = () => {
-  const [activeTab, setActiveTab] = useState<'digest' | 'command' | 'clients' | 'training' | 'reminders' | 'notifications' | 'services' | 'profile'>('digest');
+  const [activeTab, setActiveTab] = useState<'digest' | 'command' | 'clients' | 'training' | 'reminders' | 'notifications' | 'services' | 'profile' | 'intake-review'>('digest');
   const [userProfile, setUserProfile] = useState<any>(null);
   const [dashboardStats, setDashboardStats] = useState({
     rushCount: 0,
@@ -222,6 +224,7 @@ const Index = () => {
 
   const sidebarItems = [
     { id: 'command', label: 'Command Center', icon: LayoutDashboard, color: 'text-rdr-navy' },
+    { id: 'intake-review', label: 'Intake Review', icon: FileText, color: 'text-teal-600' },
     { id: 'clients', label: 'Client Management', icon: Users, color: 'text-blue-600' },
     { id: 'digest', label: 'Daily Digest', icon: Calendar, color: 'text-green-600' },
     { id: 'training', label: 'Training Materials', icon: BookOpen, color: 'text-purple-600' },
@@ -366,6 +369,7 @@ const Index = () => {
           <div className="bg-white rounded-xl shadow-lg border border-border min-h-[600px] p-6 mt-1">
             {activeTab === 'digest' && <DailyDigest />}
             {activeTab === 'command' && <AdminCommandCenter />}
+            {activeTab === 'intake-review' && <AdminDashboard />}
             {activeTab === 'clients' && <ClientManager />}
             {activeTab === 'training' && <TrainingMaterialUpload />}
             {activeTab === 'reminders' && <ReminderManager />}
