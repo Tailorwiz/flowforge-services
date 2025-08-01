@@ -307,6 +307,90 @@ export type Database = {
         }
         Relationships: []
       }
+      deliveries: {
+        Row: {
+          approved_at: string | null
+          client_id: string
+          created_at: string
+          delivered_at: string
+          document_title: string
+          document_type: string
+          file_path: string
+          file_size: number | null
+          file_url: string
+          id: string
+          mime_type: string | null
+          project_id: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          approved_at?: string | null
+          client_id: string
+          created_at?: string
+          delivered_at?: string
+          document_title: string
+          document_type: string
+          file_path: string
+          file_size?: number | null
+          file_url: string
+          id?: string
+          mime_type?: string | null
+          project_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          approved_at?: string | null
+          client_id?: string
+          created_at?: string
+          delivered_at?: string
+          document_title?: string
+          document_type?: string
+          file_path?: string
+          file_size?: number | null
+          file_url?: string
+          id?: string
+          mime_type?: string | null
+          project_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      delivery_comments: {
+        Row: {
+          client_id: string | null
+          content: string
+          created_at: string
+          delivery_id: string
+          id: string
+          is_admin: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          client_id?: string | null
+          content: string
+          created_at?: string
+          delivery_id: string
+          id?: string
+          is_admin?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          client_id?: string | null
+          content?: string
+          created_at?: string
+          delivery_id?: string
+          id?: string
+          is_admin?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       document_collaborators: {
         Row: {
           accepted_at: string | null
@@ -899,6 +983,48 @@ export type Database = {
           title?: string
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      revision_requests: {
+        Row: {
+          attachment_urls: string[] | null
+          client_id: string
+          created_at: string
+          custom_reason: string | null
+          delivery_id: string
+          description: string
+          due_date: string | null
+          id: string
+          reasons: string[]
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          attachment_urls?: string[] | null
+          client_id: string
+          created_at?: string
+          custom_reason?: string | null
+          delivery_id: string
+          description: string
+          due_date?: string | null
+          id?: string
+          reasons?: string[]
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          attachment_urls?: string[] | null
+          client_id?: string
+          created_at?: string
+          custom_reason?: string | null
+          delivery_id?: string
+          description?: string
+          due_date?: string | null
+          id?: string
+          reasons?: string[]
+          status?: string
+          updated_at?: string
         }
         Relationships: []
       }

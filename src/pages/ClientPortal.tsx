@@ -37,6 +37,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import RDRLogo from "@/components/RDRLogo";
 import AvatarUpload from "@/components/AvatarUpload";
+import { ClientDeliveries } from "@/components/ClientDeliveries";
 
 interface ClientProfile {
   id: string;
@@ -676,8 +677,12 @@ export default function ClientPortal() {
         </Card>
 
         {/* Main Content Tabs */}
-        <Tabs defaultValue="documents" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-7 bg-white shadow-sm border">
+        <Tabs defaultValue="deliveries" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-8 bg-white shadow-sm border">
+            <TabsTrigger value="deliveries" className="flex items-center gap-2">
+              <Package className="w-4 h-4" />
+              Deliveries
+            </TabsTrigger>
             <TabsTrigger value="documents" className="flex items-center gap-2">
               <FileText className="w-4 h-4" />
               Documents
@@ -712,6 +717,11 @@ export default function ClientPortal() {
               Help
             </TabsTrigger>
           </TabsList>
+
+          {/* Deliveries Tab */}
+          <TabsContent value="deliveries">
+            <ClientDeliveries />
+          </TabsContent>
 
           {/* Documents Tab */}
           <TabsContent value="documents">
