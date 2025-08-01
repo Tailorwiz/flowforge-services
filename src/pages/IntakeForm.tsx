@@ -40,6 +40,21 @@ export default function IntakeForm() {
       console.log('Submitting intake form with data:', formData);
       console.log('Client ID:', clientId);
       console.log('User ID:', user?.id);
+      console.log('User object:', user);
+
+      // First verify we can read the client data
+      console.log('Verifying client access...');
+      const { data: clientCheck, error: clientCheckError } = await supabase
+        .from('clients')
+        .select('id, user_id, name')
+        .eq('id', clientId)
+        .single();
+      
+      if (clientCheckError) {
+        console.error('Cannot access client:', clientCheckError);
+        throw new Error(`Cannot access client: ${clientCheckError.message}`);
+      }
+      console.log('Client data:', clientCheck);
 
       // Save intake form data to client history
       console.log('Inserting into client_history...');
