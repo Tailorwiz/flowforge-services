@@ -37,8 +37,13 @@ export default function IntakeForm() {
     setLoading(true);
 
     try {
+      console.log('Submitting intake form with data:', formData);
+      console.log('Client ID:', clientId);
+      console.log('User ID:', user?.id);
+
       // Save intake form data to client history
-      const { error } = await supabase
+      console.log('Inserting into client_history...');
+      const { data: historyData, error: historyError } = await supabase
         .from('client_history')
         .insert({
           client_id: clientId,
@@ -46,20 +51,31 @@ export default function IntakeForm() {
           description: 'Client completed intake questionnaire',
           metadata: formData,
           created_by: user?.id
-        });
+        })
+        .select();
 
-      if (error) throw error;
+      if (historyError) {
+        console.error('History insert error:', historyError);
+        throw historyError;
+      }
+      console.log('History inserted successfully:', historyData);
 
       // Update client progress
-      const { error: updateError } = await supabase
+      console.log('Updating client progress...');
+      const { data: updateData, error: updateError } = await supabase
         .from('clients')
         .update({ 
           intake_form_submitted: true,
           updated_at: new Date().toISOString()
         })
-        .eq('id', clientId);
+        .eq('id', clientId)
+        .select();
 
-      if (updateError) throw updateError;
+      if (updateError) {
+        console.error('Client update error:', updateError);
+        throw updateError;
+      }
+      console.log('Client updated successfully:', updateData);
 
       toast({
         title: "Intake Form Submitted!",
@@ -73,11 +89,11 @@ export default function IntakeForm() {
       } else {
         navigate('/portal');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error submitting intake form:', error);
       toast({
         title: "Error",
-        description: "Failed to submit intake form. Please try again.",
+        description: `Failed to submit intake form: ${error.message || 'Please try again.'}`,
         variant: "destructive",
       });
     } finally {
