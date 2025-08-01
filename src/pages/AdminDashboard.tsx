@@ -17,7 +17,8 @@ import {
   Phone,
   Mail,
   Download,
-  FileSpreadsheet
+  FileSpreadsheet,
+  Type
 } from 'lucide-react';
 
 interface Client {
@@ -136,7 +137,7 @@ export default function AdminDashboard() {
     }
   };
 
-  const exportSelectedForms = async (format: 'json' | 'csv' = 'json') => {
+  const exportSelectedForms = async (format: 'json' | 'csv' | 'text' = 'json') => {
     if (selectedFormIds.size === 0) {
       toast({
         title: "No Selection",
@@ -195,6 +196,45 @@ export default function AdminDashboard() {
         const a = document.createElement('a');
         a.href = url;
         a.download = `selected-intake-forms-${new Date().toISOString().split('T')[0]}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+      } else if (format === 'text') {
+        // Create readable text format
+        const textContent = selectedForms.map((form, index) => {
+          const metadata = form.metadata || {};
+          let text = `INTAKE FORM ${index + 1}\n`;
+          text += `${'='.repeat(40)}\n\n`;
+          text += `Client Name: ${form.client.name}\n`;
+          text += `Email: ${form.client.email}\n`;
+          text += `Phone: ${form.client.phone || 'Not provided'}\n`;
+          text += `Status: ${form.client.status.toUpperCase()}\n`;
+          text += `Submitted: ${formatDate(form.created_at)}\n\n`;
+          
+          text += `FORM RESPONSES:\n`;
+          text += `${'-'.repeat(20)}\n`;
+          
+          Object.entries(metadata).forEach(([key, value]) => {
+            const formattedKey = key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+            const formattedValue = Array.isArray(value) ? value.join(', ') : String(value);
+            text += `${formattedKey}: ${formattedValue}\n`;
+          });
+          
+          text += `\n${'-'.repeat(60)}\n\n`;
+          return text;
+        }).join('');
+        
+        const finalText = `INTAKE FORMS EXPORT\n`;
+        const finalHeader = `Export Date: ${new Date().toLocaleString()}\n`;
+        const finalSummary = `Total Forms: ${selectedForms.length}\n\n${'='.repeat(60)}\n\n`;
+        const fullContent = finalText + finalHeader + finalSummary + textContent;
+        
+        const blob = new Blob([fullContent], { type: 'text/plain' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `selected-intake-forms-${new Date().toISOString().split('T')[0]}.txt`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
@@ -300,6 +340,15 @@ export default function AdminDashboard() {
           <div className="flex space-x-2">
             {selectedFormIds.size > 0 && (
               <>
+                <Button
+                  onClick={() => exportSelectedForms('text')}
+                  disabled={actionLoading}
+                  variant="outline"
+                  className="flex items-center space-x-2"
+                >
+                  <Type className="h-4 w-4" />
+                  <span>Export Selected ({selectedFormIds.size}) TXT</span>
+                </Button>
                 <Button
                   onClick={() => exportSelectedForms('csv')}
                   disabled={actionLoading}
