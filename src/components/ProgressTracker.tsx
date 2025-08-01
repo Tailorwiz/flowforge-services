@@ -1,51 +1,249 @@
-import React from 'react';
-import { Check, Clock, Upload, Calendar, Eye } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Check, Clock, Upload, Calendar, Eye, FileText, ChevronRight } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from './AuthProvider';
+import { Button } from './ui/button';
+import { toast } from '@/hooks/use-toast';
 
 interface Step {
   id: number;
   title: string;
+  description: string;
   icon: React.ReactNode;
   status: 'completed' | 'current' | 'upcoming';
+  action?: () => void;
+  actionText?: string;
+}
+
+interface ClientData {
+  id: string;
+  status: string;
+  // Using mock progress state since actual columns don't exist
+  progressStep?: number;
 }
 
 interface ProgressTrackerProps {
-  currentStep?: number;
+  clientId?: string;
   className?: string;
+  onProgressUpdate?: (newStep: number) => void;
 }
 
-const ProgressTracker: React.FC<ProgressTrackerProps> = ({ currentStep = 4, className = "" }) => {
+const ProgressTracker: React.FC<ProgressTrackerProps> = ({ 
+  clientId, 
+  className = "", 
+  onProgressUpdate 
+}) => {
+  const { user } = useAuth();
+  const [clientData, setClientData] = useState<ClientData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [currentStep, setCurrentStep] = useState(1);
+  // Local storage for demo progress tracking
+  const [localProgress, setLocalProgress] = useState<Record<number, boolean>>({});
+
+  // Fetch client data from database
+  useEffect(() => {
+    if (user) {
+      fetchClientData();
+      loadLocalProgress();
+    }
+  }, [user, clientId]);
+
+  const loadLocalProgress = () => {
+    const saved = localStorage.getItem(`progress_${user?.id}`);
+    if (saved) {
+      setLocalProgress(JSON.parse(saved));
+    }
+  };
+
+  const saveLocalProgress = (progress: Record<number, boolean>) => {
+    localStorage.setItem(`progress_${user?.id}`, JSON.stringify(progress));
+    setLocalProgress(progress);
+  };
+
+  const fetchClientData = async () => {
+    try {
+      setLoading(true);
+      
+      // Find client by user ID or use provided clientId
+      let query = supabase.from('clients').select('id, status');
+      
+      if (clientId) {
+        query = query.eq('id', clientId);
+      } else {
+        query = query.eq('user_id', user?.id);
+      }
+      
+      const { data, error } = await query.maybeSingle();
+
+      if (error) throw error;
+
+      if (data) {
+        setClientData(data);
+        // Calculate current step based on local progress
+        const completedSteps = Object.values(localProgress).filter(Boolean).length;
+        setCurrentStep(completedSteps + 1);
+      }
+    } catch (error) {
+      console.error('Error fetching client data:', error);
+      // For demo purposes, set a default client if none found
+      setClientData({ id: 'demo', status: 'active' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleStepClick = async (stepId: number) => {
+    const step = steps.find(s => s.id === stepId);
+    if (step?.action) {
+      step.action();
+    }
+  };
+
+  const markStepCompleted = async (stepNumber: number) => {
+    try {
+      const newProgress = { ...localProgress, [stepNumber]: true };
+      saveLocalProgress(newProgress);
+      
+      const completedSteps = Object.values(newProgress).filter(Boolean).length;
+      setCurrentStep(completedSteps + 1);
+      
+      // Notify parent component
+      if (onProgressUpdate) {
+        onProgressUpdate(completedSteps + 1);
+      }
+
+      toast({
+        title: "Progress Updated",
+        description: `Step ${stepNumber} marked as completed!`,
+      });
+    } catch (error) {
+      console.error('Error updating progress:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update progress. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const openIntakeForm = () => {
+    toast({
+      title: "Intake Form",
+      description: "Opening intake questionnaire...",
+    });
+    
+    // Simulate form completion after 2 seconds
+    setTimeout(() => {
+      markStepCompleted(1);
+    }, 2000);
+  };
+
+  const openResumeUpload = () => {
+    toast({
+      title: "Resume Upload",
+      description: "Opening resume upload dialog...",
+    });
+    
+    // Simulate upload completion
+    setTimeout(() => {
+      markStepCompleted(2);
+    }, 1500);
+  };
+
+  const openSessionBooking = () => {
+    toast({
+      title: "Session Booking",
+      description: "Opening consultation booking system...",
+    });
+    
+    // Simulate booking completion
+    setTimeout(() => {
+      markStepCompleted(3);
+    }, 1000);
+  };
+
+  const openDocumentReview = () => {
+    toast({
+      title: "Document Review",
+      description: "Opening document review portal...",
+    });
+    
+    // Simulate review completion
+    setTimeout(() => {
+      markStepCompleted(5);
+    }, 1000);
+  };
+
+  const getStepStatus = (stepId: number): 'completed' | 'current' | 'upcoming' => {
+    if (localProgress[stepId]) return 'completed';
+    if (currentStep === stepId) return 'current';
+    return 'upcoming';
+  };
+
   const steps: Step[] = [
     {
       id: 1,
       title: "Intake Form",
-      icon: <Check className="w-4 h-4" />,
-      status: currentStep > 1 ? 'completed' : currentStep === 1 ? 'current' : 'upcoming'
+      description: "Complete your intake questionnaire",
+      icon: <FileText className="w-4 h-4" />,
+      status: getStepStatus(1),
+      action: openIntakeForm,
+      actionText: "Start Questionnaire"
     },
     {
       id: 2,
       title: "Upload Resume",
+      description: "Upload your current resume",
       icon: <Upload className="w-4 h-4" />,
-      status: currentStep > 2 ? 'completed' : currentStep === 2 ? 'current' : 'upcoming'
+      status: getStepStatus(2),
+      action: openResumeUpload,
+      actionText: "Upload Resume"
     },
     {
       id: 3,
       title: "Book Session",
+      description: "Schedule your consultation",
       icon: <Calendar className="w-4 h-4" />,
-      status: currentStep > 3 ? 'completed' : currentStep === 3 ? 'current' : 'upcoming'
+      status: getStepStatus(3),
+      action: openSessionBooking,
+      actionText: "Book Session"
     },
     {
       id: 4,
       title: "In Progress",
+      description: "We're working on your documents",
       icon: <Clock className="w-4 h-4" />,
-      status: currentStep > 4 ? 'completed' : currentStep === 4 ? 'current' : 'upcoming'
+      status: getStepStatus(4)
     },
     {
       id: 5,
       title: "Review Documents",
+      description: "Review and download your completed documents",
       icon: <Eye className="w-4 h-4" />,
-      status: currentStep > 5 ? 'completed' : currentStep === 5 ? 'current' : 'upcoming'
+      status: getStepStatus(5),
+      action: openDocumentReview,
+      actionText: "Review Documents"
     }
   ];
+
+  if (loading) {
+    return (
+      <div className={`bg-white rounded-xl p-6 shadow-lg border border-border ${className}`}>
+        <h3 className="text-lg font-semibold text-rdr-navy mb-6 font-heading">Project Progress</h3>
+        <div className="animate-pulse space-y-6">
+          {[1, 2, 3, 4, 5].map(i => (
+            <div key={i} className="flex items-center space-x-4">
+              <div className="w-12 h-12 rounded-full bg-gray-200"></div>
+              <div className="flex-1 space-y-2">
+                <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={`bg-white rounded-xl p-6 shadow-lg border border-border ${className}`}>
@@ -61,41 +259,74 @@ const ProgressTracker: React.FC<ProgressTrackerProps> = ({ currentStep = 4, clas
         
         {/* Steps */}
         <div className="space-y-6">
-          {steps.map((step) => (
-            <div key={step.id} className="relative flex items-center">
-              {/* Step Icon */}
-              <div className={`
-                relative z-10 w-12 h-12 rounded-full flex items-center justify-center border-2 transition-all duration-300
-                ${step.status === 'completed' 
-                  ? 'bg-rdr-gold border-rdr-gold text-rdr-navy' 
-                  : step.status === 'current'
-                  ? 'bg-rdr-navy border-rdr-navy text-white'
-                  : 'bg-white border-border text-rdr-medium-gray'
-                }
-              `}>
-                {step.status === 'completed' ? <Check className="w-5 h-5" /> : step.icon}
-              </div>
-              
-              {/* Step Content */}
-              <div className="ml-4">
-                <h4 className={`
-                  font-medium transition-colors duration-300
-                  ${step.status === 'completed' || step.status === 'current' 
-                    ? 'text-rdr-navy' 
-                    : 'text-rdr-medium-gray'
+          {steps.map((step) => {
+            const isClickable = step.action && (step.status === 'current' || (step.status === 'upcoming' && step.id <= currentStep));
+            
+            return (
+              <div 
+                key={step.id} 
+                className={`relative flex items-center group ${
+                  isClickable ? 'cursor-pointer' : ''
+                }`}
+                onClick={() => isClickable && handleStepClick(step.id)}
+              >
+                {/* Step Icon */}
+                <div className={`
+                  relative z-10 w-12 h-12 rounded-full flex items-center justify-center border-2 transition-all duration-300
+                  ${step.status === 'completed' 
+                    ? 'bg-rdr-gold border-rdr-gold text-rdr-navy' 
+                    : step.status === 'current'
+                    ? 'bg-rdr-navy border-rdr-navy text-white'
+                    : 'bg-white border-border text-rdr-medium-gray'
                   }
+                  ${isClickable ? 'group-hover:scale-110 group-hover:shadow-lg' : ''}
                 `}>
-                  {step.title}
-                </h4>
-                {step.status === 'completed' && (
-                  <span className="text-sm text-rdr-gold font-medium">✓ Complete</span>
-                )}
-                {step.status === 'current' && (
-                  <span className="text-sm text-rdr-navy font-medium">In Progress</span>
-                )}
+                  {step.status === 'completed' ? <Check className="w-5 h-5" /> : step.icon}
+                </div>
+                
+                {/* Step Content */}
+                <div className="ml-4 flex-1">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className={`
+                        font-medium transition-colors duration-300
+                        ${step.status === 'completed' || step.status === 'current' 
+                          ? 'text-rdr-navy' 
+                          : 'text-rdr-medium-gray'
+                        }
+                      `}>
+                        {step.title}
+                      </h4>
+                      <p className="text-sm text-rdr-medium-gray">{step.description}</p>
+                      
+                      {step.status === 'completed' && (
+                        <span className="text-sm text-rdr-gold font-medium">✓ Complete</span>
+                      )}
+                      {step.status === 'current' && (
+                        <span className="text-sm text-rdr-navy font-medium">Ready to start</span>
+                      )}
+                    </div>
+                    
+                    {/* Action Button */}
+                    {isClickable && step.actionText && (
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        className="ml-4 opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleStepClick(step.id);
+                        }}
+                      >
+                        {step.actionText}
+                        <ChevronRight className="w-4 h-4 ml-1" />
+                      </Button>
+                    )}
+                  </div>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </div>
