@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "@/hooks/use-toast";
@@ -78,6 +79,19 @@ export default function ClientPortal() {
   const [alerts, setAlerts] = useState<any[]>([]);
   const [timeRemaining, setTimeRemaining] = useState({ days: 0, hours: 0, minutes: 0 });
   const [actionItems, setActionItems] = useState<any[]>([]);
+  
+  // Intake form state
+  const [showIntakeForm, setShowIntakeForm] = useState(false);
+  const [formLoading, setFormLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    currentJobTitle: '',
+    targetJobTitle: '',
+    industry: '',
+    experience: '',
+    careerGoals: '',
+    challenges: '',
+    additionalInfo: ''
+  });
 
   // Handle authentication redirect
   useEffect(() => {
@@ -399,15 +413,93 @@ export default function ClientPortal() {
 
   const handleIntakeFormClick = () => {
     console.log('Opening intake form...');
-    toast({
-      title: "Intake Form",
-      description: "Opening your intake questionnaire...",
-    });
-    
-    // For now, we'll create a simple form dialog
-    // Later we can integrate with actual intake form system
-    const formUrl = `${window.location.origin}/intake-form?client=${profile?.id}`;
-    window.open(formUrl, '_blank', 'width=800,height=600');
+    setShowIntakeForm(!showIntakeForm);
+  };
+
+  const handleInputChange = (field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleIntakeSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setFormLoading(true);
+
+    try {
+      console.log('=== INTAKE FORM SUBMISSION DEBUG ===');
+      console.log('Form data:', formData);
+      console.log('Client ID:', profile?.id);
+      console.log('User ID:', user?.id);
+
+      if (!profile?.id) {
+        throw new Error('Client information not loaded');
+      }
+
+      if (!user?.id) {
+        throw new Error('User not authenticated');
+      }
+
+      // Save intake form data to client history
+      const { data: historyData, error: historyError } = await supabase
+        .from('client_history')
+        .insert({
+          client_id: profile.id,
+          action_type: 'intake_form_completed',
+          description: 'Client completed intake questionnaire',
+          metadata: formData,
+          created_by: user.id
+        })
+        .select();
+
+      if (historyError) {
+        console.error('History insert error:', historyError);
+        throw historyError;
+      }
+
+      // Update client progress
+      const { data: updateData, error: updateError } = await supabase
+        .from('clients')
+        .update({ 
+          intake_form_submitted: true,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', profile.id)
+        .select();
+
+      if (updateError) {
+        console.error('Client update error:', updateError);
+        throw updateError;
+      }
+
+      // Update local profile state
+      setProfile(prev => prev ? { ...prev, progress_step: 2 } : null);
+      setShowIntakeForm(false);
+      
+      toast({
+        title: "Intake Form Submitted!",
+        description: "Thank you for completing your intake questionnaire. We'll review your information and get started on your project.",
+      });
+
+      // Reset form
+      setFormData({
+        currentJobTitle: '',
+        targetJobTitle: '',
+        industry: '',
+        experience: '',
+        careerGoals: '',
+        challenges: '',
+        additionalInfo: ''
+      });
+
+    } catch (error: any) {
+      console.error('Error submitting intake form:', error);
+      toast({
+        title: "Error",
+        description: `Failed to submit intake form: ${error.message || 'Please try again.'}`,
+        variant: "destructive",
+      });
+    } finally {
+      setFormLoading(false);
+    }
   };
 
   const handleSaveProfile = async () => {
@@ -732,6 +824,116 @@ export default function ClientPortal() {
                   );
                 })}
               </div>
+              
+              {/* Intake Form Collapsible */}
+              {showIntakeForm && (
+                <Collapsible open={showIntakeForm} onOpenChange={setShowIntakeForm}>
+                  <CollapsibleContent className="mt-6">
+                    <div className="bg-slate-50 p-6 rounded-lg border border-slate-200">
+                      <h4 className="text-lg font-semibold text-slate-800 mb-4">Intake Questionnaire</h4>
+                      <form onSubmit={handleIntakeSubmit} className="space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <Label htmlFor="currentJobTitle">Current Job Title</Label>
+                            <Input
+                              id="currentJobTitle"
+                              value={formData.currentJobTitle}
+                              onChange={(e) => handleInputChange('currentJobTitle', e.target.value)}
+                              placeholder="e.g., Senior Software Engineer"
+                              required
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="targetJobTitle">Target Job Title</Label>
+                            <Input
+                              id="targetJobTitle"
+                              value={formData.targetJobTitle}
+                              onChange={(e) => handleInputChange('targetJobTitle', e.target.value)}
+                              placeholder="e.g., Lead Software Engineer"
+                              required
+                            />
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <Label htmlFor="industry">Industry</Label>
+                            <Input
+                              id="industry"
+                              value={formData.industry}
+                              onChange={(e) => handleInputChange('industry', e.target.value)}
+                              placeholder="e.g., Technology, Healthcare, Finance"
+                              required
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="experience">Years of Experience</Label>
+                            <Input
+                              id="experience"
+                              value={formData.experience}
+                              onChange={(e) => handleInputChange('experience', e.target.value)}
+                              placeholder="e.g., 5-7 years"
+                              required
+                            />
+                          </div>
+                        </div>
+
+                        <div>
+                          <Label htmlFor="careerGoals">Career Goals</Label>
+                          <Textarea
+                            id="careerGoals"
+                            value={formData.careerGoals}
+                            onChange={(e) => handleInputChange('careerGoals', e.target.value)}
+                            placeholder="What are your short-term and long-term career goals?"
+                            rows={3}
+                            required
+                          />
+                        </div>
+
+                        <div>
+                          <Label htmlFor="challenges">Current Challenges</Label>
+                          <Textarea
+                            id="challenges"
+                            value={formData.challenges}
+                            onChange={(e) => handleInputChange('challenges', e.target.value)}
+                            placeholder="What challenges are you facing in your job search or career?"
+                            rows={3}
+                          />
+                        </div>
+
+                        <div>
+                          <Label htmlFor="additionalInfo">Additional Information</Label>
+                          <Textarea
+                            id="additionalInfo"
+                            value={formData.additionalInfo}
+                            onChange={(e) => handleInputChange('additionalInfo', e.target.value)}
+                            placeholder="Any additional information you'd like us to know?"
+                            rows={2}
+                          />
+                        </div>
+
+                        <div className="flex gap-4 pt-4">
+                          <Button 
+                            type="submit" 
+                            disabled={formLoading}
+                            className="flex-1"
+                          >
+                            {formLoading ? 'Submitting...' : 'Submit Intake Form'}
+                          </Button>
+                          <Button 
+                            type="button" 
+                            variant="outline"
+                            onClick={() => setShowIntakeForm(false)}
+                            disabled={formLoading}
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      </form>
+                    </div>
+                  </CollapsibleContent>
+                </Collapsible>
+              )}
             </div>
           </CardContent>
         </Card>
