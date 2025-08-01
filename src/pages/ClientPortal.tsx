@@ -37,6 +37,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import RDRLogo from "@/components/RDRLogo";
 import AvatarUpload from "@/components/AvatarUpload";
+import { ClientDeliveries } from "@/components/ClientDeliveries";
 
 interface ClientProfile {
   id: string;
@@ -88,9 +89,33 @@ export default function ClientPortal() {
   // Handle case where user is authenticated but has no client profile
   useEffect(() => {
     if (!authLoading && !loading && user && !profile) {
-      navigate('/login');
+      console.log('ClientPortal: User authenticated but no client profile found, checking if admin...');
+      // Instead of redirecting to login, check if this is an admin
+      checkIfUserIsAdmin();
     }
   }, [user, authLoading, loading, profile, navigate]);
+
+  const checkIfUserIsAdmin = async () => {
+    try {
+      const { data: userRole } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user?.id)
+        .maybeSingle();
+      
+      if (userRole?.role === 'admin') {
+        console.log('ClientPortal: User is admin, redirecting to admin dashboard');
+        navigate('/admin');
+      } else {
+        console.log('ClientPortal: User is not admin and has no client profile');
+        // Only redirect to login if they're not an admin and have no client profile
+        navigate('/login');
+      }
+    } catch (error) {
+      console.error('Error checking user role:', error);
+      navigate('/login');
+    }
+  };
 
   useEffect(() => {
     if (user) {
@@ -341,9 +366,10 @@ export default function ClientPortal() {
   };
 
   const determineProgressStep = (clientData: any) => {
-    // Logic to determine current progress step based on client data
-    // This would be based on your actual business logic
-    return 2; // Example: currently on step 2
+    // Start at step 1 by default
+    // In a real implementation, this would check actual completion status
+    console.log('Determining progress step for client:', clientData);
+    return 1; // Start at step 1 - intake form
   };
 
   const getProgressPercentage = () => {
@@ -369,6 +395,19 @@ export default function ClientPortal() {
       title: "Profile photo updated!",
       description: "Your profile photo has been successfully uploaded."
     });
+  };
+
+  const handleIntakeFormClick = () => {
+    console.log('Opening intake form...');
+    toast({
+      title: "Intake Form",
+      description: "Opening your intake questionnaire...",
+    });
+    
+    // For now, we'll create a simple form dialog
+    // Later we can integrate with actual intake form system
+    const formUrl = `${window.location.origin}/intake-form?client=${profile?.id}`;
+    window.open(formUrl, '_blank', 'width=800,height=600');
   };
 
   const handleSaveProfile = async () => {
@@ -625,9 +664,9 @@ export default function ClientPortal() {
               <div>
                 <div className="flex justify-between text-sm mb-2">
                   <span className="font-medium">Overall Progress</span>
-                  <span className="text-primary font-semibold">{Math.round(progressPercentage)}% Complete</span>
+                  <span className="text-primary font-semibold">{Math.round(getProgressPercentage())}% Complete</span>
                 </div>
-                <Progress value={progressPercentage} className="h-3" />
+                <Progress value={getProgressPercentage()} className="h-3" />
               </div>
               
               <div className="grid gap-4">
@@ -635,13 +674,21 @@ export default function ClientPortal() {
                   const isCompleted = profile.progress_step > step.id;
                   const isCurrent = profile.progress_step === step.id;
                   const IconComponent = step.icon;
+                  // Make intake form always clickable, others only when current
+                  const isClickable = step.id === 1 || (step.id === profile.progress_step && !isCompleted);
+                  
+                  console.log(`Step ${step.id}: progress_step=${profile.progress_step}, isCompleted=${isCompleted}, isClickable=${isClickable}`);
                   
                   return (
-                    <div key={step.id} className={`flex items-center gap-4 p-4 rounded-lg border ${
-                      isCompleted ? 'bg-green-50 border-green-200' :
-                      isCurrent ? 'bg-primary/5 border-primary/20' :
-                      'bg-slate-50 border-slate-200'
-                    }`}>
+                    <div 
+                      key={step.id} 
+                      className={`flex items-center gap-4 p-4 rounded-lg border transition-all ${
+                        isCompleted ? 'bg-green-50 border-green-200' :
+                        isCurrent ? 'bg-primary/5 border-primary/20' :
+                        'bg-slate-50 border-slate-200'
+                      } ${isClickable ? 'cursor-pointer hover:shadow-md hover:border-primary/40' : ''}`}
+                      onClick={() => isClickable && handleIntakeFormClick()}
+                    >
                       <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
                         isCompleted ? 'bg-green-500 text-white' :
                         isCurrent ? 'bg-primary text-white' :
@@ -667,6 +714,20 @@ export default function ClientPortal() {
                           In Progress
                         </Badge>
                       )}
+                      {(isClickable || step.id === 1) && (
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (step.id === 1) {
+                              handleIntakeFormClick();
+                            }
+                          }}
+                        >
+                          {isCompleted && step.id === 1 ? 'Update' : 'Start'} →
+                        </Button>
+                      )}
                     </div>
                   );
                 })}
@@ -676,8 +737,12 @@ export default function ClientPortal() {
         </Card>
 
         {/* Main Content Tabs */}
-        <Tabs defaultValue="documents" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-7 bg-white shadow-sm border">
+        <Tabs defaultValue="deliveries" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-8 bg-white shadow-sm border">
+            <TabsTrigger value="deliveries" className="flex items-center gap-2">
+              <Package className="w-4 h-4" />
+              Deliveries
+            </TabsTrigger>
             <TabsTrigger value="documents" className="flex items-center gap-2">
               <FileText className="w-4 h-4" />
               Documents
@@ -712,6 +777,11 @@ export default function ClientPortal() {
               Help
             </TabsTrigger>
           </TabsList>
+
+          {/* Deliveries Tab */}
+          <TabsContent value="deliveries">
+            <ClientDeliveries />
+          </TabsContent>
 
           {/* Documents Tab */}
           <TabsContent value="documents">

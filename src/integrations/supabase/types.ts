@@ -59,6 +59,53 @@ export type Database = {
         }
         Relationships: []
       }
+      audio_files: {
+        Row: {
+          created_at: string
+          duration: number | null
+          file_path: string
+          file_size: number
+          file_url: string | null
+          generation_status: string
+          id: string
+          lesson_id: string
+          updated_at: string
+          voice_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          duration?: number | null
+          file_path: string
+          file_size?: number
+          file_url?: string | null
+          generation_status?: string
+          id?: string
+          lesson_id: string
+          updated_at?: string
+          voice_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          duration?: number | null
+          file_path?: string
+          file_size?: number
+          file_url?: string | null
+          generation_status?: string
+          id?: string
+          lesson_id?: string
+          updated_at?: string
+          voice_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "audio_files_lesson_id_fkey"
+            columns: ["lesson_id"]
+            isOneToOne: false
+            referencedRelation: "lessons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       client_history: {
         Row: {
           action_type: string
@@ -96,6 +143,50 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "client_history_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      client_progress: {
+        Row: {
+          client_id: string
+          completed_at: string | null
+          created_at: string
+          id: string
+          metadata: Json | null
+          status: string
+          step_name: string
+          step_number: number
+          updated_at: string
+        }
+        Insert: {
+          client_id: string
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          status?: string
+          step_name: string
+          step_number: number
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          status?: string
+          step_name?: string
+          step_number?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_progress_client_id_fkey"
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
@@ -212,12 +303,15 @@ export type Database = {
           email: string
           estimated_delivery_date: string | null
           id: string
+          intake_form_submitted: boolean | null
           is_rush: boolean
           name: string
           payment_status: string | null
           phone: string | null
+          resume_uploaded: boolean | null
           rush_deadline: string | null
           service_type_id: string | null
+          session_booked: boolean | null
           status: string | null
           stripe_customer_id: string | null
           updated_at: string
@@ -228,12 +322,15 @@ export type Database = {
           email: string
           estimated_delivery_date?: string | null
           id?: string
+          intake_form_submitted?: boolean | null
           is_rush?: boolean
           name: string
           payment_status?: string | null
           phone?: string | null
+          resume_uploaded?: boolean | null
           rush_deadline?: string | null
           service_type_id?: string | null
+          session_booked?: boolean | null
           status?: string | null
           stripe_customer_id?: string | null
           updated_at?: string
@@ -244,12 +341,15 @@ export type Database = {
           email?: string
           estimated_delivery_date?: string | null
           id?: string
+          intake_form_submitted?: boolean | null
           is_rush?: boolean
           name?: string
           payment_status?: string | null
           phone?: string | null
+          resume_uploaded?: boolean | null
           rush_deadline?: string | null
           service_type_id?: string | null
+          session_booked?: boolean | null
           status?: string | null
           stripe_customer_id?: string | null
           updated_at?: string
@@ -261,6 +361,139 @@ export type Database = {
             columns: ["service_type_id"]
             isOneToOne: false
             referencedRelation: "service_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      course_outlines: {
+        Row: {
+          approval_status: string
+          course_preferences_id: string
+          created_at: string
+          description: string | null
+          ebook_id: string
+          id: string
+          modules: Json
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          approval_status?: string
+          course_preferences_id: string
+          created_at?: string
+          description?: string | null
+          ebook_id: string
+          id?: string
+          modules?: Json
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          approval_status?: string
+          course_preferences_id?: string
+          created_at?: string
+          description?: string | null
+          ebook_id?: string
+          id?: string
+          modules?: Json
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_course_outlines_ebook"
+            columns: ["ebook_id"]
+            isOneToOne: false
+            referencedRelation: "ebooks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_course_outlines_preferences"
+            columns: ["course_preferences_id"]
+            isOneToOne: false
+            referencedRelation: "course_preferences"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      course_preferences: {
+        Row: {
+          content_source: string
+          course_length: string
+          created_at: string
+          ebook_id: string
+          id: string
+          outline_approach: string
+          updated_at: string
+        }
+        Insert: {
+          content_source: string
+          course_length: string
+          created_at?: string
+          ebook_id: string
+          id?: string
+          outline_approach: string
+          updated_at?: string
+        }
+        Update: {
+          content_source?: string
+          course_length?: string
+          created_at?: string
+          ebook_id?: string
+          id?: string
+          outline_approach?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_course_preferences_ebook"
+            columns: ["ebook_id"]
+            isOneToOne: false
+            referencedRelation: "ebooks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      courses: {
+        Row: {
+          created_at: string
+          description: string | null
+          ebook_id: string
+          id: string
+          processing_status: string
+          title: string
+          total_lessons: number
+          total_modules: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          ebook_id: string
+          id?: string
+          processing_status?: string
+          title: string
+          total_lessons?: number
+          total_modules?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          ebook_id?: string
+          id?: string
+          processing_status?: string
+          title?: string
+          total_lessons?: number
+          total_modules?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "courses_ebook_id_fkey"
+            columns: ["ebook_id"]
+            isOneToOne: false
+            referencedRelation: "ebooks"
             referencedColumns: ["id"]
           },
         ]
@@ -302,6 +535,90 @@ export type Database = {
           include_overdue?: boolean
           send_time?: string
           timezone?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      deliveries: {
+        Row: {
+          approved_at: string | null
+          client_id: string
+          created_at: string
+          delivered_at: string
+          document_title: string
+          document_type: string
+          file_path: string
+          file_size: number | null
+          file_url: string
+          id: string
+          mime_type: string | null
+          project_id: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          approved_at?: string | null
+          client_id: string
+          created_at?: string
+          delivered_at?: string
+          document_title: string
+          document_type: string
+          file_path: string
+          file_size?: number | null
+          file_url: string
+          id?: string
+          mime_type?: string | null
+          project_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          approved_at?: string | null
+          client_id?: string
+          created_at?: string
+          delivered_at?: string
+          document_title?: string
+          document_type?: string
+          file_path?: string
+          file_size?: number | null
+          file_url?: string
+          id?: string
+          mime_type?: string | null
+          project_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      delivery_comments: {
+        Row: {
+          client_id: string | null
+          content: string
+          created_at: string
+          delivery_id: string
+          id: string
+          is_admin: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          client_id?: string | null
+          content: string
+          created_at?: string
+          delivery_id: string
+          id?: string
+          is_admin?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          client_id?: string | null
+          content?: string
+          created_at?: string
+          delivery_id?: string
+          id?: string
+          is_admin?: boolean
           updated_at?: string
           user_id?: string
         }
@@ -485,6 +802,48 @@ export type Database = {
         }
         Relationships: []
       }
+      ebooks: {
+        Row: {
+          author: string | null
+          created_at: string
+          extracted_text: string | null
+          file_name: string
+          file_path: string
+          file_size: number
+          file_type: string
+          id: string
+          processing_status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          author?: string | null
+          created_at?: string
+          extracted_text?: string | null
+          file_name: string
+          file_path: string
+          file_size?: number
+          file_type: string
+          id?: string
+          processing_status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          author?: string | null
+          created_at?: string
+          extracted_text?: string | null
+          file_name?: string
+          file_path?: string
+          file_size?: number
+          file_type?: string
+          id?: string
+          processing_status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       email_templates: {
         Row: {
           content: string
@@ -550,6 +909,97 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      lessons: {
+        Row: {
+          content: string
+          created_at: string
+          duration_estimate: number | null
+          id: string
+          key_points: Json
+          lesson_order: number
+          module_id: string
+          narration_script: string | null
+          summary: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          duration_estimate?: number | null
+          id?: string
+          key_points?: Json
+          lesson_order?: number
+          module_id: string
+          narration_script?: string | null
+          summary?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          duration_estimate?: number | null
+          id?: string
+          key_points?: Json
+          lesson_order?: number
+          module_id?: string
+          narration_script?: string | null
+          summary?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lessons_module_id_fkey"
+            columns: ["module_id"]
+            isOneToOne: false
+            referencedRelation: "modules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      modules: {
+        Row: {
+          course_id: string
+          created_at: string
+          description: string | null
+          id: string
+          lesson_count: number
+          module_order: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          course_id: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          lesson_count?: number
+          module_order?: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          course_id?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          lesson_count?: number
+          module_order?: number
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "modules_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       notification_rules: {
         Row: {
@@ -899,6 +1349,48 @@ export type Database = {
           title?: string
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      revision_requests: {
+        Row: {
+          attachment_urls: string[] | null
+          client_id: string
+          created_at: string
+          custom_reason: string | null
+          delivery_id: string
+          description: string
+          due_date: string | null
+          id: string
+          reasons: string[]
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          attachment_urls?: string[] | null
+          client_id: string
+          created_at?: string
+          custom_reason?: string | null
+          delivery_id: string
+          description: string
+          due_date?: string | null
+          id?: string
+          reasons?: string[]
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          attachment_urls?: string[] | null
+          client_id?: string
+          created_at?: string
+          custom_reason?: string | null
+          delivery_id?: string
+          description?: string
+          due_date?: string | null
+          id?: string
+          reasons?: string[]
+          status?: string
+          updated_at?: string
         }
         Relationships: []
       }

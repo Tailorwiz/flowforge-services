@@ -21,14 +21,19 @@ export default function CustomerAuth() {
   const navigate = useNavigate();
 
   useEffect(() => {
+    console.log('CustomerAuth: Checking existing session...');
     // Check if user is already logged in
     const checkUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
+      console.log('CustomerAuth: Session found:', session ? 'Yes' : 'No');
       if (session) {
+        console.log('CustomerAuth: User email:', session.user.email);
         try {
           // For customer portal, always redirect to customer portal regardless of role
+          console.log('CustomerAuth: Redirecting to /portal');
           navigate("/portal");
         } catch (error) {
+          console.log('CustomerAuth: Error in redirect, going to /portal anyway');
           navigate("/portal");
         }
       }
@@ -124,11 +129,13 @@ export default function CustomerAuth() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
       <div className="w-full max-w-md">
+        {/* RDR Logo above the card - centered */}
+        <div className="flex justify-center mb-6">
+          <RDRLogo className="w-32 h-32" />
+        </div>
+        
         <Card className="shadow-xl border-blue-200">
           <CardHeader className="space-y-4 text-center bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-t-lg">
-            <div className="flex justify-center">
-              <RDRLogo className="text-white" />
-            </div>
             <div>
               <CardTitle className="text-2xl font-bold flex items-center justify-center gap-2">
                 <Users className="w-6 h-6" />
