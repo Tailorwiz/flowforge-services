@@ -87,13 +87,18 @@ export default function AdminDashboard() {
   const updateClientStatus = async (clientId: string, status: string, actionType: string, description: string) => {
     setActionLoading(true);
     try {
-      // Update client status
-      const { error: clientError } = await supabase
+      console.log('Updating client status for:', clientId, 'to:', status);
+      
+      // Update client status for specific client only
+      const { data: updatedData, error: clientError } = await supabase
         .from('clients')
         .update({ status })
-        .eq('id', clientId);
+        .eq('id', clientId)
+        .select();
 
       if (clientError) throw clientError;
+      
+      console.log('Updated client data:', updatedData);
 
       // Add history entry
       const { error: historyError } = await supabase
