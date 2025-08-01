@@ -138,7 +138,10 @@ export default function ClientPortal() {
 
   // Countdown timer effect
   useEffect(() => {
-    if (!profile?.estimated_delivery_date) return;
+    if (!profile?.estimated_delivery_date) {
+      setTimeRemaining({ days: 0, hours: 0, minutes: 0 });
+      return;
+    }
 
     const updateTimer = () => {
       const deliveryDate = new Date(profile.estimated_delivery_date);
