@@ -366,9 +366,10 @@ export default function ClientPortal() {
   };
 
   const determineProgressStep = (clientData: any) => {
-    // Logic to determine current progress step based on client data
-    // This would be based on your actual business logic
-    return 2; // Example: currently on step 2
+    // Start at step 1 by default
+    // In a real implementation, this would check actual completion status
+    console.log('Determining progress step for client:', clientData);
+    return 1; // Start at step 1 - intake form
   };
 
   const getProgressPercentage = () => {
@@ -673,7 +674,10 @@ export default function ClientPortal() {
                   const isCompleted = profile.progress_step > step.id;
                   const isCurrent = profile.progress_step === step.id;
                   const IconComponent = step.icon;
-                  const isClickable = step.id === 1 && !isCompleted; // Only make intake form clickable for now
+                  // Make intake form always clickable, others only when current
+                  const isClickable = step.id === 1 || (step.id === profile.progress_step && !isCompleted);
+                  
+                  console.log(`Step ${step.id}: progress_step=${profile.progress_step}, isCompleted=${isCompleted}, isClickable=${isClickable}`);
                   
                   return (
                     <div 
@@ -710,9 +714,18 @@ export default function ClientPortal() {
                           In Progress
                         </Badge>
                       )}
-                      {isClickable && (
-                        <Button variant="outline" size="sm">
-                          Start →
+                      {(isClickable || step.id === 1) && (
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (step.id === 1) {
+                              handleIntakeFormClick();
+                            }
+                          }}
+                        >
+                          {isCompleted && step.id === 1 ? 'Update' : 'Start'} →
                         </Button>
                       )}
                     </div>
