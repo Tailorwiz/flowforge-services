@@ -593,123 +593,17 @@ export default function ClientPortal() {
                     </p>
                     <p className="text-xs text-slate-500 mt-1">{step.description}</p>
                     
-                    {/* Show intake form directly under Step 1 when it's current */}
+                    {/* Show button for intake form when it's Step 1 and current */}
                     {step.id === 1 && isCurrent && (
-                      <div className="mt-4 col-span-full">
-                        <Collapsible open={showIntakeForm} onOpenChange={setShowIntakeForm}>
-                          <CollapsibleTrigger asChild>
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              onClick={handleIntakeFormClick}
-                              className="w-full max-w-xs mx-auto"
-                            >
-                              {showIntakeForm ? 'Hide Questionnaire' : 'Start Questionnaire'}
-                            </Button>
-                          </CollapsibleTrigger>
-                          <CollapsibleContent className="mt-4">
-                            <Card className="border shadow-sm w-full">
-                              <CardHeader>
-                                <CardTitle className="text-lg text-center">Intake Questionnaire</CardTitle>
-                                <p className="text-sm text-slate-600 text-center">Please provide detailed information to help us create your perfect resume</p>
-                              </CardHeader>
-                              <CardContent>
-                                <form onSubmit={handleIntakeSubmit} className="space-y-6">
-                                  <div className="grid gap-6 lg:grid-cols-3 md:grid-cols-2">
-                                    <div>
-                                      <Label htmlFor="currentJobTitle">Current Job Title</Label>
-                                      <Input
-                                      id="currentJobTitle"
-                                      value={formData.currentJobTitle}
-                                      onChange={(e) => handleInputChange('currentJobTitle', e.target.value)}
-                                      placeholder="e.g., Marketing Coordinator"
-                                      required
-                                    />
-                                    </div>
-                                  </div>
-
-                                  <div>
-                                      <Label htmlFor="targetJobTitle">Target Job Title</Label>
-                                      <Input
-                                      id="targetJobTitle"
-                                      value={formData.targetJobTitle}
-                                      onChange={(e) => handleInputChange('targetJobTitle', e.target.value)}
-                                      placeholder="e.g., Marketing Manager"
-                                      required
-                                    />
-                                    </div>
-
-                                    <div>
-                                      <Label htmlFor="industry">Industry</Label>
-                                      <Input
-                                      id="industry"
-                                      value={formData.industry}
-                                      onChange={(e) => handleInputChange('industry', e.target.value)}
-                                      placeholder="e.g., Technology, Healthcare, Finance"
-                                      required
-                                    />
-                                    </div>
-
-                                    <div>
-                                      <Label htmlFor="experience">Years of Experience</Label>
-                                      <Input
-                                      id="experience"
-                                      value={formData.experience}
-                                      onChange={(e) => handleInputChange('experience', e.target.value)}
-                                      placeholder="e.g., 5 years"
-                                      required
-                                    />
-                                  </div>
-
-                                  <div className="grid gap-6 lg:grid-cols-2">
-                                    <div>
-                                      <Label htmlFor="careerGoals">Career Goals</Label>
-                                    <Textarea
-                                      id="careerGoals"
-                                      value={formData.careerGoals}
-                                      onChange={(e) => handleInputChange('careerGoals', e.target.value)}
-                                      placeholder="Describe your short-term and long-term career objectives..."
-                                      rows={3}
-                                      required
-                                    />
-                                    </div>
-
-                                    <div>
-                                      <Label htmlFor="challenges">Current Challenges</Label>
-                                      <Textarea
-                                      id="challenges"
-                                      value={formData.challenges}
-                                      onChange={(e) => handleInputChange('challenges', e.target.value)}
-                                      placeholder="What challenges are you facing in your job search or career?"
-                                      rows={3}
-                                    />
-                                    </div>
-                                  </div>
-
-                                  <div>
-                                    <Label htmlFor="additionalInfo">Additional Information</Label>
-                                    <Textarea
-                                      id="additionalInfo"
-                                      value={formData.additionalInfo}
-                                      onChange={(e) => handleInputChange('additionalInfo', e.target.value)}
-                                      placeholder="Any other information you'd like us to know..."
-                                      rows={3}
-                                    />
-                                  </div>
-
-                                  <div className="flex justify-center gap-4 pt-6">
-                                    <Button type="submit" className="px-8" disabled={formLoading}>
-                                      {formLoading ? "Submitting..." : "Submit Questionnaire"}
-                                    </Button>
-                                    <Button type="button" variant="outline" className="px-8" onClick={() => setShowIntakeForm(false)}>
-                                      Cancel
-                                    </Button>
-                                  </div>
-                                </form>
-                              </CardContent>
-                            </Card>
-                          </CollapsibleContent>
-                        </Collapsible>
+                      <div className="mt-4">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={handleIntakeFormClick}
+                          className="w-full"
+                        >
+                          {showIntakeForm ? 'Hide Questionnaire' : 'Start Questionnaire'}
+                        </Button>
                       </div>
                     )}
                   </div>
@@ -718,6 +612,110 @@ export default function ClientPortal() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Full Width Intake Form - Shows when button is clicked */}
+        {profile.progress_step === 1 && showIntakeForm && (
+          <Card className="mb-8 shadow-lg border-0">
+            <CardHeader>
+              <CardTitle className="text-xl text-center">Intake Questionnaire</CardTitle>
+              <p className="text-slate-600 text-center">Please provide detailed information to help us create your perfect resume</p>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleIntakeSubmit} className="space-y-6">
+                <div className="grid gap-6 lg:grid-cols-4 md:grid-cols-2">
+                  <div>
+                    <Label htmlFor="currentJobTitle">Current Job Title</Label>
+                    <Input
+                      id="currentJobTitle"
+                      value={formData.currentJobTitle}
+                      onChange={(e) => handleInputChange('currentJobTitle', e.target.value)}
+                      placeholder="e.g., Marketing Coordinator"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="targetJobTitle">Target Job Title</Label>
+                    <Input
+                      id="targetJobTitle"
+                      value={formData.targetJobTitle}
+                      onChange={(e) => handleInputChange('targetJobTitle', e.target.value)}
+                      placeholder="e.g., Marketing Manager"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="industry">Industry</Label>
+                    <Input
+                      id="industry"
+                      value={formData.industry}
+                      onChange={(e) => handleInputChange('industry', e.target.value)}
+                      placeholder="e.g., Technology, Healthcare, Finance"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="experience">Years of Experience</Label>
+                    <Input
+                      id="experience"
+                      value={formData.experience}
+                      onChange={(e) => handleInputChange('experience', e.target.value)}
+                      placeholder="e.g., 5 years"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="grid gap-6 lg:grid-cols-2">
+                  <div>
+                    <Label htmlFor="careerGoals">Career Goals</Label>
+                    <Textarea
+                      id="careerGoals"
+                      value={formData.careerGoals}
+                      onChange={(e) => handleInputChange('careerGoals', e.target.value)}
+                      placeholder="Describe your short-term and long-term career objectives..."
+                      rows={4}
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="challenges">Current Challenges</Label>
+                    <Textarea
+                      id="challenges"
+                      value={formData.challenges}
+                      onChange={(e) => handleInputChange('challenges', e.target.value)}
+                      placeholder="What challenges are you facing in your job search or career?"
+                      rows={4}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="additionalInfo">Additional Information</Label>
+                  <Textarea
+                    id="additionalInfo"
+                    value={formData.additionalInfo}
+                    onChange={(e) => handleInputChange('additionalInfo', e.target.value)}
+                    placeholder="Any other information you'd like us to know..."
+                    rows={4}
+                  />
+                </div>
+
+                <div className="flex justify-center gap-4 pt-6">
+                  <Button type="submit" className="px-12 py-3 text-lg" disabled={formLoading}>
+                    {formLoading ? "Submitting..." : "Submit Questionnaire"}
+                  </Button>
+                  <Button type="button" variant="outline" className="px-8 py-3" onClick={() => setShowIntakeForm(false)}>
+                    Cancel
+                  </Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Main Content Tabs */}
         <Tabs defaultValue="deliveries" className="space-y-6">
