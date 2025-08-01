@@ -70,6 +70,19 @@ const PROGRESS_STEPS = [
 export default function ClientPortal() {
   const { user, signOut, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+  
+  // Early returns MUST happen before any hooks
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent mx-auto mb-4"></div>
+          <span className="text-lg font-medium text-slate-700">Loading your portal...</span>
+        </div>
+      </div>
+    );
+  }
+
   const [profile, setProfile] = useState<ClientProfile | null>(null);
   const [needsPhotoUpload, setNeedsPhotoUpload] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -487,7 +500,8 @@ export default function ClientPortal() {
     ));
   };
 
-  if (authLoading || loading) {
+  // Handle remaining loading states and photo upload after hooks are called
+  if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
         <div className="text-center">
@@ -496,7 +510,7 @@ export default function ClientPortal() {
         </div>
       </div>
     );
-  };
+  }
 
   // Profile photo upload modal
   if (needsPhotoUpload) {
