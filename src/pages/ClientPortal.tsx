@@ -78,6 +78,16 @@ export default function ClientPortal() {
   const [alerts, setAlerts] = useState<any[]>([]);
   const [timeRemaining, setTimeRemaining] = useState({ days: 0, hours: 0, minutes: 0 });
   const [actionItems, setActionItems] = useState<any[]>([]);
+  const [showIntakeForm, setShowIntakeForm] = useState(false);
+  const [formData, setFormData] = useState({
+    currentJobTitle: '',
+    targetJobTitle: '',
+    industry: '',
+    experience: '',
+    careerGoals: '',
+    challenges: '',
+    additionalInfo: ''
+  });
 
   // Handle authentication redirect
   useEffect(() => {
@@ -399,15 +409,109 @@ export default function ClientPortal() {
 
   const handleIntakeFormClick = () => {
     console.log('Opening intake form...');
+    setShowIntakeForm(true);
     toast({
       title: "Intake Form",
       description: "Opening your intake questionnaire...",
     });
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     
-    // For now, we'll create a simple form dialog
-    // Later we can integrate with actual intake form system
-    const formUrl = `${window.location.origin}/intake-form?client=${profile?.id}`;
-    window.open(formUrl, '_blank', 'width=800,height=600');
+    if (!profile?.id) {
+      toast({
+        title: "Error",
+        description: "No client profile found.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      // Insert into client_history table
+      const historyData = {
+        client_id: profile.id,
+        action_type: 'intake_form_submitted',
+        description: 'Client submitted intake form with career details',
+        metadata: formData,
+        created_by: user?.id
+      };
+
+      console.log('Submitting intake form data:', historyData);
+
+      const { data: historyResult, error: historyError } = await supabase
+        .from('client_history')
+        .insert(historyData)
+        .select();
+
+      if (historyError) {
+        console.error('Error inserting client history:', historyError);
+        console.error('Error details:', {
+          code: historyError.code,
+          message: historyError.message,
+          details: historyError.details,
+          hint: historyError.hint
+        });
+        throw historyError;
+      }
+
+      console.log('Successfully inserted client history:', historyResult);
+
+      // Update client record to mark intake form as submitted
+      const { error: clientError } = await supabase
+        .from('clients')
+        .update({ 
+          intake_form_submitted: true,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', profile.id);
+
+      if (clientError) {
+        console.error('Error updating client:', clientError);
+        throw clientError;
+      }
+
+      // Update profile to reflect the change
+      setProfile(prev => prev ? { ...prev, progress_step: Math.max(prev.progress_step, 2) } : null);
+
+      toast({
+        title: "Form Submitted!",
+        description: "Your intake form has been submitted successfully. We'll review your information and get back to you soon.",
+      });
+
+      // Reset form and close
+      setFormData({
+        currentJobTitle: '',
+        targetJobTitle: '',
+        industry: '',
+        experience: '',
+        careerGoals: '',
+        challenges: '',
+        additionalInfo: ''
+      });
+      setShowIntakeForm(false);
+
+    } catch (error) {
+      console.error('Error submitting intake form:', error);
+      toast({
+        title: "Error",
+        description: "Failed to submit form. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSaveProfile = async () => {
@@ -563,6 +667,159 @@ export default function ClientPortal() {
 
   const daysUntilDelivery = getDaysUntilDelivery();
   const progressPercentage = getProgressPercentage();
+
+  // If showing intake form, render it full width
+  if (showIntakeForm) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4">
+        <div className="max-w-6xl mx-auto">
+          <Card className="shadow-xl border-0">
+            <CardHeader className="text-center pb-6">
+              <div className="mb-6">
+                <RDRLogo />
+              </div>
+              <CardTitle className="text-3xl font-bold text-slate-800 mb-2">
+                Career Development Intake Form
+              </CardTitle>
+              <p className="text-slate-600 text-lg">
+                Help us understand your career goals and current situation
+              </p>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleSubmit} className="space-y-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="currentJobTitle" className="text-sm font-medium text-slate-700">
+                      Current Job Title
+                    </Label>
+                    <Input
+                      id="currentJobTitle"
+                      name="currentJobTitle"
+                      value={formData.currentJobTitle}
+                      onChange={handleInputChange}
+                      placeholder="e.g., Software Engineer"
+                      className="h-12"
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="targetJobTitle" className="text-sm font-medium text-slate-700">
+                      Target Job Title
+                    </Label>
+                    <Input
+                      id="targetJobTitle"
+                      name="targetJobTitle"
+                      value={formData.targetJobTitle}
+                      onChange={handleInputChange}
+                      placeholder="e.g., Senior Software Engineer"
+                      className="h-12"
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="industry" className="text-sm font-medium text-slate-700">
+                      Industry
+                    </Label>
+                    <Input
+                      id="industry"
+                      name="industry"
+                      value={formData.industry}
+                      onChange={handleInputChange}
+                      placeholder="e.g., Technology, Healthcare"
+                      className="h-12"
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="experience" className="text-sm font-medium text-slate-700">
+                      Years of Experience
+                    </Label>
+                    <Input
+                      id="experience"
+                      name="experience"
+                      value={formData.experience}
+                      onChange={handleInputChange}
+                      placeholder="e.g., 5 years"
+                      className="h-12"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="careerGoals" className="text-sm font-medium text-slate-700">
+                      Career Goals
+                    </Label>
+                    <Textarea
+                      id="careerGoals"
+                      name="careerGoals"
+                      value={formData.careerGoals}
+                      onChange={handleInputChange}
+                      placeholder="Describe your short-term and long-term career objectives..."
+                      className="min-h-32 resize-none"
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="challenges" className="text-sm font-medium text-slate-700">
+                      Current Challenges
+                    </Label>
+                    <Textarea
+                      id="challenges"
+                      name="challenges"
+                      value={formData.challenges}
+                      onChange={handleInputChange}
+                      placeholder="What challenges are you facing in your job search or career progression?"
+                      className="min-h-32 resize-none"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="additionalInfo" className="text-sm font-medium text-slate-700">
+                    Additional Information
+                  </Label>
+                  <Textarea
+                    id="additionalInfo"
+                    name="additionalInfo"
+                    value={formData.additionalInfo}
+                    onChange={handleInputChange}
+                    placeholder="Any additional information you'd like us to know about your background, achievements, or specific requirements..."
+                    className="min-h-24 resize-none"
+                  />
+                </div>
+
+                <div className="flex justify-end gap-4 pt-6 border-t border-slate-200">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setShowIntakeForm(false)}
+                    className="px-8 py-3 text-base"
+                    disabled={loading}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={loading}
+                    className="px-8 py-3 text-base bg-primary hover:bg-primary/90"
+                  >
+                    {loading ? "Submitting..." : "Submit Form"}
+                  </Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
