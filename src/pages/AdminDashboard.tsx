@@ -14,7 +14,9 @@ import {
   Calendar,
   FileText,
   Phone,
-  Mail
+  Mail,
+  Download,
+  FileSpreadsheet
 } from 'lucide-react';
 
 interface Client {
@@ -132,6 +134,62 @@ export default function AdminDashboard() {
     }
   };
 
+  const exportClientData = async (format: 'json' | 'csv' = 'json') => {
+    try {
+      setActionLoading(true);
+      
+      const { data: session } = await supabase.auth.getSession();
+      if (!session.session) {
+        throw new Error('Not authenticated');
+      }
+
+      const response = await fetch(`https://gxatnnzwaggcvzzurgsq.supabase.co/functions/v1/export-client-data?format=${format}`, {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${session.session.access_token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Export failed');
+      }
+
+      const data = format === 'csv' ? await response.text() : await response.json();
+
+      
+
+      // Create download link
+      const blob = new Blob([format === 'csv' ? data : JSON.stringify(data, null, 2)], {
+        type: format === 'csv' ? 'text/csv' : 'application/json'
+      });
+      
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `client-data-${new Date().toISOString().split('T')[0]}.${format}`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+
+      toast({
+        title: "Success",
+        description: `Client data exported as ${format.toUpperCase()}`,
+      });
+    } catch (error) {
+      console.error('Export error:', error);
+      toast({
+        title: "Error",
+        description: "Failed to export client data",
+        variant: "destructive",
+      });
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'approved':
@@ -168,8 +226,32 @@ export default function AdminDashboard() {
   return (
     <div className="container mx-auto p-6">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-slate-800 mb-2">Admin Dashboard</h1>
-        <p className="text-slate-600">Review and manage client intake forms</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-slate-800 mb-2">Admin Dashboard</h1>
+            <p className="text-slate-600">Review and manage client intake forms</p>
+          </div>
+          <div className="flex space-x-2">
+            <Button
+              onClick={() => exportClientData('csv')}
+              disabled={actionLoading}
+              variant="outline"
+              className="flex items-center space-x-2"
+            >
+              <FileSpreadsheet className="h-4 w-4" />
+              <span>Export CSV</span>
+            </Button>
+            <Button
+              onClick={() => exportClientData('json')}
+              disabled={actionLoading}
+              variant="outline"
+              className="flex items-center space-x-2"
+            >
+              <Download className="h-4 w-4" />
+              <span>Export JSON</span>
+            </Button>
+          </div>
+        </div>
       </div>
 
       <Tabs defaultValue="pending" className="w-full">
