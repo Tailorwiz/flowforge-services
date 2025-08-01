@@ -62,20 +62,28 @@ export default function IntakeForm() {
       // Ensure metadata is properly formatted JSON
       const metadata = JSON.parse(JSON.stringify(formData));
       console.log('Metadata to insert:', metadata);
+      console.log('Metadata type:', typeof metadata);
+      
+      const insertData = {
+        client_id: clientId,
+        action_type: 'intake_form_completed',
+        description: 'Client completed intake questionnaire',
+        metadata: metadata,
+        created_by: user?.id
+      };
+      
+      console.log('Full insert data:', insertData);
+      console.log('Client ID:', clientId, 'Type:', typeof clientId);
+      console.log('User ID:', user?.id, 'Type:', typeof user?.id);
       
       const { data: historyData, error: historyError } = await supabase
         .from('client_history')
-        .insert({
-          client_id: clientId,
-          action_type: 'intake_form_completed',
-          description: 'Client completed intake questionnaire',
-          metadata: metadata,
-          created_by: user?.id
-        })
+        .insert(insertData)
         .select();
 
       if (historyError) {
         console.error('History insert error:', historyError);
+        console.error('Error details:', JSON.stringify(historyError, null, 2));
         throw historyError;
       }
       console.log('History inserted successfully:', historyData);
