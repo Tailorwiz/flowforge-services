@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/components/AuthProvider";
 import { supabase } from "@/integrations/supabase/client";
@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "@/hooks/use-toast";
@@ -15,7 +14,6 @@ import {
   FileText, 
   Calendar,
   MessageCircle,
-  MessageSquare,
   CheckCircle,
   Clock,
   Download,
@@ -39,7 +37,6 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import RDRLogo from "@/components/RDRLogo";
 import AvatarUpload from "@/components/AvatarUpload";
-import { ClientDeliveries } from "@/components/ClientDeliveries";
 
 interface ClientProfile {
   id: string;
@@ -80,19 +77,6 @@ export default function ClientPortal() {
   const [alerts, setAlerts] = useState<any[]>([]);
   const [timeRemaining, setTimeRemaining] = useState({ days: 0, hours: 0, minutes: 0 });
   const [actionItems, setActionItems] = useState<any[]>([]);
-  
-  // Intake form state
-  const [showIntakeForm, setShowIntakeForm] = useState(false);
-  const [formLoading, setFormLoading] = useState(false);
-  const [formData, setFormData] = useState({
-    currentJobTitle: '',
-    targetJobTitle: '',
-    industry: '',
-    experience: '',
-    careerGoals: '',
-    challenges: '',
-    additionalInfo: ''
-  });
 
   // Handle authentication redirect
   useEffect(() => {
@@ -104,31 +88,9 @@ export default function ClientPortal() {
   // Handle case where user is authenticated but has no client profile
   useEffect(() => {
     if (!authLoading && !loading && user && !profile) {
-      console.log('ClientPortal: User authenticated but no client profile found, checking if admin...');
-      checkIfUserIsAdmin();
-    }
-  }, [user, authLoading, loading, profile, navigate]);
-
-  const checkIfUserIsAdmin = async () => {
-    try {
-      const { data: userRole } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', user?.id)
-        .maybeSingle();
-      
-      if (userRole?.role === 'admin') {
-        console.log('ClientPortal: User is admin, redirecting to admin dashboard');
-        navigate('/admin');
-      } else {
-        console.log('ClientPortal: User is not admin and has no client profile');
-        navigate('/login');
-      }
-    } catch (error) {
-      console.error('Error checking user role:', error);
       navigate('/login');
     }
-  };
+  }, [user, authLoading, loading, profile, navigate]);
 
   useEffect(() => {
     if (user) {
@@ -162,19 +124,21 @@ export default function ClientPortal() {
     };
 
     updateTimer();
-    const interval = setInterval(updateTimer, 60000);
+    const interval = setInterval(updateTimer, 60000); // Update every minute
 
     return () => clearInterval(interval);
   }, [profile?.estimated_delivery_date]);
 
   const fetchClientProfile = async () => {
     try {
+      // Check if user has a profile with avatar
       const { data: profileData } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', user?.id)
         .maybeSingle();
 
+      // Check if user exists as a client
       const { data: clientData } = await supabase
         .from('clients')
         .select(`
@@ -204,6 +168,7 @@ export default function ClientPortal() {
           bio: profileData?.bio
         });
 
+        // Check if profile photo is needed
         if (!profileData?.avatar_url) {
           setNeedsPhotoUpload(true);
         }
@@ -216,6 +181,7 @@ export default function ClientPortal() {
   };
 
   const fetchMessages = async () => {
+    // Mock messages for now
     setMessages([
       {
         id: 1,
@@ -228,6 +194,7 @@ export default function ClientPortal() {
   };
 
   const fetchDocuments = async () => {
+    // Mock documents for now
     setDocuments([
       {
         id: 1,
@@ -253,6 +220,7 @@ export default function ClientPortal() {
         .select('*')
         .eq('is_active', true);
       
+      // Add sample training programs with full-size photos if no data
       const sampleMaterials = data && data.length > 0 ? data : [
         {
           id: 1,
@@ -269,6 +237,22 @@ export default function ClientPortal() {
           content_url: '#',
           thumbnail_url: 'https://images.unsplash.com/photo-1487058792275-0ad4aaf24ca7?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80',
           is_active: true
+        },
+        {
+          id: 3,
+          name: 'Advanced MacBook Development',
+          description: 'Master development workflows on MacBook with professional coding environments and tools.',
+          content_url: '#',
+          thumbnail_url: 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80',
+          is_active: true
+        },
+        {
+          id: 4,
+          name: 'UI/UX Design Principles',
+          description: 'Learn design fundamentals for creating beautiful and functional user interfaces.',
+          content_url: '#',
+          thumbnail_url: 'https://images.unsplash.com/photo-1483058712412-4245e9b90334?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80',
+          is_active: true
         }
       ];
       
@@ -279,6 +263,7 @@ export default function ClientPortal() {
   };
 
   const fetchAlerts = async () => {
+    // Mock alerts for now
     setAlerts([
       {
         id: 1,
@@ -287,6 +272,14 @@ export default function ClientPortal() {
         message: 'Your project has been started. We\'ll keep you updated on progress.',
         timestamp: new Date().toISOString(),
         read: false
+      },
+      {
+        id: 2,
+        type: 'reminder',
+        title: 'Document Upload',
+        message: 'Please upload your current resume when convenient.',
+        timestamp: new Date(Date.now() - 86400000).toISOString(),
+        read: true
       }
     ]);
   };
@@ -301,14 +294,42 @@ export default function ClientPortal() {
         .eq('client_id', profile.id)
         .order('task_order', { ascending: true });
       
+      // Add sample action items if no data
       const sampleItems = data && data.length > 0 ? data : [
         {
           id: 1,
           name: 'Complete Intake Questionnaire',
           description: 'Please fill out the detailed questionnaire about your career goals and experience.',
           status: 'pending',
-          due_date: new Date(Date.now() + 86400000 * 2).toISOString().split('T')[0],
+          due_date: new Date(Date.now() + 86400000 * 2).toISOString().split('T')[0], // 2 days from now
           task_order: 1,
+          assigned_date: new Date().toISOString().split('T')[0]
+        },
+        {
+          id: 2,
+          name: 'Upload Current Resume',
+          description: 'Upload your existing resume so we can review and improve it.',
+          status: 'pending',
+          due_date: new Date(Date.now() + 86400000 * 3).toISOString().split('T')[0], // 3 days from now
+          task_order: 2,
+          assigned_date: new Date().toISOString().split('T')[0]
+        },
+        {
+          id: 3,
+          name: 'Initial Draft Review',
+          description: 'We are preparing your initial resume draft based on your requirements.',
+          status: 'waiting_admin',
+          due_date: new Date(Date.now() + 86400000 * 5).toISOString().split('T')[0], // 5 days from now
+          task_order: 3,
+          assigned_date: new Date().toISOString().split('T')[0]
+        },
+        {
+          id: 4,
+          name: 'Review and Provide Feedback',
+          description: 'Review the initial draft and provide any feedback or revision requests.',
+          status: 'blocked',
+          due_date: new Date(Date.now() + 86400000 * 6).toISOString().split('T')[0], // 6 days from now
+          task_order: 4,
           assigned_date: new Date().toISOString().split('T')[0]
         }
       ];
@@ -320,8 +341,9 @@ export default function ClientPortal() {
   };
 
   const determineProgressStep = (clientData: any) => {
-    console.log('Determining progress step for client:', clientData);
-    return 1;
+    // Logic to determine current progress step based on client data
+    // This would be based on your actual business logic
+    return 2; // Example: currently on step 2
   };
 
   const getProgressPercentage = () => {
@@ -349,99 +371,57 @@ export default function ClientPortal() {
     });
   };
 
-  const handleIntakeFormClick = () => {
-    console.log('Opening intake form...');
-    setShowIntakeForm(!showIntakeForm);
-  };
-
-  const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-  };
-
-  const handleIntakeSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setFormLoading(true);
-
+  const handleSaveProfile = async () => {
+    if (!profile || !user) return;
+    
     try {
-      console.log('=== INTAKE FORM SUBMISSION DEBUG ===');
-      console.log('Form data:', formData);
-      console.log('Client ID:', profile?.id);
-      console.log('User ID:', user?.id);
-
-      if (!profile?.id) {
-        throw new Error('Client information not loaded');
-      }
-
-      if (!user?.id) {
-        throw new Error('User not authenticated');
-      }
-
-      const { data: historyData, error: historyError } = await supabase
-        .from('client_history')
-        .insert({
-          client_id: profile.id,
-          action_type: 'intake_form_completed',
-          description: 'Client completed intake questionnaire',
-          metadata: formData,
-          created_by: user.id
-        })
-        .select();
-
-      if (historyError) {
-        console.error('History insert error:', historyError);
-        throw historyError;
-      }
-
-      const { data: updateData, error: updateError } = await supabase
-        .from('clients')
-        .update({ 
-          intake_form_submitted: true,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', profile.id)
-        .select();
-
-      if (updateError) {
-        console.error('Client update error:', updateError);
-        throw updateError;
-      }
-
-      setProfile(prev => prev ? { ...prev, progress_step: 2 } : null);
-      setShowIntakeForm(false);
+      setLoading(true);
       
+      // Update the profiles table
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .upsert({
+          id: user.id,
+          email: profile.email,
+          first_name: profile.first_name,
+          last_name: profile.last_name,
+          phone: profile.phone,
+          location: profile.location,
+          job_title: profile.job_title,
+          industry: profile.industry,
+          website: profile.website,
+          bio: profile.bio,
+          updated_at: new Date().toISOString(),
+        });
+
+      if (profileError) throw profileError;
+
+      // Update the clients table 
+      const { error: clientError } = await supabase
+        .from('clients')
+        .update({
+          name: `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || profile.name,
+          email: profile.email,
+          phone: profile.phone,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', profile.id);
+
+      if (clientError) throw clientError;
+
       toast({
-        title: "Intake Form Submitted!",
-        description: "Thank you for completing your intake questionnaire. We'll review your information and get started on your project.",
+        title: "Profile Updated",
+        description: "Your profile information has been saved successfully.",
       });
-
-      setFormData({
-        currentJobTitle: '',
-        targetJobTitle: '',
-        industry: '',
-        experience: '',
-        careerGoals: '',
-        challenges: '',
-        additionalInfo: ''
-      });
-
-    } catch (error: any) {
-      console.error('Error submitting intake form:', error);
+    } catch (error) {
+      console.error('Error saving profile:', error);
       toast({
         title: "Error",
-        description: `Failed to submit intake form: ${error.message || 'Please try again.'}`,
+        description: "Failed to save profile changes. Please try again.",
         variant: "destructive",
       });
     } finally {
-      setFormLoading(false);
-    }
-  };
-
-  const handleSignOut = async () => {
-    try {
-      await signOut();
-      navigate('/');
-    } catch (error) {
-      console.error('Error signing out:', error);
+      setLoading(false);
     }
   };
 
@@ -461,9 +441,50 @@ export default function ClientPortal() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-slate-600">Loading your dashboard...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent mx-auto mb-4"></div>
+          <span className="text-lg font-medium text-slate-700">Loading your portal...</span>
         </div>
+      </div>
+    );
+  };
+
+  // Profile photo upload modal
+  if (needsPhotoUpload) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center p-4">
+        <Card className="w-full max-w-md shadow-xl border-0">
+          <CardHeader className="text-center">
+            <div className="mb-4">
+              <RDRLogo />
+            </div>
+            <CardTitle className="text-2xl font-bold text-slate-800">Welcome to RDR Project Portal</CardTitle>
+            <p className="text-slate-600">Let's get started by adding your profile photo</p>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="text-center">
+              <div className="w-32 h-32 mx-auto mb-4 bg-slate-100 rounded-full flex items-center justify-center">
+                <Camera className="w-8 h-8 text-slate-400" />
+              </div>
+              <AvatarUpload 
+                currentAvatarUrl={profile?.avatar_url}
+                onAvatarUpdate={handlePhotoUpload}
+                size="lg"
+                showUploadButton={true}
+              />
+            </div>
+            <div className="text-sm text-slate-600 space-y-2">
+              <p><strong>Requirements:</strong></p>
+              <ul className="list-disc list-inside space-y-1 text-xs">
+                <li>Clear headshot or professional photo</li>
+                <li>JPG or PNG format</li>
+                <li>Minimum 400x400 pixels</li>
+              </ul>
+              <p className="text-center mt-4 text-slate-500">
+                This helps us personalize your experience and keep your account secure.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -471,43 +492,79 @@ export default function ClientPortal() {
   if (!profile) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
-        <div className="text-center">
-          <AlertCircle className="h-12 w-12 text-orange-500 mx-auto mb-4" />
-          <h2 className="text-xl font-semibold text-slate-800 mb-2">Profile Not Found</h2>
-          <p className="text-slate-600 mb-4">We couldn't find your client profile. Please contact support.</p>
-          <Button onClick={() => navigate('/login')}>Back to Login</Button>
-        </div>
+        <Card className="w-full max-w-md shadow-xl border-0">
+          <CardContent className="text-center p-8">
+            <div className="mb-4">
+              <RDRLogo />
+            </div>
+            <h2 className="text-xl font-bold mb-2 text-slate-800">Access Denied</h2>
+            <p className="text-slate-600 mb-6">
+              You don't have access to the customer portal. Please contact support if you believe this is an error.
+            </p>
+            <div className="space-y-3">
+              <Button 
+                onClick={() => window.location.href = '/auth'} 
+                variant="outline" 
+                className="w-full"
+              >
+                Back to Sign In
+              </Button>
+              <Button 
+                onClick={() => window.location.href = 'mailto:support@resultsdrivenresumes.com'} 
+                className="w-full"
+              >
+                Contact Support
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
   const daysUntilDelivery = getDaysUntilDelivery();
+  const progressPercentage = getProgressPercentage();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="h-16 flex items-center justify-between">
+      <header className="bg-white shadow-sm border-b border-slate-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <RDRLogo className="h-8 w-auto" />
-              <div className="hidden md:block">
-                <h1 className="text-xl font-semibold text-slate-800">Client Portal</h1>
+              <RDRLogo />
+              <div>
+                <h1 className="text-2xl font-bold text-slate-800">Client Dashboard</h1>
               </div>
             </div>
-            
             <div className="flex items-center gap-4">
-              <div className="flex items-center gap-3">
-                <Avatar className="h-8 w-8">
-                  <AvatarImage src={profile.avatar_url} />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={async () => {
+                  await signOut();
+                  toast({
+                    title: "Logged out successfully",
+                    description: "You have been signed out of your account."
+                  });
+                  // Redirect to login selection page after logout
+                  window.location.href = "/login";
+                }}
+                className="flex items-center gap-2"
+              >
+                <LogOut className="h-4 w-4" />
+                Logout
+              </Button>
+              <div className="relative">
+                <Avatar className="h-12 w-12 ring-2 ring-primary/20">
+                  <AvatarImage src={profile.avatar_url} alt={profile.name} />
                   <AvatarFallback>
-                    {profile.name.split(' ').map(n => n[0]).join('')}
+                    <User className="h-6 w-6" />
                   </AvatarFallback>
                 </Avatar>
-                {needsPhotoUpload && (
-                  <div className="relative">
-                    <Camera className="h-4 w-4 text-orange-500" />
-                    <div className="absolute -top-1 -right-1 h-3 w-3 bg-orange-500 rounded-full"></div>
+                {!profile.avatar_url && (
+                  <div className="absolute -bottom-1 -right-1 bg-orange-500 text-white rounded-full p-1">
+                    <Camera className="h-3 w-3" />
                   </div>
                 )}
               </div>
@@ -560,170 +617,67 @@ export default function ClientPortal() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <CheckCircle className="w-5 h-5 text-primary" />
-              Project Progress
+              Your Progress
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="mb-6">
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-sm font-medium text-slate-700">Overall Progress</span>
-                <span className="text-sm text-slate-600">{Math.round(getProgressPercentage())}% Complete</span>
+            <div className="space-y-6">
+              <div>
+                <div className="flex justify-between text-sm mb-2">
+                  <span className="font-medium">Overall Progress</span>
+                  <span className="text-primary font-semibold">{Math.round(progressPercentage)}% Complete</span>
+                </div>
+                <Progress value={progressPercentage} className="h-3" />
               </div>
-              <Progress value={getProgressPercentage()} className="h-2" />
-            </div>
-            
-            <div className="grid gap-4 md:grid-cols-5">
-              {PROGRESS_STEPS.map((step, index) => {
-                const IconComponent = step.icon;
-                const isCompleted = profile.progress_step > step.id;
-                const isCurrent = profile.progress_step === step.id;
-                
-                return (
-                  <div key={step.id} className="text-center">
-                    <div className={`
-                      w-12 h-12 rounded-full mx-auto mb-2 flex items-center justify-center
-                      ${isCompleted ? 'bg-primary text-white' : 
-                        isCurrent ? 'bg-primary/20 text-primary border-2 border-primary' : 
-                        'bg-slate-100 text-slate-400'}
-                    `}>
-                      <IconComponent className="w-5 h-5" />
-                    </div>
-                    <p className={`text-sm font-medium ${isCurrent ? 'text-primary' : 'text-slate-700'}`}>
-                      {step.title}
-                    </p>
-                    <p className="text-xs text-slate-500 mt-1">{step.description}</p>
-                    
-                    {/* Show button for intake form when it's Step 1 and current */}
-                    {step.id === 1 && isCurrent && (
-                      <div className="mt-4">
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={handleIntakeFormClick}
-                          className="w-full"
-                        >
-                          {showIntakeForm ? 'Hide Questionnaire' : 'Start Questionnaire'}
-                        </Button>
+              
+              <div className="grid gap-4">
+                {PROGRESS_STEPS.map((step, index) => {
+                  const isCompleted = profile.progress_step > step.id;
+                  const isCurrent = profile.progress_step === step.id;
+                  const IconComponent = step.icon;
+                  
+                  return (
+                    <div key={step.id} className={`flex items-center gap-4 p-4 rounded-lg border ${
+                      isCompleted ? 'bg-green-50 border-green-200' :
+                      isCurrent ? 'bg-primary/5 border-primary/20' :
+                      'bg-slate-50 border-slate-200'
+                    }`}>
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                        isCompleted ? 'bg-green-500 text-white' :
+                        isCurrent ? 'bg-primary text-white' :
+                        'bg-slate-300 text-slate-600'
+                      }`}>
+                        {isCompleted ? (
+                          <CheckCircle className="w-5 h-5" />
+                        ) : (
+                          <IconComponent className="w-5 h-5" />
+                        )}
                       </div>
-                    )}
-                  </div>
-                );
-              })}
+                      <div className="flex-1">
+                        <h4 className="font-semibold text-slate-800">{step.title}</h4>
+                        <p className="text-sm text-slate-600">{step.description}</p>
+                      </div>
+                      {isCompleted && (
+                        <Badge variant="default" className="bg-green-500">
+                          Complete
+                        </Badge>
+                      )}
+                      {isCurrent && (
+                        <Badge variant="default">
+                          In Progress
+                        </Badge>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Full Width Intake Form - Shows when button is clicked */}
-        {profile.progress_step === 1 && showIntakeForm && (
-          <Card className="mb-8 shadow-lg border-0">
-            <CardHeader>
-              <CardTitle className="text-xl text-center">Intake Questionnaire</CardTitle>
-              <p className="text-slate-600 text-center">Please provide detailed information to help us create your perfect resume</p>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleIntakeSubmit} className="space-y-6">
-                <div className="grid gap-6 lg:grid-cols-4 md:grid-cols-2">
-                  <div>
-                    <Label htmlFor="currentJobTitle">Current Job Title</Label>
-                    <Input
-                      id="currentJobTitle"
-                      value={formData.currentJobTitle}
-                      onChange={(e) => handleInputChange('currentJobTitle', e.target.value)}
-                      placeholder="e.g., Marketing Coordinator"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="targetJobTitle">Target Job Title</Label>
-                    <Input
-                      id="targetJobTitle"
-                      value={formData.targetJobTitle}
-                      onChange={(e) => handleInputChange('targetJobTitle', e.target.value)}
-                      placeholder="e.g., Marketing Manager"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="industry">Industry</Label>
-                    <Input
-                      id="industry"
-                      value={formData.industry}
-                      onChange={(e) => handleInputChange('industry', e.target.value)}
-                      placeholder="e.g., Technology, Healthcare, Finance"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="experience">Years of Experience</Label>
-                    <Input
-                      id="experience"
-                      value={formData.experience}
-                      onChange={(e) => handleInputChange('experience', e.target.value)}
-                      placeholder="e.g., 5 years"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="grid gap-6 lg:grid-cols-2">
-                  <div>
-                    <Label htmlFor="careerGoals">Career Goals</Label>
-                    <Textarea
-                      id="careerGoals"
-                      value={formData.careerGoals}
-                      onChange={(e) => handleInputChange('careerGoals', e.target.value)}
-                      placeholder="Describe your short-term and long-term career objectives..."
-                      rows={4}
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="challenges">Current Challenges</Label>
-                    <Textarea
-                      id="challenges"
-                      value={formData.challenges}
-                      onChange={(e) => handleInputChange('challenges', e.target.value)}
-                      placeholder="What challenges are you facing in your job search or career?"
-                      rows={4}
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <Label htmlFor="additionalInfo">Additional Information</Label>
-                  <Textarea
-                    id="additionalInfo"
-                    value={formData.additionalInfo}
-                    onChange={(e) => handleInputChange('additionalInfo', e.target.value)}
-                    placeholder="Any other information you'd like us to know..."
-                    rows={4}
-                  />
-                </div>
-
-                <div className="flex justify-center gap-4 pt-6">
-                  <Button type="submit" className="px-12 py-3 text-lg" disabled={formLoading}>
-                    {formLoading ? "Submitting..." : "Submit Questionnaire"}
-                  </Button>
-                  <Button type="button" variant="outline" className="px-8 py-3" onClick={() => setShowIntakeForm(false)}>
-                    Cancel
-                  </Button>
-                </div>
-              </form>
-            </CardContent>
-          </Card>
-        )}
-
         {/* Main Content Tabs */}
-        <Tabs defaultValue="deliveries" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-8 bg-white shadow-sm border">
-            <TabsTrigger value="deliveries" className="flex items-center gap-2">
-              <Package className="w-4 h-4" />
-              Deliveries
-            </TabsTrigger>
+        <Tabs defaultValue="documents" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-7 bg-white shadow-sm border">
             <TabsTrigger value="documents" className="flex items-center gap-2">
               <FileText className="w-4 h-4" />
               Documents
@@ -737,15 +691,20 @@ export default function ClientPortal() {
               Training
             </TabsTrigger>
             <TabsTrigger value="messages" className="flex items-center gap-2">
-              <MessageSquare className="w-4 h-4" />
+              <MessageCircle className="w-4 h-4" />
               Messages
             </TabsTrigger>
             <TabsTrigger value="alerts" className="flex items-center gap-2">
-              <AlertCircle className="w-4 h-4" />
+              <Bell className="w-4 h-4" />
               Alerts
+              {alerts.filter(a => !a.read).length > 0 && (
+                <span className="bg-orange-500 text-white text-xs rounded-full px-1.5 py-0.5 ml-1">
+                  {alerts.filter(a => !a.read).length}
+                </span>
+              )}
             </TabsTrigger>
             <TabsTrigger value="profile" className="flex items-center gap-2">
-              <Settings className="w-4 h-4" />
+              <User className="w-4 h-4" />
               Profile
             </TabsTrigger>
             <TabsTrigger value="help" className="flex items-center gap-2">
@@ -754,52 +713,28 @@ export default function ClientPortal() {
             </TabsTrigger>
           </TabsList>
 
-          {/* Deliveries Tab */}
-          <TabsContent value="deliveries">
-            <ClientDeliveries />
-          </TabsContent>
-
           {/* Documents Tab */}
           <TabsContent value="documents">
-            <Card>
+            <Card className="shadow-lg border-0">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <FileText className="w-5 h-5 text-primary" />
-                  Documents
-                </CardTitle>
+                <CardTitle>Your Documents</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {documents.map((doc) => {
-                    const getIcon = (type: string) => {
-                      switch (type.toLowerCase()) {
-                        case 'resume': return FileText;
-                        case 'cover letter': return MessageSquare;
-                        case 'linkedin': return User;
-                        default: return FileText;
-                      }
-                    };
-                    const IconComponent = getIcon(doc.type);
-                    
+                    const IconComponent = doc.icon;
                     return (
-                      <Card key={doc.id} className="border border-slate-200">
-                        <CardContent className="p-4">
-                          <div className="flex items-center gap-3 mb-3">
-                            <div className="p-2 bg-primary/10 rounded-lg">
-                              <IconComponent className="w-5 h-5 text-primary" />
-                            </div>
-                            <div className="flex-1">
-                              <h3 className="font-medium text-slate-800">{doc.name}</h3>
-                              <Badge variant={
-                                doc.status === 'completed' ? 'default' :
-                                doc.status === 'in_progress' ? 'secondary' : 'outline'
-                              }>
-                                {doc.status.replace('_', ' ')}
-                              </Badge>
-                            </div>
+                      <Card key={doc.id} className="border border-slate-200 hover:shadow-md transition-shadow">
+                        <CardContent className="p-6 text-center">
+                          <div className="w-16 h-16 mx-auto mb-4 bg-primary/10 rounded-full flex items-center justify-center">
+                            <IconComponent className="w-8 h-8 text-primary" />
                           </div>
+                          <h3 className="font-semibold text-slate-800 mb-2">{doc.name}</h3>
+                          <Badge variant={doc.status === 'in_progress' ? 'default' : 'secondary'}>
+                            {doc.status === 'in_progress' ? 'In Progress' : 'Pending'}
+                          </Badge>
                           {doc.status === 'completed' && (
-                            <Button size="sm" className="w-full">
+                            <Button className="w-full mt-4" variant="outline">
                               <Download className="w-4 h-4 mr-2" />
                               Download
                             </Button>
@@ -815,39 +750,117 @@ export default function ClientPortal() {
 
           {/* Action Items Tab */}
           <TabsContent value="action-items">
-            <Card>
+            <Card className="shadow-lg border-0">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <ListTodo className="w-5 h-5 text-primary" />
-                  Action Items
+                  Action Items & Next Steps
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {actionItems.map((item) => (
-                    <div key={item.id} className="border rounded-lg p-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <h3 className="font-medium">{item.name}</h3>
-                        <Badge variant={
-                          item.status === 'completed' ? 'default' :
-                          item.status === 'pending' ? 'secondary' :
-                          item.status === 'waiting_admin' ? 'outline' : 'destructive'
-                        }>
-                          {item.status.replace('_', ' ')}
-                        </Badge>
-                      </div>
-                      <p className="text-slate-600 text-sm mb-2">{item.description}</p>
-                      <p className="text-xs text-slate-500">Due: {item.due_date}</p>
+                  {actionItems.map((item) => {
+                    const getStatusIcon = (status: string) => {
+                      switch (status) {
+                        case 'completed':
+                          return <CheckCircle className="w-5 h-5 text-green-600" />;
+                        case 'pending':
+                          return <Clock className="w-5 h-5 text-orange-600" />;
+                        case 'waiting_admin':
+                          return <UserCheck className="w-5 h-5 text-blue-600" />;
+                        case 'blocked':
+                          return <AlertCircle className="w-5 h-5 text-red-600" />;
+                        default:
+                          return <Clock className="w-5 h-5 text-slate-400" />;
+                      }
+                    };
+
+                    const getStatusBadge = (status: string) => {
+                      switch (status) {
+                        case 'completed':
+                          return <Badge variant="default" className="bg-green-500">Completed</Badge>;
+                        case 'pending':
+                          return <Badge variant="default" className="bg-orange-500">Action Required</Badge>;
+                        case 'waiting_admin':
+                          return <Badge variant="default" className="bg-blue-500">Waiting for Us</Badge>;
+                        case 'blocked':
+                          return <Badge variant="secondary">Blocked</Badge>;
+                        default:
+                          return <Badge variant="secondary">Unknown</Badge>;
+                      }
+                    };
+
+                    const getStatusColor = (status: string) => {
+                      switch (status) {
+                        case 'completed':
+                          return 'border-green-200 bg-green-50';
+                        case 'pending':
+                          return 'border-orange-200 bg-orange-50';
+                        case 'waiting_admin':
+                          return 'border-blue-200 bg-blue-50';
+                        case 'blocked':
+                          return 'border-red-200 bg-red-50';
+                        default:
+                          return 'border-slate-200 bg-slate-50';
+                      }
+                    };
+
+                    return (
+                      <Card key={item.id} className={`border ${getStatusColor(item.status)} transition-shadow hover:shadow-md`}>
+                        <CardContent className="p-6">
+                          <div className="flex items-start gap-4">
+                            <div className="flex-shrink-0 mt-1">
+                              {getStatusIcon(item.status)}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-start justify-between gap-4 mb-2">
+                                <h3 className="text-lg font-semibold text-slate-800">{item.name}</h3>
+                                {getStatusBadge(item.status)}
+                              </div>
+                              <p className="text-slate-600 mb-3">{item.description}</p>
+                              <div className="flex items-center gap-6 text-sm text-slate-500">
+                                {item.due_date && (
+                                  <div className="flex items-center gap-1">
+                                    <Calendar className="w-4 h-4" />
+                                    <span>Due: {new Date(item.due_date).toLocaleDateString()}</span>
+                                  </div>
+                                )}
+                                {item.assigned_date && (
+                                  <div className="flex items-center gap-1">
+                                    <Clock className="w-4 h-4" />
+                                    <span>Assigned: {new Date(item.assigned_date).toLocaleDateString()}</span>
+                                  </div>
+                                )}
+                              </div>
+                              {item.status === 'pending' && (
+                                <div className="mt-4">
+                                  <Button size="sm" className="w-full sm:w-auto">
+                                    Start Task
+                                  </Button>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                  
+                  {actionItems.length === 0 && (
+                    <div className="text-center py-12">
+                      <ListTodo className="w-16 h-16 text-slate-300 mx-auto mb-4" />
+                      <p className="text-slate-500 text-lg">No action items at this time.</p>
+                      <p className="text-slate-400 text-sm">Check back later for updates on your project.</p>
                     </div>
-                  ))}
+                  )}
                 </div>
               </CardContent>
             </Card>
           </TabsContent>
 
-          {/* Training Tab */}
+          {/* Training Materials Tab */}
           <TabsContent value="training">
-            <Card>
+            <Card className="shadow-lg border-0">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <BookOpen className="w-5 h-5 text-primary" />
@@ -855,26 +868,40 @@ export default function ClientPortal() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                  {trainingMaterials.map((material) => (
-                    <Card key={material.id} className="border border-slate-200 overflow-hidden">
-                      <div className="aspect-video bg-slate-100">
-                        <img 
-                          src={material.thumbnail_url} 
-                          alt={material.name}
-                          className="w-full h-full object-cover"
-                        />
+                <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                  {trainingMaterials.length > 0 ? trainingMaterials.map((material) => (
+                    <Card key={material.id} className="border border-slate-200 hover:shadow-lg transition-shadow overflow-hidden">
+                      <div className="relative bg-white">
+                        {material.thumbnail_url ? (
+                          <img 
+                            src={material.thumbnail_url} 
+                            alt={material.name} 
+                            className="w-full h-auto object-contain"
+                            style={{ maxHeight: '400px' }}
+                          />
+                        ) : (
+                          <div className="w-full h-64 bg-slate-100 flex items-center justify-center">
+                            <FileText className="w-16 h-16 text-slate-400" />
+                          </div>
+                        )}
                       </div>
                       <CardContent className="p-4">
-                        <h3 className="font-semibold text-slate-800 mb-2">{material.name}</h3>
-                        <p className="text-sm text-slate-600 mb-4 line-clamp-3">{material.description}</p>
-                        <Button size="sm" className="w-full">
-                          <BookOpen className="w-4 h-4 mr-2" />
-                          Start Learning
+                        <h3 className="text-lg font-bold mb-2 text-center">{material.name}</h3>
+                        <p className="text-sm text-slate-600 mb-4 text-center">{material.description}</p>
+                        <Button size="lg" className="w-full" asChild>
+                          <a href={material.content_url} target="_blank" rel="noopener noreferrer">
+                            <BookOpen className="w-5 h-5 mr-2" />
+                            Start Reading
+                          </a>
                         </Button>
                       </CardContent>
                     </Card>
-                  ))}
+                  )) : (
+                    <div className="col-span-full text-center py-12">
+                      <BookOpen className="w-16 h-16 text-slate-300 mx-auto mb-4" />
+                      <p className="text-slate-500 text-lg">No training materials available yet.</p>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -882,40 +909,35 @@ export default function ClientPortal() {
 
           {/* Messages Tab */}
           <TabsContent value="messages">
-            <Card>
+            <Card className="shadow-lg border-0">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <MessageSquare className="w-5 h-5 text-primary" />
-                  Messages
-                </CardTitle>
+                <CardTitle>Messages</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
+                <div className="space-y-4 max-h-96 overflow-y-auto">
                   {messages.map((message) => (
-                    <div key={message.id} className="border rounded-lg p-4">
-                      <div className="flex items-start gap-3">
-                        <Avatar className="h-8 w-8">
-                          <AvatarFallback>
-                            {message.sender === 'admin' ? 'RDR' : 'You'}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <p className="font-medium text-slate-800">{message.sender_name}</p>
-                            <span className="text-xs text-slate-500">
-                              {new Date(message.timestamp).toLocaleDateString()}
-                            </span>
-                          </div>
-                          <p className="text-slate-600">{message.message}</p>
+                    <div key={message.id} className="flex gap-3">
+                      <Avatar className="h-8 w-8">
+                        <AvatarFallback>RDR</AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1">
+                        <div className="bg-slate-100 rounded-lg p-3">
+                          <p className="text-sm">{message.message}</p>
                         </div>
+                        <p className="text-xs text-slate-500 mt-1">
+                          {new Date(message.timestamp).toLocaleString()}
+                        </p>
                       </div>
                     </div>
                   ))}
                 </div>
-                <div className="mt-6 p-4 border border-slate-200 rounded-lg">
-                  <p className="text-sm text-slate-600 mb-3">Send us a message:</p>
+                <div className="mt-4 pt-4 border-t">
                   <div className="flex gap-2">
-                    <Input placeholder="Type your message..." className="flex-1" />
+                    <input 
+                      type="text" 
+                      placeholder="Type your message..."
+                      className="flex-1 px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                    />
                     <Button>Send</Button>
                   </div>
                 </div>
@@ -925,43 +947,49 @@ export default function ClientPortal() {
 
           {/* Alerts Tab */}
           <TabsContent value="alerts">
-            <Card>
+            <Card className="shadow-lg border-0">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <AlertCircle className="w-5 h-5 text-primary" />
+                  <Bell className="w-5 h-5 text-primary" />
                   Notifications & Alerts
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
                   {alerts.map((alert) => (
-                    <div key={alert.id} className={`border rounded-lg p-4 ${!alert.read ? 'bg-blue-50 border-blue-200' : ''}`}>
-                      <div className="flex items-start justify-between">
+                    <div 
+                      key={alert.id} 
+                      className={`p-4 rounded-lg border-l-4 ${
+                        alert.type === 'info' ? 'bg-blue-50 border-blue-400' :
+                        alert.type === 'reminder' ? 'bg-orange-50 border-orange-400' :
+                        'bg-gray-50 border-gray-400'
+                      } ${!alert.read ? 'ring-2 ring-primary/20' : ''}`}
+                      onClick={() => markAlertAsRead(alert.id)}
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className={`p-2 rounded-full ${
+                          alert.type === 'info' ? 'bg-blue-100' :
+                          alert.type === 'reminder' ? 'bg-orange-100' :
+                          'bg-gray-100'
+                        }`}>
+                          {alert.type === 'info' ? (
+                            <AlertCircle className="w-4 h-4 text-blue-600" />
+                          ) : (
+                            <Clock className="w-4 h-4 text-orange-600" />
+                          )}
+                        </div>
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-1">
-                            <Badge variant={
-                              alert.type === 'info' ? 'default' :
-                              alert.type === 'warning' ? 'secondary' :
-                              alert.type === 'reminder' ? 'outline' : 'destructive'
-                            }>
-                              {alert.type}
-                            </Badge>
-                            <span className="text-xs text-slate-500">
-                              {new Date(alert.timestamp).toLocaleDateString()}
-                            </span>
+                            <h4 className="font-semibold text-slate-800">{alert.title}</h4>
+                            {!alert.read && (
+                              <div className="w-2 h-2 bg-primary rounded-full"></div>
+                            )}
                           </div>
-                          <h3 className="font-medium text-slate-800 mb-1">{alert.title}</h3>
-                          <p className="text-slate-600 text-sm">{alert.message}</p>
+                          <p className="text-sm text-slate-600 mb-2">{alert.message}</p>
+                          <p className="text-xs text-slate-500">
+                            {new Date(alert.timestamp).toLocaleDateString()} at {new Date(alert.timestamp).toLocaleTimeString()}
+                          </p>
                         </div>
-                        {!alert.read && (
-                          <Button 
-                            size="sm" 
-                            variant="ghost"
-                            onClick={() => markAlertAsRead(alert.id)}
-                          >
-                            Mark as Read
-                          </Button>
-                        )}
                       </div>
                     </div>
                   ))}
@@ -972,57 +1000,197 @@ export default function ClientPortal() {
 
           {/* Profile Tab */}
           <TabsContent value="profile">
-            <Card>
+            <Card className="shadow-lg border-0">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <User className="w-5 h-5 text-primary" />
-                  Profile Settings
+                  Profile & Settings
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-6">
-                {needsPhotoUpload && (
-                  <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
-                    <div className="flex items-center gap-3">
-                      <Camera className="h-5 w-5 text-orange-600" />
-                      <div className="flex-1">
-                        <h3 className="font-medium text-orange-800">Profile Photo Needed</h3>
-                        <p className="text-sm text-orange-700">Please upload a professional headshot for your profile.</p>
-                      </div>
-                    </div>
-                    <div className="mt-4">
-                      <AvatarUpload onAvatarUpdate={handlePhotoUpload} />
-                    </div>
+              <CardContent>
+                {/* Profile Photo Section - Centered at top */}
+                <div className="text-center mb-8">
+                  <div className="inline-block">
+                    <AvatarUpload 
+                      currentAvatarUrl={profile.avatar_url}
+                      onAvatarUpdate={(url) => {
+                        setProfile(prev => prev ? { ...prev, avatar_url: url } : null);
+                      }}
+                      size="lg"
+                      showUploadButton={true}
+                    />
                   </div>
-                )}
-
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div>
-                    <Label htmlFor="firstName">First Name</Label>
-                    <Input id="firstName" value={profile.first_name || ''} readOnly />
-                  </div>
-                  <div>
-                    <Label htmlFor="lastName">Last Name</Label>
-                    <Input id="lastName" value={profile.last_name || ''} readOnly />
-                  </div>
-                  <div>
-                    <Label htmlFor="email">Email</Label>
-                    <Input id="email" value={profile.email} disabled />
-                  </div>
-                  <div>
-                    <Label htmlFor="phone">Phone</Label>
-                    <Input id="phone" value={profile.phone || ''} readOnly />
+                  <div className="mt-4">
+                    <h3 className="text-xl font-semibold">{profile.name}</h3>
+                    <p className="text-slate-600">{profile.email}</p>
                   </div>
                 </div>
 
-                <div className="flex gap-3">
-                  <Button className="flex-1">
-                    <Save className="w-4 h-4 mr-2" />
-                    Save Changes
-                  </Button>
-                  <Button onClick={handleSignOut} variant="outline">
-                    <LogOut className="w-4 h-4 mr-2" />
-                    Sign Out
-                  </Button>
+                {/* Profile Information Form */}
+                <div className="max-w-2xl mx-auto">
+                  <div className="mb-6">
+                    <h4 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                      <Edit className="w-5 h-5" />
+                      Personal Information
+                    </h4>
+                  </div>
+                  
+                  <div className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="firstName">First Name</Label>
+                        <Input
+                          id="firstName"
+                          value={profile.first_name || ''}
+                          onChange={(e) => setProfile(prev => prev ? { ...prev, first_name: e.target.value } : null)}
+                          placeholder="Enter your first name"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="lastName">Last Name</Label>
+                        <Input
+                          id="lastName"
+                          value={profile.last_name || ''}
+                          onChange={(e) => setProfile(prev => prev ? { ...prev, last_name: e.target.value } : null)}
+                          placeholder="Enter your last name"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <Label htmlFor="email">Email Address</Label>
+                      <Input
+                        id="email"
+                        type="email"
+                        value={profile.email || ''}
+                        onChange={(e) => setProfile(prev => prev ? { ...prev, email: e.target.value } : null)}
+                        placeholder="Enter your email"
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="phone">Phone Number</Label>
+                      <Input
+                        id="phone"
+                        type="tel"
+                        value={profile.phone || ''}
+                        onChange={(e) => setProfile(prev => prev ? { ...prev, phone: e.target.value } : null)}
+                        placeholder="Enter your phone number"
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="location">Address/Location</Label>
+                      <Input
+                        id="location"
+                        value={profile.location || ''}
+                        onChange={(e) => setProfile(prev => prev ? { ...prev, location: e.target.value } : null)}
+                        placeholder="Enter your address or location"
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="jobTitle">Job Title</Label>
+                      <Input
+                        id="jobTitle"
+                        value={profile.job_title || ''}
+                        onChange={(e) => setProfile(prev => prev ? { ...prev, job_title: e.target.value } : null)}
+                        placeholder="Enter your job title"
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="industry">Industry</Label>
+                      <Input
+                        id="industry"
+                        value={profile.industry || ''}
+                        onChange={(e) => setProfile(prev => prev ? { ...prev, industry: e.target.value } : null)}
+                        placeholder="Enter your industry"
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="website">Website</Label>
+                      <Input
+                        id="website"
+                        type="url"
+                        value={profile.website || ''}
+                        onChange={(e) => setProfile(prev => prev ? { ...prev, website: e.target.value } : null)}
+                        placeholder="Enter your website URL"
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="bio">Bio</Label>
+                      <Textarea
+                        id="bio"
+                        value={profile.bio || ''}
+                        onChange={(e) => setProfile(prev => prev ? { ...prev, bio: e.target.value } : null)}
+                        placeholder="Tell us about yourself"
+                        rows={3}
+                      />
+                    </div>
+
+                    <div className="flex gap-3 pt-6">
+                      <Button 
+                        onClick={handleSaveProfile} 
+                        className="flex-1"
+                        disabled={!profile || loading}
+                      >
+                        <Save className="w-4 h-4 mr-2" />
+                        {loading ? "Saving..." : "Save Changes"}
+                      </Button>
+                      <Button 
+                        onClick={handleRequestCall} 
+                        variant="outline"
+                        className="flex-1"
+                      >
+                        <Phone className="w-4 h-4 mr-2" />
+                        Request a Call
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Service Information */}
+                <div className="mt-12 max-w-2xl mx-auto">
+                  <div className="mb-6">
+                    <h4 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                      <Package className="w-5 h-5" />
+                      Service Information
+                    </h4>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-2">Service Package</label>
+                      <div className="p-4 bg-gradient-to-r from-primary/10 to-primary/5 rounded-lg border border-primary/20">
+                        <p className="font-semibold text-primary">{profile.service_type}</p>
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-2">Project Status</label>
+                      <div className="p-4 bg-slate-50 rounded-lg">
+                        <Badge variant={profile.status === 'active' ? 'default' : 'secondary'}>
+                          {profile.status}
+                        </Badge>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-2">Estimated Delivery</label>
+                      <div className="p-4 bg-slate-50 rounded-lg">
+                        <p className="flex items-center gap-2 text-sm">
+                          <Calendar className="w-4 h-4" />
+                          {profile.estimated_delivery_date ? 
+                            new Date(profile.estimated_delivery_date).toLocaleDateString() : 
+                            'To be determined'
+                          }
+                        </p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -1030,31 +1198,56 @@ export default function ClientPortal() {
 
           {/* Help Tab */}
           <TabsContent value="help">
-            <div className="grid gap-6 md:grid-cols-2">
-              <Card>
-                <CardContent className="p-6 text-center">
-                  <MessageCircle className="w-12 h-12 text-primary mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">Contact Support</h3>
-                  <p className="text-slate-600 mb-4">Have questions? Our support team is here to help.</p>
-                  <Button className="w-full">
-                    <MessageCircle className="w-4 h-4 mr-2" />
-                    Send Message
-                  </Button>
-                </CardContent>
-              </Card>
+            <Card className="shadow-lg border-0">
+              <CardHeader>
+                <CardTitle>Need Help?</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <Card className="border border-slate-200">
+                    <CardContent className="p-6 text-center">
+                      <MessageCircle className="w-12 h-12 text-primary mx-auto mb-4" />
+                      <h3 className="text-lg font-semibold mb-2">Send a Message</h3>
+                      <p className="text-slate-600 mb-4">Have a question? Send us a message and we'll get back to you quickly.</p>
+                      <Button className="w-full">
+                        <MessageCircle className="w-4 h-4 mr-2" />
+                        Start Chat
+                      </Button>
+                    </CardContent>
+                  </Card>
 
-              <Card>
-                <CardContent className="p-6 text-center">
-                  <Phone className="w-12 h-12 text-primary mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">Schedule a Call</h3>
-                  <p className="text-slate-600 mb-4">Want to discuss your project over the phone?</p>
-                  <Button onClick={handleRequestCall} className="w-full" variant="outline">
-                    <Phone className="w-4 h-4 mr-2" />
-                    Request Call
-                  </Button>
-                </CardContent>
-              </Card>
-            </div>
+                  <Card className="border border-slate-200">
+                    <CardContent className="p-6 text-center">
+                      <Phone className="w-12 h-12 text-primary mx-auto mb-4" />
+                      <h3 className="text-lg font-semibold mb-2">Schedule a Call</h3>
+                      <p className="text-slate-600 mb-4">Want to discuss your project over the phone? Schedule a convenient time.</p>
+                      <Button onClick={handleRequestCall} className="w-full" variant="outline">
+                        <Phone className="w-4 h-4 mr-2" />
+                        Request Call
+                      </Button>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                <div className="mt-8 p-6 bg-slate-50 rounded-lg">
+                  <h3 className="text-lg font-semibold mb-4">Frequently Asked Questions</h3>
+                  <div className="space-y-4">
+                    <div>
+                      <h4 className="font-medium mb-2">How long does the process take?</h4>
+                      <p className="text-sm text-slate-600">Most projects are completed within 5-7 business days, depending on the service package selected.</p>
+                    </div>
+                    <div>
+                      <h4 className="font-medium mb-2">Can I request revisions?</h4>
+                      <p className="text-sm text-slate-600">Yes! We include revisions with all our packages to ensure you're completely satisfied with the final result.</p>
+                    </div>
+                    <div>
+                      <h4 className="font-medium mb-2">How will I receive my documents?</h4>
+                      <p className="text-sm text-slate-600">All completed documents will be available for download directly from this portal.</p>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
 

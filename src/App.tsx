@@ -11,7 +11,6 @@ import CustomerAuth from "./pages/CustomerAuth";
 import AdminAuth from "./pages/AdminAuth";
 import ClientDashboard from "./pages/ClientDashboard";
 import ClientPortal from "./pages/ClientPortal";
-import IntakeForm from "./pages/IntakeForm";
 import SMSOptInPolicy from "./pages/SMSOptInPolicy";
 import NotFound from "./pages/NotFound";
 
@@ -39,7 +38,6 @@ const App = () => (
                 <Route path="/auth" element={<Auth />} />
                 <Route path="/client/:clientId" element={<ClientDashboard />} />
                 <Route path="/portal" element={<ClientPortal />} />
-                <Route path="/intake-form" element={<IntakeForm />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
               </Routes>

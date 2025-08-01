@@ -40,10 +40,7 @@ export default function LoginSelect() {
               </div>
               <Button 
                 className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 flex items-center justify-center gap-2"
-                onClick={() => {
-                  console.log('LoginSelect: Navigating to /customer/login');
-                  navigate("/customer/login");
-                }}
+                onClick={() => navigate("/customer/login")}
               >
                 Access Customer Portal
                 <ArrowRight className="w-4 h-4" />

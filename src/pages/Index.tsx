@@ -49,7 +49,7 @@ const Index = () => {
 
   useEffect(() => {
     if (!loading && !user) {
-      navigate("/login");
+      navigate("/auth");
     } else if (user) {
       // Check if user is admin, if not redirect to customer portal
       checkUserRole();
