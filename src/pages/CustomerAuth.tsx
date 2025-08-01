@@ -129,6 +129,11 @@ export default function CustomerAuth() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
       <div className="w-full max-w-md">
+        {/* RDR Logo above the card */}
+        <div className="text-center mb-6">
+          <RDRLogo className="mx-auto" />
+        </div>
+        
         <Card className="shadow-xl border-blue-200">
           <CardHeader className="space-y-4 text-center bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-t-lg">
             <div className="flex justify-center">
