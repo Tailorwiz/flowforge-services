@@ -51,14 +51,17 @@ export function ClientDeliveries() {
 
   const fetchClientAndDeliveries = async () => {
     try {
-      // First get the client record
+      // First get the client record using email since clients don't have user_id
       const { data: clientData, error: clientError } = await supabase
         .from('clients')
         .select('*')
-        .eq('user_id', user?.id)
+        .eq('email', user?.email)
         .single();
 
-      if (clientError) throw clientError;
+      if (clientError) {
+        console.error('Error fetching client:', clientError);
+        throw clientError;
+      }
       setClient(clientData);
 
       // Then get deliveries for this client
