@@ -89,9 +89,33 @@ export default function ClientPortal() {
   // Handle case where user is authenticated but has no client profile
   useEffect(() => {
     if (!authLoading && !loading && user && !profile) {
-      navigate('/login');
+      console.log('ClientPortal: User authenticated but no client profile found, checking if admin...');
+      // Instead of redirecting to login, check if this is an admin
+      checkIfUserIsAdmin();
     }
   }, [user, authLoading, loading, profile, navigate]);
+
+  const checkIfUserIsAdmin = async () => {
+    try {
+      const { data: userRole } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user?.id)
+        .maybeSingle();
+      
+      if (userRole?.role === 'admin') {
+        console.log('ClientPortal: User is admin, redirecting to admin dashboard');
+        navigate('/admin');
+      } else {
+        console.log('ClientPortal: User is not admin and has no client profile');
+        // Only redirect to login if they're not an admin and have no client profile
+        navigate('/login');
+      }
+    } catch (error) {
+      console.error('Error checking user role:', error);
+      navigate('/login');
+    }
+  };
 
   useEffect(() => {
     if (user) {
