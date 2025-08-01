@@ -126,9 +126,15 @@ export default function ClientPortal() {
       fetchDocuments();
       fetchTrainingMaterials();
       fetchAlerts();
-      fetchActionItems();
     }
   }, [user]);
+
+  // Separate effect for fetchActionItems that depends on profile
+  useEffect(() => {
+    if (profile?.id) {
+      fetchActionItems();
+    }
+  }, [profile?.id]);
 
   // Countdown timer effect
   useEffect(() => {
