@@ -817,123 +817,122 @@ export default function ClientPortal() {
                             }
                           }}
                         >
-                          {isCompleted && step.id === 1 ? 'Update' : 'Start'} →
-                        </Button>
-                      )}
+                           {isCompleted && step.id === 1 ? 'Update' : 'Start'} →
+                         </Button>
+                        )}
+                      </div>
+                      
+                      {/* Intake Form Collapsible - appears directly after step 1 */}
+                      {step.id === 1 && showIntakeForm && (
+                        <div className="mt-4">
+                          <div className="bg-slate-50 p-6 rounded-lg border border-slate-200">
+                            <h4 className="text-lg font-semibold text-slate-800 mb-4">Intake Questionnaire</h4>
+                            <form onSubmit={handleIntakeSubmit} className="space-y-4">
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                  <Label htmlFor="currentJobTitle">Current Job Title</Label>
+                                  <Input
+                                    id="currentJobTitle"
+                                    value={formData.currentJobTitle}
+                                    onChange={(e) => handleInputChange('currentJobTitle', e.target.value)}
+                                    placeholder="e.g., Senior Software Engineer"
+                                    required
+                                  />
+                                </div>
+                                <div>
+                                  <Label htmlFor="targetJobTitle">Target Job Title</Label>
+                                  <Input
+                                    id="targetJobTitle"
+                                    value={formData.targetJobTitle}
+                                    onChange={(e) => handleInputChange('targetJobTitle', e.target.value)}
+                                    placeholder="e.g., Lead Software Engineer"
+                                    required
+                                  />
+                                </div>
+                              </div>
+
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                  <Label htmlFor="industry">Industry</Label>
+                                  <Input
+                                    id="industry"
+                                    value={formData.industry}
+                                    onChange={(e) => handleInputChange('industry', e.target.value)}
+                                    placeholder="e.g., Technology, Healthcare, Finance"
+                                    required
+                                  />
+                                </div>
+                                <div>
+                                  <Label htmlFor="experience">Years of Experience</Label>
+                                  <Input
+                                    id="experience"
+                                    value={formData.experience}
+                                    onChange={(e) => handleInputChange('experience', e.target.value)}
+                                    placeholder="e.g., 5-7 years"
+                                    required
+                                  />
+                                </div>
+                              </div>
+
+                              <div>
+                                <Label htmlFor="careerGoals">Career Goals</Label>
+                                <Textarea
+                                  id="careerGoals"
+                                  value={formData.careerGoals}
+                                  onChange={(e) => handleInputChange('careerGoals', e.target.value)}
+                                  placeholder="What are your short-term and long-term career goals?"
+                                  rows={3}
+                                  required
+                                />
+                              </div>
+
+                              <div>
+                                <Label htmlFor="challenges">Current Challenges</Label>
+                                <Textarea
+                                  id="challenges"
+                                  value={formData.challenges}
+                                  onChange={(e) => handleInputChange('challenges', e.target.value)}
+                                  placeholder="What challenges are you facing in your job search or career?"
+                                  rows={3}
+                                />
+                              </div>
+
+                              <div>
+                                <Label htmlFor="additionalInfo">Additional Information</Label>
+                                <Textarea
+                                  id="additionalInfo"
+                                  value={formData.additionalInfo}
+                                  onChange={(e) => handleInputChange('additionalInfo', e.target.value)}
+                                  placeholder="Any additional information you'd like us to know?"
+                                  rows={2}
+                                />
+                              </div>
+
+                              <div className="flex gap-4 pt-4">
+                                <Button 
+                                  type="submit" 
+                                  disabled={formLoading}
+                                  className="flex-1"
+                                >
+                                  {formLoading ? 'Submitting...' : 'Submit Intake Form'}
+                                </Button>
+                                <Button 
+                                  type="button" 
+                                  variant="outline"
+                                  onClick={() => setShowIntakeForm(false)}
+                                  disabled={formLoading}
+                                >
+                                  Cancel
+                                </Button>
+                              </div>
+                            </form>
+                          </div>
+                         </div>
+                       )}
                     </div>
                   );
                 })}
               </div>
-              
-              {/* Intake Form Collapsible */}
-              {showIntakeForm && (
-                <Collapsible open={showIntakeForm} onOpenChange={setShowIntakeForm}>
-                  <CollapsibleContent className="mt-6">
-                    <div className="bg-slate-50 p-6 rounded-lg border border-slate-200">
-                      <h4 className="text-lg font-semibold text-slate-800 mb-4">Intake Questionnaire</h4>
-                      <form onSubmit={handleIntakeSubmit} className="space-y-4">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div>
-                            <Label htmlFor="currentJobTitle">Current Job Title</Label>
-                            <Input
-                              id="currentJobTitle"
-                              value={formData.currentJobTitle}
-                              onChange={(e) => handleInputChange('currentJobTitle', e.target.value)}
-                              placeholder="e.g., Senior Software Engineer"
-                              required
-                            />
-                          </div>
-                          <div>
-                            <Label htmlFor="targetJobTitle">Target Job Title</Label>
-                            <Input
-                              id="targetJobTitle"
-                              value={formData.targetJobTitle}
-                              onChange={(e) => handleInputChange('targetJobTitle', e.target.value)}
-                              placeholder="e.g., Lead Software Engineer"
-                              required
-                            />
-                          </div>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div>
-                            <Label htmlFor="industry">Industry</Label>
-                            <Input
-                              id="industry"
-                              value={formData.industry}
-                              onChange={(e) => handleInputChange('industry', e.target.value)}
-                              placeholder="e.g., Technology, Healthcare, Finance"
-                              required
-                            />
-                          </div>
-                          <div>
-                            <Label htmlFor="experience">Years of Experience</Label>
-                            <Input
-                              id="experience"
-                              value={formData.experience}
-                              onChange={(e) => handleInputChange('experience', e.target.value)}
-                              placeholder="e.g., 5-7 years"
-                              required
-                            />
-                          </div>
-                        </div>
-
-                        <div>
-                          <Label htmlFor="careerGoals">Career Goals</Label>
-                          <Textarea
-                            id="careerGoals"
-                            value={formData.careerGoals}
-                            onChange={(e) => handleInputChange('careerGoals', e.target.value)}
-                            placeholder="What are your short-term and long-term career goals?"
-                            rows={3}
-                            required
-                          />
-                        </div>
-
-                        <div>
-                          <Label htmlFor="challenges">Current Challenges</Label>
-                          <Textarea
-                            id="challenges"
-                            value={formData.challenges}
-                            onChange={(e) => handleInputChange('challenges', e.target.value)}
-                            placeholder="What challenges are you facing in your job search or career?"
-                            rows={3}
-                          />
-                        </div>
-
-                        <div>
-                          <Label htmlFor="additionalInfo">Additional Information</Label>
-                          <Textarea
-                            id="additionalInfo"
-                            value={formData.additionalInfo}
-                            onChange={(e) => handleInputChange('additionalInfo', e.target.value)}
-                            placeholder="Any additional information you'd like us to know?"
-                            rows={2}
-                          />
-                        </div>
-
-                        <div className="flex gap-4 pt-4">
-                          <Button 
-                            type="submit" 
-                            disabled={formLoading}
-                            className="flex-1"
-                          >
-                            {formLoading ? 'Submitting...' : 'Submit Intake Form'}
-                          </Button>
-                          <Button 
-                            type="button" 
-                            variant="outline"
-                            onClick={() => setShowIntakeForm(false)}
-                            disabled={formLoading}
-                          >
-                            Cancel
-                          </Button>
-                        </div>
-                      </form>
-                    </div>
-                  </CollapsibleContent>
-                </Collapsible>
-              )}
             </div>
           </CardContent>
         </Card>
