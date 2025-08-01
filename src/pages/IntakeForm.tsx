@@ -36,19 +36,38 @@ export default function IntakeForm() {
     e.preventDefault();
     setLoading(true);
 
-    try {
+     try {
       console.log('Submitting intake form with data:', formData);
-      console.log('Client ID:', clientId);
+      console.log('Client ID from URL:', clientId);
+      console.log('Client ID type:', typeof clientId);
       console.log('User ID:', user?.id);
       console.log('User object:', user);
 
+      if (!clientId) {
+        throw new Error('No client ID provided in URL');
+      }
+
       // First verify we can read the client data
       console.log('Verifying client access...');
+      
+      // Try to find ANY client first to see if RLS is the issue
+      const { data: allClients, error: allClientsError } = await supabase
+        .from('clients')
+        .select('id, user_id, name')
+        .limit(5);
+      
+      console.log('All accessible clients:', allClients);
+      console.log('All clients error:', allClientsError);
+      
+      // Now try to find the specific client
       const { data: clientCheck, error: clientCheckError } = await supabase
         .from('clients')
         .select('id, user_id, name')
         .eq('id', clientId)
         .maybeSingle();
+      
+      console.log('Specific client query result:', clientCheck);
+      console.log('Specific client query error:', clientCheckError);
       
       if (clientCheckError) {
         console.error('Cannot access client:', clientCheckError);
