@@ -407,12 +407,39 @@ export default function ClientPortal() {
     });
   };
 
-  const handleIntakeFormClick = () => {
+  const handleIntakeFormClick = async () => {
     console.log('Opening intake form...');
+    
+    // If this is an update (progress_step > 1), load existing data
+    if (profile && profile.progress_step > 1) {
+      try {
+        console.log('Loading existing intake form data for client:', profile.id);
+        const { data: historyData, error } = await supabase
+          .from('client_history')
+          .select('metadata')
+          .eq('client_id', profile.id)
+          .eq('action_type', 'intake_form_submitted')
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (error) {
+          console.error('Error fetching intake form data:', error);
+        } else if (historyData?.metadata) {
+          console.log('Found existing intake form data:', historyData.metadata);
+          setFormData(historyData.metadata as any);
+        } else {
+          console.log('No existing intake form data found');
+        }
+      } catch (error) {
+        console.error('Error loading intake form data:', error);
+      }
+    }
+    
     setShowIntakeForm(true);
     toast({
       title: "Intake Form",
-      description: "Opening your intake questionnaire...",
+      description: profile && profile.progress_step > 1 ? "Updating your intake questionnaire..." : "Opening your intake questionnaire...",
     });
   };
 
@@ -439,11 +466,11 @@ export default function ClientPortal() {
     setLoading(true);
 
     try {
-      // Insert into client_history table
+      // Insert into client_history table (for updates, this creates a new history entry)
       const historyData = {
         client_id: profile.id,
         action_type: 'intake_form_submitted',
-        description: 'Client submitted intake form with career details',
+        description: profile.progress_step > 1 ? 'Client updated intake form with career details' : 'Client submitted intake form with career details',
         metadata: formData,
         created_by: user?.id
       };
@@ -486,8 +513,8 @@ export default function ClientPortal() {
       setProfile(prev => prev ? { ...prev, progress_step: Math.max(prev.progress_step, 2) } : null);
 
       toast({
-        title: "Form Submitted!",
-        description: "Your intake form has been submitted successfully. We'll review your information and get back to you soon.",
+        title: profile.progress_step > 1 ? "Form Updated!" : "Form Submitted!",
+        description: profile.progress_step > 1 ? "Your intake form has been updated successfully." : "Your intake form has been submitted successfully. We'll review your information and get back to you soon.",
       });
 
       // Reset form and close
@@ -679,10 +706,14 @@ export default function ClientPortal() {
                 <RDRLogo />
               </div>
               <CardTitle className="text-3xl font-bold text-slate-800 mb-2">
+                {profile && profile.progress_step > 1 ? 'Update Your' : ''}
                 Career Development Intake Form
               </CardTitle>
               <p className="text-slate-600 text-lg">
-                Help us understand your career goals and current situation
+                {profile && profile.progress_step > 1 
+                  ? 'Update your career information and goals' 
+                  : 'Help us understand your career goals and current situation'
+                }
               </p>
             </CardHeader>
             <CardContent>
@@ -810,7 +841,7 @@ export default function ClientPortal() {
                     disabled={loading}
                     className="px-8 py-3 text-base bg-primary hover:bg-primary/90"
                   >
-                    {loading ? "Submitting..." : "Submit Form"}
+                    {loading ? (profile && profile.progress_step > 1 ? "Updating..." : "Submitting...") : (profile && profile.progress_step > 1 ? "Update Form" : "Submit Form")}
                   </Button>
                 </div>
               </form>
