@@ -139,13 +139,13 @@ export function AdminDeliveryManager() {
     const filePath = `deliveries/${fileName}`;
 
     const { error } = await supabase.storage
-      .from('resumes')
+      .from('client-documents')
       .upload(filePath, file);
 
     if (error) throw error;
 
     const { data } = supabase.storage
-      .from('resumes')
+      .from('client-documents')
       .getPublicUrl(filePath);
 
     return data.publicUrl;
