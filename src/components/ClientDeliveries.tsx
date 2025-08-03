@@ -19,11 +19,16 @@ interface Delivery {
   document_type: string;
   document_title: string;
   file_url: string;
+  file_path: string;
   file_size: number;
   status: string;
   delivered_at: string;
   approved_at?: string;
   client_id: string;
+  created_at: string;
+  updated_at: string;
+  mime_type: string | null;
+  project_id: string | null;
 }
 
 interface Client {
