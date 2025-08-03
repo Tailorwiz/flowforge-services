@@ -8,6 +8,7 @@ import { Label } from './ui/label';
 import { Textarea } from './ui/textarea';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './ui/collapsible';
 import { toast } from '@/hooks/use-toast';
+import ResumeUpload from './ResumeUpload';
 
 interface Step {
   id: number;
@@ -46,6 +47,7 @@ const ProgressTracker: React.FC<ProgressTrackerProps> = ({
   
   // Intake form state
   const [showIntakeForm, setShowIntakeForm] = useState(false);
+  const [showResumeUpload, setShowResumeUpload] = useState(false);
   const [formLoading, setFormLoading] = useState(false);
   const [formData, setFormData] = useState({
     currentJobTitle: '',
@@ -242,15 +244,17 @@ const ProgressTracker: React.FC<ProgressTrackerProps> = ({
   };
 
   const openResumeUpload = () => {
-    toast({
-      title: "Resume Upload",
-      description: "Opening resume upload dialog...",
-    });
+    setShowResumeUpload(true);
+  };
+
+  const handleResumeUploadComplete = () => {
+    setShowResumeUpload(false);
+    markStepCompleted(2);
     
-    // Simulate upload completion
-    setTimeout(() => {
-      markStepCompleted(2);
-    }, 1500);
+    toast({
+      title: "Documents Uploaded!",
+      description: "Your resume and documents have been uploaded successfully.",
+    });
   };
 
   const openSessionBooking = () => {
@@ -554,6 +558,19 @@ const ProgressTracker: React.FC<ProgressTrackerProps> = ({
           })}
         </div>
       </div>
+
+      {/* Resume Upload Modal */}
+      {showResumeUpload && clientData && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <ResumeUpload
+              clientId={clientData.id}
+              onUploadComplete={handleResumeUploadComplete}
+              onClose={() => setShowResumeUpload(false)}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 };
