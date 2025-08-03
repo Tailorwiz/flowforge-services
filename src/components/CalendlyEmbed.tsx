@@ -11,7 +11,7 @@ interface CalendlyEmbedProps {
 }
 
 export default function CalendlyEmbed({ 
-  calendlyUrl = "https://calendly.com/your-username/consultation", // Default placeholder
+  calendlyUrl = "https://calendly.com/resultsdrivenresumes/resume-clarity-research-review-interview-session",
   onBookingComplete, 
   onClose 
 }: CalendlyEmbedProps) {
