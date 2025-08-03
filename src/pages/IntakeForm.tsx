@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,6 +9,7 @@ import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthProvider';
 import RDRLogo from '@/components/RDRLogo';
+import { Save, Clock } from 'lucide-react';
 
 export default function IntakeForm() {
   const { user } = useAuth();
@@ -27,9 +28,134 @@ export default function IntakeForm() {
   });
   
   const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  const [isDirty, setIsDirty] = useState(false);
+  const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const saveCountRef = useRef(0);
+
+  // Load saved draft on mount
+  useEffect(() => {
+    const loadDraft = async () => {
+      if (!user?.id || !clientId) return;
+      
+      try {
+        const { data, error } = await (supabase as any)
+          .from('intake_form_drafts')
+          .select('form_data, updated_at')
+          .eq('client_id', clientId)
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        if (error) {
+          console.error('Error loading draft:', error);
+          return;
+        }
+
+        if (data) {
+          setFormData(data.form_data);
+          setLastSaved(new Date(data.updated_at));
+          toast({
+            title: "Draft Loaded",
+            description: "Your previously saved progress has been restored.",
+          });
+        }
+      } catch (error) {
+        console.error('Error loading draft:', error);
+      }
+    };
+
+    loadDraft();
+  }, [user?.id, clientId]);
+
+  // Auto-save functionality
+  const saveDraft = useCallback(async (data: typeof formData, showToast = false) => {
+    if (!user?.id || !clientId || saving) return;
+
+    try {
+      setSaving(true);
+      saveCountRef.current += 1;
+      const currentSaveCount = saveCountRef.current;
+
+      const { error } = await (supabase as any).rpc('save_intake_draft', {
+        p_client_id: clientId,
+        p_user_id: user.id,
+        p_form_data: data
+      });
+
+      // Only update UI if this is the most recent save attempt
+      if (currentSaveCount === saveCountRef.current) {
+        if (error) {
+          console.error('Error saving draft:', error);
+          if (showToast) {
+            toast({
+              title: "Save Failed",
+              description: "Failed to save your progress. Please try again.",
+              variant: "destructive",
+            });
+          }
+        } else {
+          setLastSaved(new Date());
+          setIsDirty(false);
+          if (showToast) {
+            toast({
+              title: "Progress Saved",
+              description: "Your form progress has been saved.",
+            });
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error saving draft:', error);
+      if (showToast) {
+        toast({
+          title: "Save Failed",
+          description: "Failed to save your progress. Please try again.",
+          variant: "destructive",
+        });
+      }
+    } finally {
+      setSaving(false);
+    }
+  }, [user?.id, clientId, saving]);
+
+  // Auto-save timer setup
+  useEffect(() => {
+    if (isDirty && !saving) {
+      // Clear existing timeout
+      if (autoSaveTimeoutRef.current) {
+        clearTimeout(autoSaveTimeoutRef.current);
+      }
+
+      // Set new timeout for 5 seconds
+      autoSaveTimeoutRef.current = setTimeout(() => {
+        saveDraft(formData);
+      }, 5000);
+    }
+
+    return () => {
+      if (autoSaveTimeoutRef.current) {
+        clearTimeout(autoSaveTimeoutRef.current);
+      }
+    };
+  }, [formData, isDirty, saving, saveDraft]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (autoSaveTimeoutRef.current) {
+        clearTimeout(autoSaveTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+    setIsDirty(true);
+  };
+
+  const handleManualSave = () => {
+    saveDraft(formData, true);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -149,6 +275,17 @@ export default function IntakeForm() {
         description: "Thank you for completing your intake questionnaire. We'll review your information and get started on your project.",
       });
 
+      // Delete the draft after successful submission
+      try {
+        await (supabase as any)
+          .from('intake_form_drafts')
+          .delete()
+          .eq('client_id', clientId)
+          .eq('user_id', user.id);
+      } catch (error) {
+        console.error('Error deleting draft:', error);
+      }
+
       // Close the popup window and refresh parent
       if (window.opener) {
         window.opener.location.reload();
@@ -179,7 +316,37 @@ export default function IntakeForm() {
 
         <Card className="shadow-xl border-0">
           <CardHeader>
-            <CardTitle>Tell us about yourself</CardTitle>
+            <CardTitle className="flex items-center justify-between">
+              <span>Tell us about yourself</span>
+              <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                {saving && (
+                  <div className="flex items-center gap-1">
+                    <Clock className="h-4 w-4 animate-spin" />
+                    <span>Saving...</span>
+                  </div>
+                )}
+                {lastSaved && !saving && (
+                  <div className="flex items-center gap-1">
+                    <Save className="h-4 w-4" />
+                    <span>
+                      Saved {lastSaved.toLocaleTimeString()}
+                    </span>
+                  </div>
+                )}
+                {isDirty && !saving && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleManualSave}
+                    className="h-7 px-2 text-xs"
+                  >
+                    <Save className="h-3 w-3 mr-1" />
+                    Save Progress
+                  </Button>
+                )}
+              </div>
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">

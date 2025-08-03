@@ -713,6 +713,75 @@ export type Database = {
           },
         ]
       }
+      document_uploads: {
+        Row: {
+          bucket_name: string
+          client_id: string | null
+          created_at: string
+          document_type: string
+          file_name: string
+          file_path: string
+          file_size: number
+          id: string
+          intake_form_id: string | null
+          metadata: Json | null
+          mime_type: string
+          original_name: string
+          status: string
+          updated_at: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          bucket_name: string
+          client_id?: string | null
+          created_at?: string
+          document_type: string
+          file_name: string
+          file_path: string
+          file_size?: number
+          id?: string
+          intake_form_id?: string | null
+          metadata?: Json | null
+          mime_type: string
+          original_name: string
+          status?: string
+          updated_at?: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          bucket_name?: string
+          client_id?: string | null
+          created_at?: string
+          document_type?: string
+          file_name?: string
+          file_path?: string
+          file_size?: number
+          id?: string
+          intake_form_id?: string | null
+          metadata?: Json | null
+          mime_type?: string
+          original_name?: string
+          status?: string
+          updated_at?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_uploads_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "document_uploads_intake_form_id_fkey"
+            columns: ["intake_form_id"]
+            isOneToOne: false
+            referencedRelation: "intake_forms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       document_versions: {
         Row: {
           change_summary: string | null
@@ -877,6 +946,33 @@ export type Database = {
           subject?: string
           trigger_type?: string | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      intake_form_drafts: {
+        Row: {
+          client_id: string
+          created_at: string
+          form_data: Json
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          form_data?: Json
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          form_data?: Json
+          id?: string
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -1790,6 +1886,10 @@ export type Database = {
       is_admin: {
         Args: { _user_id: string }
         Returns: boolean
+      }
+      save_intake_draft: {
+        Args: { p_client_id: string; p_user_id: string; p_form_data: Json }
+        Returns: string
       }
     }
     Enums: {
