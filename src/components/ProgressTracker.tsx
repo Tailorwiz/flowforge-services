@@ -9,6 +9,7 @@ import { Textarea } from './ui/textarea';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './ui/collapsible';
 import { toast } from '@/hooks/use-toast';
 import ResumeUpload from './ResumeUpload';
+import CalendlyEmbed from './CalendlyEmbed';
 
 interface Step {
   id: number;
@@ -45,9 +46,10 @@ const ProgressTracker: React.FC<ProgressTrackerProps> = ({
   // Local storage for demo progress tracking
   const [localProgress, setLocalProgress] = useState<Record<number, boolean>>({});
   
-  // Intake form state
+  // Component state
   const [showIntakeForm, setShowIntakeForm] = useState(false);
   const [showResumeUpload, setShowResumeUpload] = useState(false);
+  const [showCalendlyBooking, setShowCalendlyBooking] = useState(false);
   const [formLoading, setFormLoading] = useState(false);
   const [formData, setFormData] = useState({
     currentJobTitle: '',
@@ -258,15 +260,17 @@ const ProgressTracker: React.FC<ProgressTrackerProps> = ({
   };
 
   const openSessionBooking = () => {
-    toast({
-      title: "Session Booking",
-      description: "Opening consultation booking system...",
-    });
+    setShowCalendlyBooking(true);
+  };
+
+  const handleBookingComplete = () => {
+    setShowCalendlyBooking(false);
+    markStepCompleted(3);
     
-    // Simulate booking completion
-    setTimeout(() => {
-      markStepCompleted(3);
-    }, 1000);
+    toast({
+      title: "Session Booked!",
+      description: "Your consultation has been scheduled successfully.",
+    });
   };
 
   const openDocumentReview = () => {
@@ -567,6 +571,19 @@ const ProgressTracker: React.FC<ProgressTrackerProps> = ({
               clientId={clientData.id}
               onUploadComplete={handleResumeUploadComplete}
               onClose={() => setShowResumeUpload(false)}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Calendly Booking Modal */}
+      {showCalendlyBooking && clientData && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <CalendlyEmbed
+              calendlyUrl="https://calendly.com/your-username/consultation" // Replace with your actual Calendly URL
+              onBookingComplete={handleBookingComplete}
+              onClose={() => setShowCalendlyBooking(false)}
             />
           </div>
         </div>
