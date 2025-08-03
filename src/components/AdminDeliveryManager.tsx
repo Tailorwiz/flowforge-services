@@ -168,7 +168,7 @@ export function AdminDeliveryManager() {
       const fileUrl = await uploadFile(newDelivery.file);
 
       // Create delivery
-      const { error } = await supabase
+      const { data: deliveryData, error } = await supabase
         .from('deliveries')
         .insert({
           client_id: newDelivery.client_id,
@@ -179,14 +179,42 @@ export function AdminDeliveryManager() {
           file_size: newDelivery.file.size,
           mime_type: newDelivery.file.type,
           status: 'delivered'
-        });
+        })
+        .select()
+        .single();
 
       if (error) throw error;
 
-      toast({
-        title: "Delivery Created",
-        description: "The document has been delivered to the client.",
-      });
+      // Send notification
+      try {
+        const { error: notificationError } = await supabase.functions.invoke('send-delivery-notification', {
+          body: {
+            delivery_id: deliveryData.id,
+            client_id: newDelivery.client_id,
+            document_title: newDelivery.document_title,
+            notification_type: 'delivery_ready'
+          }
+        });
+
+        if (notificationError) {
+          console.error('Notification error (delivery still created):', notificationError);
+          toast({
+            title: "Delivery Created",
+            description: "Document delivered successfully. Note: Notification may have failed to send.",
+          });
+        } else {
+          toast({
+            title: "Delivery Created & Notification Sent",
+            description: "The document has been delivered and the client has been notified.",
+          });
+        }
+      } catch (notificationError) {
+        console.error('Notification failed (delivery still created):', notificationError);
+        toast({
+          title: "Delivery Created",
+          description: "Document delivered successfully. Notification could not be sent.",
+        });
+      }
 
       setShowCreateModal(false);
       setNewDelivery({

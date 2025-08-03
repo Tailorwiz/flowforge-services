@@ -38,6 +38,7 @@ import { Textarea } from "@/components/ui/textarea";
 import RDRLogo from "@/components/RDRLogo";
 import AvatarUpload from "@/components/AvatarUpload";
 import { ClientDeliveries } from "@/components/ClientDeliveries";
+import { ClientNotificationBell } from "@/components/ClientNotificationBell";
 
 interface ClientProfile {
   id: string;
@@ -865,6 +866,7 @@ export default function ClientPortal() {
               </div>
             </div>
             <div className="flex items-center gap-4">
+              <ClientNotificationBell />
               <Button
                 variant="outline"
                 size="sm"
@@ -1067,7 +1069,7 @@ export default function ClientPortal() {
           </TabsList>
 
           {/* Deliveries Tab */}
-          <TabsContent value="deliveries">
+          <TabsContent value="deliveries" id="deliveries-section">
             <ClientDeliveries />
           </TabsContent>
 
