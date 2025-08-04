@@ -136,8 +136,38 @@ export default function ClientPortal() {
       fetchTrainingMaterials();
       fetchAlerts();
       fetchActionItems();
+      loadSavedProgress();
     }
   }, [user]);
+
+  // Load saved progress from localStorage and database
+  const loadSavedProgress = async () => {
+    try {
+      // Load localStorage progress
+      const saved = localStorage.getItem(`progress_${user?.id}`);
+      if (saved) {
+        const localProgress = JSON.parse(saved);
+        console.log('Loaded local progress:', localProgress);
+      }
+
+      // Load saved intake form data if exists and we have a profile
+      if (profile?.id && user?.id) {
+        const { data: draftData } = await supabase
+          .from('intake_form_drafts')
+          .select('form_data')
+          .eq('user_id', user.id)
+          .eq('client_id', profile.id)
+          .maybeSingle();
+
+        if (draftData?.form_data) {
+          setFormData(draftData.form_data as any);
+          console.log('Loaded saved form data:', draftData.form_data);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading saved progress:', error);
+    }
+  };
 
   // Countdown timer effect
   useEffect(() => {
@@ -208,6 +238,9 @@ export default function ClientPortal() {
         if (!profileData?.avatar_url) {
           setNeedsPhotoUpload(true);
         }
+        
+        // Load saved progress after profile is set
+        setTimeout(() => loadSavedProgress(), 100);
       }
     } catch (error) {
       console.error('Error fetching client profile:', error);
@@ -377,10 +410,22 @@ export default function ClientPortal() {
   };
 
   const determineProgressStep = (clientData: any) => {
-    // Start at step 1 by default
-    // In a real implementation, this would check actual completion status
-    console.log('Determining progress step for client:', clientData);
-    return 1; // Start at step 1 - intake form
+    // Check localStorage for saved progress
+    const saved = localStorage.getItem(`progress_${user?.id}`);
+    if (saved) {
+      const localProgress = JSON.parse(saved);
+      const completedSteps = Object.values(localProgress).filter(Boolean).length;
+      return Math.min(completedSteps + 1, 5); // Max step 5
+    }
+    
+    // Check database fields for completion
+    let step = 1;
+    if (clientData.intake_form_submitted) step = Math.max(step, 2);
+    if (clientData.resume_uploaded) step = Math.max(step, 3);
+    if (clientData.session_booked) step = Math.max(step, 4);
+    
+    console.log('Determined progress step for client:', step, clientData);
+    return step;
   };
 
   const getProgressPercentage = () => {
@@ -411,45 +456,73 @@ export default function ClientPortal() {
   const handleIntakeFormClick = async () => {
     console.log('Opening intake form...');
     
-    // If this is an update (progress_step > 1), load existing data
-    if (profile && profile.progress_step > 1) {
-      try {
-        console.log('Loading existing intake form data for client:', profile.id);
-        const { data: historyData, error } = await supabase
+    // Load existing data from drafts or history
+    try {
+      // First try to load from drafts
+      const { data: draftData } = await supabase
+        .from('intake_form_drafts')
+        .select('form_data')
+        .eq('user_id', user?.id)
+        .eq('client_id', profile?.id)
+        .maybeSingle();
+
+      if (draftData?.form_data) {
+        console.log('Found draft data:', draftData.form_data);
+        setFormData(draftData.form_data as any);
+      } else {
+        // If no draft, try to load from history
+        const { data: historyData } = await supabase
           .from('client_history')
           .select('metadata')
-          .eq('client_id', profile.id)
+          .eq('client_id', profile?.id)
           .eq('action_type', 'intake_form_submitted')
           .order('created_at', { ascending: false })
           .limit(1)
           .maybeSingle();
 
-        if (error) {
-          console.error('Error fetching intake form data:', error);
-        } else if (historyData?.metadata) {
+        if (historyData?.metadata) {
           console.log('Found existing intake form data:', historyData.metadata);
           setFormData(historyData.metadata as any);
-        } else {
-          console.log('No existing intake form data found');
         }
-      } catch (error) {
-        console.error('Error loading intake form data:', error);
       }
+    } catch (error) {
+      console.error('Error loading intake form data:', error);
     }
     
     setShowIntakeForm(true);
     toast({
       title: "Intake Form",
-      description: profile && profile.progress_step > 1 ? "Updating your intake questionnaire..." : "Opening your intake questionnaire...",
+      description: "Opening your intake questionnaire...",
     });
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
+    const newFormData = {
+      ...formData,
       [name]: value
-    }));
+    };
+    setFormData(newFormData);
+    
+    // Auto-save draft to database
+    saveDraft(newFormData);
+  };
+
+  const saveDraft = async (data: any) => {
+    if (!user?.id || !profile?.id) return;
+    
+    try {
+      await supabase
+        .from('intake_form_drafts')
+        .upsert({
+          user_id: user.id,
+          client_id: profile.id,
+          form_data: data
+        });
+      console.log('Draft saved:', data);
+    } catch (error) {
+      console.error('Error saving draft:', error);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -509,6 +582,20 @@ export default function ClientPortal() {
         console.error('Error updating client:', clientError);
         throw clientError;
       }
+
+      // Update localStorage progress
+      const saved = localStorage.getItem(`progress_${user?.id}`) || '{}';
+      const localProgress = JSON.parse(saved);
+      localProgress[1] = true; // Mark step 1 as completed
+      localStorage.setItem(`progress_${user?.id}`, JSON.stringify(localProgress));
+
+      // Delete the draft after successful submission
+      await supabase
+        .from('intake_form_drafts')
+        .delete()
+        .eq('client_id', profile.id)
+        .eq('user_id', user.id);
+
 
       // Update profile to reflect the change
       setProfile(prev => prev ? { ...prev, progress_step: Math.max(prev.progress_step, 2) } : null);

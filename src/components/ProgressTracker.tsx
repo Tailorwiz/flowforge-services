@@ -86,7 +86,7 @@ const ProgressTracker: React.FC<ProgressTrackerProps> = ({
       setLoading(true);
       
       // Find client by user ID or use provided clientId
-      let query = supabase.from('clients').select('id, status');
+      let query = supabase.from('clients').select('id, status, intake_form_submitted, resume_uploaded, session_booked');
       
       if (clientId) {
         query = query.eq('id', clientId);
@@ -100,9 +100,27 @@ const ProgressTracker: React.FC<ProgressTrackerProps> = ({
 
       if (data) {
         setClientData(data);
-        // Calculate current step based on local progress
-        const completedSteps = Object.values(localProgress).filter(Boolean).length;
-        setCurrentStep(completedSteps + 1);
+        
+        // Sync local progress with database
+        const dbProgress: Record<number, boolean> = {
+          1: data.intake_form_submitted || false,
+          2: data.resume_uploaded || false,
+          3: data.session_booked || false,
+          4: false, // In progress - set manually by admin
+          5: false  // Review complete - set manually by admin
+        };
+        
+        // Merge with local progress (prioritize database for steps 1-3)
+        const mergedProgress = { ...localProgress };
+        mergedProgress[1] = dbProgress[1] || localProgress[1] || false;
+        mergedProgress[2] = dbProgress[2] || localProgress[2] || false;
+        mergedProgress[3] = dbProgress[3] || localProgress[3] || false;
+        
+        saveLocalProgress(mergedProgress);
+        
+        // Calculate current step
+        const completedSteps = Object.values(mergedProgress).filter(Boolean).length;
+        setCurrentStep(Math.min(completedSteps + 1, 5));
       }
     } catch (error) {
       console.error('Error fetching client data:', error);
@@ -199,14 +217,13 @@ const ProgressTracker: React.FC<ProgressTrackerProps> = ({
       }
 
       // Update client progress
-      const { data: updateData, error: updateError } = await supabase
+      const { error: updateError } = await supabase
         .from('clients')
         .update({ 
           intake_form_submitted: true,
           updated_at: new Date().toISOString()
         })
-        .eq('id', clientData.id)
-        .select();
+        .eq('id', clientData.id);
 
       if (updateError) {
         console.error('Client update error:', updateError);
