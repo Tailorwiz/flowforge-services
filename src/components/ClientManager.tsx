@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
-import { Plus, Calendar, CheckCircle, Search, ArrowUpDown, ExternalLink } from "lucide-react";
+import { Plus, Calendar, CheckCircle, Search, ArrowUpDown, ExternalLink, Trash2, Users, Archive, Mail, RefreshCw } from "lucide-react";
 import { DocumentUploadParser } from "./DocumentUploadParser";
 import { DocumentUploadModal } from "./DocumentUploadModal";
 
@@ -44,6 +44,8 @@ export function ClientManager() {
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<'name' | 'email' | 'created_at' | 'estimated_delivery_date' | 'service_type' | 'status' | 'payment_status'>('created_at');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [selectedClients, setSelectedClients] = useState<Set<string>>(new Set());
+  const [bulkActionLoading, setBulkActionLoading] = useState(false);
   const [newClient, setNewClient] = useState({
     name: "",
     email: "",
@@ -183,6 +185,159 @@ export function ClientManager() {
         description: !currentRushStatus ? "Client marked as RUSH (72-hour delivery)" : "RUSH status removed" 
       });
       fetchClients();
+    }
+  };
+
+  // Bulk selection functions
+  const handleSelectAll = () => {
+    if (selectedClients.size === filteredAndSortedClients.length) {
+      setSelectedClients(new Set());
+    } else {
+      setSelectedClients(new Set(filteredAndSortedClients.map(client => client.id)));
+    }
+  };
+
+  const handleSelectClient = (clientId: string) => {
+    const newSelected = new Set(selectedClients);
+    if (newSelected.has(clientId)) {
+      newSelected.delete(clientId);
+    } else {
+      newSelected.add(clientId);
+    }
+    setSelectedClients(newSelected);
+  };
+
+  // Bulk action functions
+  const bulkDeleteClients = async () => {
+    if (selectedClients.size === 0) return;
+    
+    if (!confirm(`Are you sure you want to delete ${selectedClients.size} client(s)? This action cannot be undone.`)) {
+      return;
+    }
+
+    setBulkActionLoading(true);
+    try {
+      const { error } = await supabase
+        .from("clients")
+        .delete()
+        .in("id", Array.from(selectedClients));
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: `${selectedClients.size} client(s) deleted successfully`
+      });
+
+      setSelectedClients(new Set());
+      fetchClients();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete clients",
+        variant: "destructive"
+      });
+    } finally {
+      setBulkActionLoading(false);
+    }
+  };
+
+  const bulkUpdateStatus = async (newStatus: string) => {
+    if (selectedClients.size === 0) return;
+
+    setBulkActionLoading(true);
+    try {
+      const { error } = await supabase
+        .from("clients")
+        .update({ status: newStatus })
+        .in("id", Array.from(selectedClients));
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: `${selectedClients.size} client(s) status updated to ${newStatus}`
+      });
+
+      setSelectedClients(new Set());
+      fetchClients();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update client status",
+        variant: "destructive"
+      });
+    } finally {
+      setBulkActionLoading(false);
+    }
+  };
+
+  const bulkUpdatePaymentStatus = async (newPaymentStatus: string) => {
+    if (selectedClients.size === 0) return;
+
+    setBulkActionLoading(true);
+    try {
+      const { error } = await supabase
+        .from("clients")
+        .update({ payment_status: newPaymentStatus })
+        .in("id", Array.from(selectedClients));
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: `${selectedClients.size} client(s) payment status updated to ${newPaymentStatus}`
+      });
+
+      setSelectedClients(new Set());
+      fetchClients();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update payment status",
+        variant: "destructive"
+      });
+    } finally {
+      setBulkActionLoading(false);
+    }
+  };
+
+  const bulkAssignService = async (serviceTypeId: string) => {
+    if (selectedClients.size === 0) return;
+
+    const serviceType = serviceTypes.find(st => st.id === serviceTypeId);
+    if (!serviceType) return;
+
+    setBulkActionLoading(true);
+    try {
+      const newDeliveryDate = new Date();
+      newDeliveryDate.setDate(newDeliveryDate.getDate() + serviceType.default_timeline_days);
+
+      const { error } = await supabase
+        .from("clients")
+        .update({
+          service_type_id: serviceTypeId,
+          estimated_delivery_date: newDeliveryDate.toISOString().split('T')[0]
+        })
+        .in("id", Array.from(selectedClients));
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: `${selectedClients.size} client(s) assigned to ${serviceType.name}`
+      });
+
+      setSelectedClients(new Set());
+      fetchClients();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to assign service type",
+        variant: "destructive"
+      });
+    } finally {
+      setBulkActionLoading(false);
     }
   };
 
@@ -375,6 +530,109 @@ export function ClientManager() {
         </Card>
       )}
 
+      {/* Bulk Actions Bar */}
+      {selectedClients.size > 0 && (
+        <Card className="shadow-lg border border-rdr-gold bg-rdr-gold/5">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <Users className="w-5 h-5 text-rdr-navy" />
+                  <span className="font-medium text-rdr-navy">
+                    {selectedClients.size} client(s) selected
+                  </span>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setSelectedClients(new Set())}
+                  className="text-rdr-navy border-rdr-navy"
+                >
+                  Clear Selection
+                </Button>
+              </div>
+              
+              <div className="flex items-center gap-2">
+                {/* Status Updates */}
+                <Select onValueChange={bulkUpdateStatus}>
+                  <SelectTrigger className="w-[140px]">
+                    <SelectValue placeholder="Update Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="active">Set Active</SelectItem>
+                    <SelectItem value="inactive">Set Inactive</SelectItem>
+                    <SelectItem value="completed">Set Completed</SelectItem>
+                    <SelectItem value="on_hold">Set On Hold</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                {/* Payment Status Updates */}
+                <Select onValueChange={bulkUpdatePaymentStatus}>
+                  <SelectTrigger className="w-[160px]">
+                    <SelectValue placeholder="Payment Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="pending">Set Pending</SelectItem>
+                    <SelectItem value="paid">Set Paid</SelectItem>
+                    <SelectItem value="overdue">Set Overdue</SelectItem>
+                    <SelectItem value="refunded">Set Refunded</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                {/* Service Assignment */}
+                <Select onValueChange={bulkAssignService}>
+                  <SelectTrigger className="w-[160px]">
+                    <SelectValue placeholder="Assign Service" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {serviceTypes.map((serviceType) => (
+                      <SelectItem key={serviceType.id} value={serviceType.id}>
+                        {serviceType.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                {/* Delete Button */}
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={bulkDeleteClients}
+                  disabled={bulkActionLoading}
+                  className="flex items-center gap-2"
+                >
+                  {bulkActionLoading ? (
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Trash2 className="w-4 h-4" />
+                  )}
+                  Delete Selected
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Select All Header */}
+      {filteredAndSortedClients.length > 0 && (
+        <Card className="shadow-lg border border-border">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <input
+                type="checkbox"
+                checked={selectedClients.size === filteredAndSortedClients.length && filteredAndSortedClients.length > 0}
+                onChange={handleSelectAll}
+                className="rounded border-gray-300"
+              />
+              <span className="text-sm font-medium text-rdr-navy">
+                Select All ({filteredAndSortedClients.length} clients)
+              </span>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       <div className="grid gap-4">
         {filteredAndSortedClients.map((client) => {
           const daysUntilDelivery = client.estimated_delivery_date ? 
@@ -391,121 +649,141 @@ export function ClientManager() {
                 client.is_rush ? 'ring-2 ring-red-500 bg-red-50' : 
                 isOverdue ? 'ring-2 ring-destructive' : 
                 isUrgent ? 'ring-2 ring-orange-400' : ''
-              }`}
-              onClick={() => navigate(`/client/${client.id}`)}
+              } ${selectedClients.has(client.id) ? 'ring-2 ring-rdr-gold bg-rdr-gold/10' : ''}`}
             >
               <CardContent className="p-6">
-                <div className="flex justify-between items-start mb-4">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h3 className="text-xl font-semibold">
-                        {client.name}
-                      </h3>
-                      <ExternalLink className="w-4 h-4 text-muted-foreground" />
+                <div className="flex items-start gap-4">
+                  {/* Selection Checkbox */}
+                  <div className="flex items-center pt-1">
+                    <input
+                      type="checkbox"
+                      checked={selectedClients.has(client.id)}
+                      onChange={(e) => {
+                        e.stopPropagation();
+                        handleSelectClient(client.id);
+                      }}
+                      className="rounded border-gray-300"
+                    />
+                  </div>
+
+                  {/* Client Content */}
+                  <div 
+                    className="flex-1"
+                    onClick={() => navigate(`/client/${client.id}`)}
+                  >
+                    <div className="flex justify-between items-start mb-4">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h3 className="text-xl font-semibold">
+                            {client.name}
+                          </h3>
+                          <ExternalLink className="w-4 h-4 text-muted-foreground" />
+                          {client.is_rush && (
+                            <Badge variant="destructive" className="text-xs font-bold animate-pulse">
+                              🚨 RUSH
+                            </Badge>
+                          )}
+                          {isOverdue && !client.is_rush && (
+                            <Badge variant="destructive" className="text-xs">
+                              OVERDUE
+                            </Badge>
+                          )}
+                          {isUrgent && !isOverdue && !client.is_rush && (
+                            <Badge variant="secondary" className="text-xs bg-orange-100 text-orange-800">
+                              URGENT
+                            </Badge>
+                          )}
+                          {isRushUrgent && (
+                            <Badge variant="destructive" className="text-xs bg-red-600 text-white">
+                              RUSH URGENT
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="text-muted-foreground">{client.email}</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <label className="flex items-center gap-2 text-sm">
+                          <input
+                            type="checkbox"
+                            checked={client.is_rush}
+                            onChange={(e) => {
+                              e.stopPropagation();
+                              toggleRushStatus(client.id, client.is_rush);
+                            }}
+                            className="rounded border-gray-300"
+                          />
+                          <span className={client.is_rush ? "text-red-600 font-semibold" : ""}>
+                            RUSH (72h)
+                          </span>
+                        </label>
+                        <Badge variant={client.status === 'active' ? 'default' : 'secondary'}>
+                          {client.status}
+                        </Badge>
+                        <Badge variant={client.payment_status === 'paid' ? 'default' : 'secondary'}>
+                          {client.payment_status}
+                        </Badge>
+                      </div>
+                    </div>
+                  
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                      <div>
+                        <Label className="text-sm font-medium">Service Type</Label>
+                        <Select
+                          value={client.service_type_id}
+                          onValueChange={(value) => updateClientService(client.id, value)}
+                        >
+                          <SelectTrigger className="mt-1">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {serviceTypes.map((serviceType) => (
+                              <SelectItem key={serviceType.id} value={serviceType.id}>
+                                {serviceType.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
+                      <div>
+                        <Label className="text-sm font-medium">
+                          {client.is_rush ? "Rush Deadline" : "Estimated Delivery"}
+                        </Label>
+                        <div className="flex items-center mt-1">
+                          <Calendar className="w-4 h-4 mr-2 text-muted-foreground" />
+                          <span className={`text-sm ${client.is_rush ? 'text-red-600 font-semibold' : ''}`}>
+                            {client.is_rush && client.rush_deadline ? 
+                              new Date(client.rush_deadline).toLocaleString() :
+                              client.estimated_delivery_date ? 
+                              new Date(client.estimated_delivery_date).toLocaleDateString() : 
+                              'Not set'
+                            }
+                          </span>
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <Label className="text-sm font-medium">Tags</Label>
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {client.service_types.tags?.map((tag) => (
+                            <Badge key={tag} variant="outline" className="text-xs">
+                              {tag}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="text-sm text-muted-foreground">
+                      Created: {new Date(client.created_at).toLocaleDateString()} • 
+                      Timeline: {client.is_rush ? '72 hours (RUSH)' : `${client.service_types.default_timeline_days} days`} • 
+                      Payment: {client.payment_status}
                       {client.is_rush && (
-                        <Badge variant="destructive" className="text-xs font-bold animate-pulse">
-                          🚨 RUSH
-                        </Badge>
-                      )}
-                      {isOverdue && !client.is_rush && (
-                        <Badge variant="destructive" className="text-xs">
-                          OVERDUE
-                        </Badge>
-                      )}
-                      {isUrgent && !isOverdue && !client.is_rush && (
-                        <Badge variant="secondary" className="text-xs bg-orange-100 text-orange-800">
-                          URGENT
-                        </Badge>
-                      )}
-                      {isRushUrgent && (
-                        <Badge variant="destructive" className="text-xs bg-red-600 text-white">
-                          RUSH URGENT
-                        </Badge>
+                        <span className="text-red-600 font-semibold"> • 🚨 RUSH ORDER</span>
                       )}
                     </div>
-                    <p className="text-muted-foreground">{client.email}</p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <label className="flex items-center gap-2 text-sm">
-                      <input
-                        type="checkbox"
-                        checked={client.is_rush}
-                        onChange={(e) => {
-                          e.stopPropagation();
-                          toggleRushStatus(client.id, client.is_rush);
-                        }}
-                        className="rounded border-gray-300"
-                      />
-                      <span className={client.is_rush ? "text-red-600 font-semibold" : ""}>
-                        RUSH (72h)
-                      </span>
-                    </label>
-                    <Badge variant={client.status === 'active' ? 'default' : 'secondary'}>
-                      {client.status}
-                    </Badge>
-                    <Badge variant={client.payment_status === 'paid' ? 'default' : 'secondary'}>
-                      {client.payment_status}
-                    </Badge>
                   </div>
                 </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                <div>
-                  <Label className="text-sm font-medium">Service Type</Label>
-                  <Select
-                    value={client.service_type_id}
-                    onValueChange={(value) => updateClientService(client.id, value)}
-                  >
-                    <SelectTrigger className="mt-1">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {serviceTypes.map((serviceType) => (
-                        <SelectItem key={serviceType.id} value={serviceType.id}>
-                          {serviceType.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div>
-                  <Label className="text-sm font-medium">
-                    {client.is_rush ? "Rush Deadline" : "Estimated Delivery"}
-                  </Label>
-                  <div className="flex items-center mt-1">
-                    <Calendar className="w-4 h-4 mr-2 text-muted-foreground" />
-                    <span className={`text-sm ${client.is_rush ? 'text-red-600 font-semibold' : ''}`}>
-                      {client.is_rush && client.rush_deadline ? 
-                        new Date(client.rush_deadline).toLocaleString() :
-                        client.estimated_delivery_date ? 
-                        new Date(client.estimated_delivery_date).toLocaleDateString() : 
-                        'Not set'
-                      }
-                    </span>
-                  </div>
-                </div>
-                
-                <div>
-                  <Label className="text-sm font-medium">Tags</Label>
-                  <div className="flex flex-wrap gap-1 mt-1">
-                    {client.service_types.tags?.map((tag) => (
-                      <Badge key={tag} variant="outline" className="text-xs">
-                        {tag}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              </div>
-              
-              <div className="text-sm text-muted-foreground">
-                Created: {new Date(client.created_at).toLocaleDateString()} • 
-                Timeline: {client.is_rush ? '72 hours (RUSH)' : `${client.service_types.default_timeline_days} days`} • 
-                Payment: {client.payment_status}
-                {client.is_rush && (
-                  <span className="text-red-600 font-semibold"> • 🚨 RUSH ORDER</span>
-                )}
-              </div>
               </CardContent>
             </Card>
           );
