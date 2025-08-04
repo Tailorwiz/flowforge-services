@@ -198,20 +198,32 @@ export function ClientManager() {
   };
 
   const handleSelectClient = (clientId: string) => {
+    console.log('Selecting client:', clientId);
+    console.log('Current selected clients:', Array.from(selectedClients));
+    
     const newSelected = new Set(selectedClients);
     if (newSelected.has(clientId)) {
       newSelected.delete(clientId);
+      console.log('Deselected client:', clientId);
     } else {
       newSelected.add(clientId);
+      console.log('Selected client:', clientId);
     }
     setSelectedClients(newSelected);
+    console.log('New selected clients:', Array.from(newSelected));
   };
 
   // Bulk action functions
   const bulkDeleteClients = async () => {
-    if (selectedClients.size === 0) return;
+    console.log('Bulk delete called with selected clients:', Array.from(selectedClients));
+    
+    if (selectedClients.size === 0) {
+      console.log('No clients selected for deletion');
+      return;
+    }
     
     if (!confirm(`Are you sure you want to delete ${selectedClients.size} client(s)? This action cannot be undone.`)) {
+      console.log('User cancelled deletion');
       return;
     }
 
@@ -659,8 +671,13 @@ export function ClientManager() {
                       type="checkbox"
                       checked={selectedClients.has(client.id)}
                       onChange={(e) => {
+                        console.log('Checkbox clicked for client:', client.id);
                         e.stopPropagation();
                         handleSelectClient(client.id);
+                      }}
+                      onClick={(e) => {
+                        console.log('Checkbox direct click for client:', client.id);
+                        e.stopPropagation();
                       }}
                       className="rounded border-gray-300"
                     />
