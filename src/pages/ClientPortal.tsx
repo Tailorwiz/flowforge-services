@@ -94,7 +94,7 @@ export default function ClientPortal() {
   // Handle authentication redirect
   useEffect(() => {
     if (!authLoading && !user) {
-      navigate('/login');
+      navigate('/customer/login');
     }
   }, [user, authLoading, navigate]);
 
@@ -128,12 +128,12 @@ export default function ClientPortal() {
         }
         console.log('ClientPortal: User is not admin and has no client profile');
         // Only redirect to login if they're not an admin and we're not explicitly on /portal
-        navigate('/login');
+        navigate('/customer/login');
       }
     } catch (error) {
       console.error('Error checking user role:', error);
       if (location.pathname !== '/portal') {
-        navigate('/login');
+        navigate('/customer/login');
       }
     }
   };

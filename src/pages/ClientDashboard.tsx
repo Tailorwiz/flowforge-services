@@ -83,36 +83,45 @@ export default function ClientDashboard() {
   const [hasNewUploads, setHasNewUploads] = useState(false);
 
   useEffect(() => {
-    if (clientId) {
-      fetchClientData();
-      fetchClientHistory();
-      fetchClientFiles();
-      fetchTrainingMaterials();
-      
-      // Set up real-time listener for new uploads
-      const channel = supabase
-        .channel('client-uploads')
-        .on(
-          'postgres_changes',
-          {
-            event: 'INSERT',
-            schema: 'public',
-            table: 'client_history',
-            filter: `client_id=eq.${clientId}`
-          },
-          (payload) => {
-            if (payload.new.action_type === 'file_uploaded') {
-              setHasNewUploads(true);
-              fetchClientHistory();
-            }
-          }
-        )
-        .subscribe();
+    if (!clientId) return;
 
-      return () => {
-        supabase.removeChannel(channel);
-      };
+    const id = String(clientId);
+    const isValid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id);
+
+    if (!isValid) {
+      console.error('Invalid clientId param:', id);
+      navigate('/portal');
+      return;
     }
+
+    fetchClientData();
+    fetchClientHistory();
+    fetchClientFiles();
+    fetchTrainingMaterials();
+    
+    // Set up real-time listener for new uploads
+    const channel = supabase
+      .channel('client-uploads')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'client_history',
+          filter: `client_id=eq.${id}`
+        },
+        (payload) => {
+          if (payload.new.action_type === 'file_uploaded') {
+            setHasNewUploads(true);
+            fetchClientHistory();
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [clientId]);
 
   const fetchClientData = async () => {
