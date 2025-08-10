@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/components/AuthProvider";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -70,6 +70,7 @@ const PROGRESS_STEPS = [
 export default function ClientPortal() {
   const { user, signOut, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [profile, setProfile] = useState<ClientProfile | null>(null);
   const [needsPhotoUpload, setNeedsPhotoUpload] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -101,10 +102,9 @@ export default function ClientPortal() {
   useEffect(() => {
     if (!authLoading && !loading && user && !profile) {
       console.log('ClientPortal: User authenticated but no client profile found, checking if admin...');
-      // Instead of redirecting to login, check if this is an admin
       checkIfUserIsAdmin();
     }
-  }, [user, authLoading, loading, profile, navigate]);
+  }, [user, authLoading, loading, profile, navigate, location.pathname]);
 
   const checkIfUserIsAdmin = async () => {
     try {
@@ -114,17 +114,27 @@ export default function ClientPortal() {
         .eq('user_id', user?.id)
         .maybeSingle();
       
-      if (userRole?.role === 'admin') {
+    if (userRole?.role === 'admin') {
+        if (location.pathname === '/portal') {
+          console.log('ClientPortal: Admin accessed /portal; staying on client portal');
+          return;
+        }
         console.log('ClientPortal: User is admin, redirecting to admin dashboard');
         navigate('/admin');
       } else {
+        if (location.pathname === '/portal') {
+          console.log('ClientPortal: Non-admin without client profile on /portal; staying on client portal');
+          return;
+        }
         console.log('ClientPortal: User is not admin and has no client profile');
-        // Only redirect to login if they're not an admin and have no client profile
+        // Only redirect to login if they're not an admin and we're not explicitly on /portal
         navigate('/login');
       }
     } catch (error) {
       console.error('Error checking user role:', error);
-      navigate('/login');
+      if (location.pathname !== '/portal') {
+        navigate('/login');
+      }
     }
   };
 
