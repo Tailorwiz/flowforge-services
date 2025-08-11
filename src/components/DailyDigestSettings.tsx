@@ -11,6 +11,7 @@ import { Loader2, Clock, Mail, Settings } from 'lucide-react';
 
 interface DigestPreferences {
   id?: string;
+  user_id?: string;
   enabled: boolean;
   send_time: string;
   timezone: string;
@@ -22,7 +23,6 @@ interface DigestPreferences {
   include_appointments: boolean;
   created_at?: string;
   updated_at?: string;
-  user_id?: string;
 }
 
 export const DailyDigestSettings = () => {
@@ -54,19 +54,13 @@ export const DailyDigestSettings = () => {
         .select('*')
         .maybeSingle();
 
-      if (error) {
+      if (error && error.code !== 'PGRST116') {
         console.error('Error fetching preferences:', error);
         return;
       }
 
       if (data) {
-        // Ensure all required fields are present
-        setPreferences({
-          ...preferences,
-          ...data,
-          recipient_email: data.recipient_email || preferences.recipient_email,
-          include_appointments: data.include_appointments !== undefined ? data.include_appointments : preferences.include_appointments,
-        });
+        setPreferences(data);
       }
     } catch (error) {
       console.error('Error:', error);
@@ -78,15 +72,29 @@ export const DailyDigestSettings = () => {
   const savePreferences = async () => {
     setSaving(true);
     try {
-      // Remove fields that shouldn't be in the upsert
-      const { created_at, user_id, ...updateData } = preferences;
-      
+      const { data: user } = await supabase.auth.getUser();
+      if (!user.user) {
+        throw new Error('User not authenticated');
+      }
+
+      // Prepare data for upsert
+      const updateData = {
+        user_id: user.user.id,
+        enabled: preferences.enabled,
+        send_time: preferences.send_time,
+        timezone: preferences.timezone,
+        recipient_email: preferences.recipient_email,
+        include_due_today: preferences.include_due_today,
+        include_due_tomorrow: preferences.include_due_tomorrow,
+        include_overdue: preferences.include_overdue,
+        include_new_uploads: preferences.include_new_uploads,
+        include_appointments: preferences.include_appointments,
+        updated_at: new Date().toISOString(),
+      };
+
       const { data, error } = await supabase
         .from('daily_digest_preferences')
-        .upsert({
-          ...updateData,
-          updated_at: new Date().toISOString(),
-        })
+        .upsert(updateData)
         .select()
         .single();
 

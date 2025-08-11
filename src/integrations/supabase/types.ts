@@ -509,10 +509,12 @@ export type Database = {
           created_at: string
           enabled: boolean
           id: string
+          include_appointments: boolean
           include_due_today: boolean
           include_due_tomorrow: boolean
           include_new_uploads: boolean
           include_overdue: boolean
+          recipient_email: string
           send_time: string
           timezone: string
           updated_at: string
@@ -522,10 +524,12 @@ export type Database = {
           created_at?: string
           enabled?: boolean
           id?: string
+          include_appointments?: boolean
           include_due_today?: boolean
           include_due_tomorrow?: boolean
           include_new_uploads?: boolean
           include_overdue?: boolean
+          recipient_email?: string
           send_time?: string
           timezone?: string
           updated_at?: string
@@ -535,10 +539,12 @@ export type Database = {
           created_at?: string
           enabled?: boolean
           id?: string
+          include_appointments?: boolean
           include_due_today?: boolean
           include_due_tomorrow?: boolean
           include_new_uploads?: boolean
           include_overdue?: boolean
+          recipient_email?: string
           send_time?: string
           timezone?: string
           updated_at?: string

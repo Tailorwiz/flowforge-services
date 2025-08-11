@@ -23,16 +23,15 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { force = false, userEmail = "admin@resultsdrivenresumes.com" }: DigestRequest = await req.json();
+    const { force = false, userEmail }: DigestRequest = await req.json();
 
     console.log("Processing daily digest request:", { force, userEmail });
 
-    // Get digest preferences
+    // Fetch daily digest preferences
     const { data: preferences, error: prefError } = await supabase
       .from("daily_digest_preferences")
       .select("*")
-      .limit(1)
-      .single();
+      .maybeSingle();
 
     if (prefError && prefError.code !== 'PGRST116') {
       console.error("Error fetching preferences:", prefError);
@@ -42,10 +41,12 @@ const handler = async (req: Request): Promise<Response> => {
     // Use default preferences if none found
     const digestPrefs = preferences || {
       enabled: true,
+      recipient_email: 'admin@resultsdrivenresumes.com',
       include_due_today: true,
       include_due_tomorrow: true,
       include_overdue: true,
-      include_new_uploads: true
+      include_new_uploads: true,
+      include_appointments: true
     };
 
     if (!digestPrefs.enabled && !force) {
@@ -148,23 +149,26 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     // Fetch Calendly appointments
-    try {
-      const appointmentsResponse = await supabase.functions.invoke('fetch-calendly-appointments');
-      if (appointmentsResponse.data?.success && appointmentsResponse.data?.appointments) {
-        // Get appointments for next 7 days
-        const nextWeek = new Date();
-        nextWeek.setDate(nextWeek.getDate() + 7);
-        
-        appointments = appointmentsResponse.data.appointments
-          .filter((event: any) => {
-            const eventDate = new Date(event.start_time);
-            return eventDate >= today && eventDate <= nextWeek;
-          })
-          .slice(0, 10); // Limit to 10 appointments
+    let appointments = [];
+    if (digestPrefs.include_appointments) {
+      try {
+        const appointmentsResponse = await supabase.functions.invoke('fetch-calendly-appointments');
+        if (appointmentsResponse.data?.success && appointmentsResponse.data?.appointments) {
+          // Get appointments for next 7 days
+          const nextWeek = new Date();
+          nextWeek.setDate(nextWeek.getDate() + 7);
+          
+          appointments = appointmentsResponse.data.appointments
+            .filter((event: any) => {
+              const eventDate = new Date(event.start_time);
+              return eventDate >= today && eventDate <= nextWeek;
+            })
+            .slice(0, 10); // Limit to 10 appointments
+        }
+      } catch (error) {
+        console.error("Error fetching Calendly appointments:", error);
+        appointments = [];
       }
-    } catch (error) {
-      console.error("Error fetching Calendly appointments:", error);
-      appointments = [];
     }
 
     // Fetch total stats
@@ -196,7 +200,7 @@ const handler = async (req: Request): Promise<Response> => {
     // Send digest email
     const emailResponse = await resend.emails.send({
       from: "RDR Project Portal Daily Digest <digest@resend.dev>",
-      to: [userEmail],
+      to: [userEmail || digestPrefs.recipient_email],
       subject: `Daily Digest - ${today.toLocaleDateString()} (${rushClients.length + dueToday.length + dueTomorrow.length + overdue.length} items)`,
       html: digestContent,
     });

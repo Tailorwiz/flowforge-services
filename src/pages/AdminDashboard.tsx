@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from '@/components/ui/use-toast';
 import { Checkbox } from '@/components/ui/checkbox';
+import { DailyDigestSettings } from '@/components/DailyDigestSettings';
 import { 
   Eye, 
   CheckCircle, 
@@ -18,7 +19,8 @@ import {
   Mail,
   Download,
   FileSpreadsheet,
-  Type
+  Type,
+  Settings
 } from 'lucide-react';
 
 interface Client {
@@ -384,11 +386,15 @@ export default function AdminDashboard() {
       </div>
 
       <Tabs defaultValue="pending" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="pending">Pending ({intakeForms.filter(f => f.client.status === 'active').length})</TabsTrigger>
           <TabsTrigger value="approved">Approved ({intakeForms.filter(f => f.client.status === 'approved').length})</TabsTrigger>
           <TabsTrigger value="rejected">Rejected ({intakeForms.filter(f => f.client.status === 'rejected').length})</TabsTrigger>
           <TabsTrigger value="all">All ({intakeForms.length})</TabsTrigger>
+          <TabsTrigger value="settings">
+            <Settings className="w-4 h-4 mr-2" />
+            Settings
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="pending" className="mt-6">
@@ -437,6 +443,10 @@ export default function AdminDashboard() {
             onToggleSelection={toggleFormSelection}
             onSelectAll={selectAllForms}
           />
+        </TabsContent>
+
+        <TabsContent value="settings" className="mt-6">
+          <DailyDigestSettings />
         </TabsContent>
       </Tabs>
 
