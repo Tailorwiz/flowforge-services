@@ -4,7 +4,6 @@ import { ClientManager } from "@/components/ClientManager";
 import { ServiceTypeAdmin } from "@/components/ServiceTypeAdmin";
 import { ReminderManager } from "@/components/ReminderManager";
 import { DailyDigest } from "@/components/DailyDigest";
-import { DailyDigestSettings } from "@/components/DailyDigestSettings";
 import { AdminProfile } from "@/components/AdminProfile";
 import { AdminCommandCenter } from "@/components/AdminCommandCenter";
 import { NotificationCenter } from "@/components/NotificationCenter";
@@ -43,7 +42,7 @@ import {
 
 const Index = () => {
   const [searchParams] = useSearchParams();
-  const [activeTab, setActiveTab] = useState<'digest' | 'command' | 'clients' | 'training' | 'reminders' | 'notifications' | 'services' | 'profile' | 'deliveries' | 'appointments' | 'settings'>('digest');
+  const [activeTab, setActiveTab] = useState<'digest' | 'command' | 'clients' | 'training' | 'reminders' | 'notifications' | 'services' | 'profile' | 'deliveries' | 'appointments'>('digest');
   const [userProfile, setUserProfile] = useState<any>(null);
   const [dashboardStats, setDashboardStats] = useState({
     rushCount: 0,
@@ -136,7 +135,7 @@ const Index = () => {
   // Handle URL tab parameter
   useEffect(() => {
     const tabFromUrl = searchParams.get('tab');
-    if (tabFromUrl && ['digest', 'command', 'clients', 'training', 'reminders', 'notifications', 'services', 'profile', 'deliveries', 'appointments', 'settings'].includes(tabFromUrl)) {
+    if (tabFromUrl && ['digest', 'command', 'clients', 'training', 'reminders', 'notifications', 'services', 'profile', 'deliveries', 'appointments'].includes(tabFromUrl)) {
       setActiveTab(tabFromUrl as any);
     }
   }, [searchParams]);
@@ -244,7 +243,6 @@ const Index = () => {
     { id: 'reminders', label: 'Reminders', icon: Clock, color: 'text-orange-600' },
     { id: 'notifications', label: 'Notifications', icon: Bell, color: 'text-red-600' },
     { id: 'services', label: 'Service Settings', icon: Settings, color: 'text-gray-600' },
-    { id: 'settings', label: 'Daily Digest Settings', icon: Settings, color: 'text-blue-600' },
     { id: 'profile', label: 'Admin Profile', icon: User, color: 'text-indigo-600' },
   ];
 
@@ -390,7 +388,6 @@ const Index = () => {
             {activeTab === 'reminders' && <ReminderManager />}
             {activeTab === 'notifications' && <NotificationCenter />}
             {activeTab === 'services' && <ServiceTypeAdmin />}
-            {activeTab === 'settings' && <DailyDigestSettings />}
             {activeTab === 'profile' && <AdminProfile />}
           </div>
         </div>

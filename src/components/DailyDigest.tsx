@@ -5,6 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { 
   Calendar, 
   Clock, 
@@ -13,9 +14,11 @@ import {
   CheckCircle,
   Bell,
   TrendingUp,
-  Users
+  Users,
+  Settings
 } from "lucide-react";
 import CalendlyAppointments from "./CalendlyAppointments";
+import { DailyDigestSettings } from "./DailyDigestSettings";
 
 interface DigestData {
   dueToday: any[];
@@ -206,10 +209,23 @@ export function DailyDigest() {
             })}
           </p>
         </div>
-        <Button onClick={sendDigestEmail} variant="outline">
-          <Bell className="w-4 h-4 mr-2" />
-          Send Digest Email
-        </Button>
+        <div className="flex gap-2">
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button variant="outline">
+                <Settings className="w-4 h-4 mr-2" />
+                Manage Daily Digest Settings
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+              <DailyDigestSettings />
+            </DialogContent>
+          </Dialog>
+          <Button onClick={sendDigestEmail} variant="outline">
+            <Bell className="w-4 h-4 mr-2" />
+            Send Digest Email
+          </Button>
+        </div>
       </div>
 
       {/* Overview Stats */}
