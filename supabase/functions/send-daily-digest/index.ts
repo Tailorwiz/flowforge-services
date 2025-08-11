@@ -68,6 +68,7 @@ const handler = async (req: Request): Promise<Response> => {
     let dueTomorrow: any[] = [];
     let overdue: any[] = [];
     let newUploads: any[] = [];
+    let appointments: any[] = [];
 
     // Fetch due today
     if (digestPrefs.include_due_today) {
@@ -128,12 +129,33 @@ const handler = async (req: Request): Promise<Response> => {
       newUploads = data || [];
     }
 
+    // Fetch Calendly appointments
+    try {
+      const appointmentsResponse = await supabase.functions.invoke('fetch-calendly-appointments');
+      if (appointmentsResponse.data?.success && appointmentsResponse.data?.appointments) {
+        // Get appointments for next 7 days
+        const nextWeek = new Date();
+        nextWeek.setDate(nextWeek.getDate() + 7);
+        
+        appointments = appointmentsResponse.data.appointments
+          .filter((event: any) => {
+            const eventDate = new Date(event.start_time);
+            return eventDate >= today && eventDate <= nextWeek;
+          })
+          .slice(0, 10); // Limit to 10 appointments
+      }
+    } catch (error) {
+      console.error("Error fetching Calendly appointments:", error);
+      appointments = [];
+    }
+
     // Create digest content
     const digestContent = generateDigestHTML({
       dueToday,
       dueTomorrow,
       overdue,
       newUploads,
+      appointments,
       date: today.toLocaleDateString()
     });
 
@@ -178,9 +200,10 @@ function generateDigestHTML(data: {
   dueTomorrow: any[];
   overdue: any[];
   newUploads: any[];
+  appointments: any[];
   date: string;
 }): string {
-  const { dueToday, dueTomorrow, overdue, newUploads, date } = data;
+  const { dueToday, dueTomorrow, overdue, newUploads, appointments, date } = data;
   
   const createClientList = (clients: any[], title: string, urgencyClass: string = "") => {
     if (!clients.length) return "";
@@ -220,6 +243,47 @@ function generateDigestHTML(data: {
     `;
   };
 
+  const createAppointmentsList = (appointments: any[]) => {
+    if (!appointments.length) return "";
+    
+    return `
+      <div style="margin-bottom: 30px;">
+        <h3 style="color: #1e40af; margin-bottom: 15px;">📅 Upcoming Appointments (${appointments.length})</h3>
+        <div style="background-color: #f0f9ff; padding: 15px; border-radius: 8px; border-left: 4px solid #3b82f6;">
+          ${appointments.map(appointment => {
+            const isToday = new Date(appointment.start_time).toDateString() === new Date().toDateString();
+            const isTomorrow = new Date(appointment.start_time).toDateString() === new Date(Date.now() + 24 * 60 * 60 * 1000).toDateString();
+            const appointmentDate = new Date(appointment.start_time);
+            
+            return `
+              <div style="padding: 12px 0; border-bottom: 1px solid #e0f2fe; ${isToday ? 'background-color: #fef3c7; border-radius: 6px; padding: 12px; margin: 8px 0;' : ''}">
+                <div style="display: flex; justify-content: space-between; align-items: start;">
+                  <div>
+                    <strong style="color: ${isToday ? '#d97706' : '#1e40af'};">${appointment.event_type}</strong>
+                    ${isToday ? '<span style="background: #f59e0b; color: white; padding: 2px 8px; border-radius: 12px; font-size: 12px; margin-left: 8px;">TODAY</span>' : ''}
+                    ${isTomorrow ? '<span style="background: #3b82f6; color: white; padding: 2px 8px; border-radius: 12px; font-size: 12px; margin-left: 8px;">TOMORROW</span>' : ''}<br>
+                    <span style="color: #666; font-size: 14px;">👤 ${appointment.invitees[0]?.name || 'Guest'}</span><br>
+                    <span style="color: #666; font-size: 14px;">📧 ${appointment.invitees[0]?.email || ''}</span>
+                  </div>
+                  <div style="text-align: right;">
+                    <strong style="color: #1e40af;">${appointmentDate.toLocaleDateString()}</strong><br>
+                    <span style="color: #666; font-size: 14px;">🕐 ${appointmentDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span><br>
+                    <span style="color: #666; font-size: 12px;">${appointment.location.type === 'zoom' ? '💻 Video Call' : appointment.location.type === 'phone' ? '📞 Phone Call' : '📍 ' + appointment.location.type}</span>
+                  </div>
+                </div>
+                ${appointment.location.join_url ? `
+                  <div style="margin-top: 8px;">
+                    <a href="${appointment.location.join_url}" style="background-color: #3b82f6; color: white; padding: 6px 12px; text-decoration: none; border-radius: 4px; font-size: 12px;">Join Meeting</a>
+                  </div>
+                ` : ''}
+              </div>
+            `;
+          }).join('')}
+        </div>
+      </div>
+    `;
+  };
+
   return `
     <div style="font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px;">
       <div style="text-align: center; margin-bottom: 30px; background: linear-gradient(135deg, #2563eb, #1e40af); color: white; padding: 30px; border-radius: 12px;">
@@ -232,8 +296,9 @@ function generateDigestHTML(data: {
         ${dueToday.length ? createClientList(dueToday, "⏰ DUE TODAY") : ""}
         ${dueTomorrow.length ? createClientList(dueTomorrow, "📅 DUE TOMORROW") : ""}
         ${createUploadsList(newUploads)}
+        ${createAppointmentsList(appointments)}
 
-        ${!dueToday.length && !dueTomorrow.length && !overdue.length && !newUploads.length ? `
+        ${!dueToday.length && !dueTomorrow.length && !overdue.length && !newUploads.length && !appointments.length ? `
           <div style="text-align: center; padding: 40px; color: #666;">
             <h3 style="color: #10b981; margin-bottom: 10px;">🎉 All caught up!</h3>
             <p>No urgent items requiring attention today. Great work!</p>
