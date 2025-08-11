@@ -203,12 +203,21 @@ const handler = async (req: Request): Promise<Response> => {
     });
 
     // Send digest email
+    // For testing, Resend only allows sending to verified email addresses
+    // Until domain is verified, we'll send to the verified email
+    const recipientEmail = "marcus@tailorwiz.com"; // Change this after verifying domain
+    
+    console.log("Attempting to send email to:", recipientEmail);
+    console.log("From address:", "marcus@tailorwiz.com");
+    
     const emailResponse = await resend.emails.send({
       from: "RDR Project Portal Daily Digest <marcus@tailorwiz.com>",
-      to: [userEmail || digestPrefs.recipient_email],
+      to: [recipientEmail],
       subject: `Daily Digest - ${today.toLocaleDateString()} (${rushClients.length + dueToday.length + dueTomorrow.length + overdue.length} items)`,
       html: digestContent,
     });
+
+    console.log("Email response:", JSON.stringify(emailResponse, null, 2));
 
     console.log("Daily digest sent successfully:", emailResponse);
 
