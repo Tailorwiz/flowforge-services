@@ -44,17 +44,9 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: `You are an expert resume parser. When given a resume document, extract as much information as possible. 
+            content: `You are an expert resume parser. Extract ONLY information explicitly present in the provided text. 
 
-If you only receive file metadata (like filename and size), make intelligent inferences based on the filename and return realistic sample data that would be appropriate for that person. 
-
-For example:
-- If filename contains "CEO" or "Executive", assume executive-level position
-- If filename contains specific roles like "Manager", "Developer", "Analyst", use those as titles
-- If filename contains a name, use that as the person's name
-- Always provide realistic contact information, skills, and experience levels
-
-Return complete JSON with all requested fields, using intelligent defaults when specific information isn't available.`
+Do not invent, infer, or fabricate any data from filenames, metadata, or context. If a field is missing, return an empty string (or empty array for list fields). If the input appears to be only file metadata and not actual resume content, return empty values for all fields. Keep outputs concise and faithful to the source.`
           },
           {
             role: 'user',

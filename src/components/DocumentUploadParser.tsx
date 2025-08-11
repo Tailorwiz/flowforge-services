@@ -105,12 +105,12 @@ export function DocumentUploadParser({ serviceTypes, onClientCreated }: Document
                 resolve(fullText);
               } else {
                 // Fallback if no text extracted
-                resolve(`Document: ${file.name}\nFile Type: ${file.type}\nFile Size: ${file.size} bytes\nDocument Description: This is a professional resume document containing contact information, work experience, education, skills, and career objectives.\n\nPlease extract all available information from this resume file and provide realistic professional data based on the filename and context.`);
+                resolve(`Document: ${file.name}\nFile Type: ${file.type}\nFile Size: ${file.size} bytes\nDocument Description: This is a professional resume document containing contact information, work experience, education, skills, and career objectives.\n\nOnly extract information explicitly present. Do not infer from filename or context. If a field is not present, leave it empty.`);
               }
             } catch (error) {
               console.error('PDF extraction error:', error);
               // Fallback for PDF processing errors
-              resolve(`Document: ${file.name}\nFile Type: ${file.type}\nFile Size: ${file.size} bytes\nDocument Description: This is a professional resume document containing contact information, work experience, education, skills, and career objectives.\n\nPlease extract all available information from this resume file and provide realistic professional data based on the filename and context.`);
+              resolve(`Document: ${file.name}\nFile Type: ${file.type}\nFile Size: ${file.size} bytes\nDocument Description: This is a professional resume document containing contact information, work experience, education, skills, and career objectives.\n\nOnly extract information explicitly present. Do not infer from filename or context. If a field is not present, leave it empty.`);
             }
           };
           reader.onerror = () => reject(new Error("Failed to read PDF file"));
@@ -131,16 +131,16 @@ export function DocumentUploadParser({ serviceTypes, onClientCreated }: Document
                   resolve(result.value);
                 } else {
                   // Fallback if no text extracted
-                  resolve(`Document: ${file.name}\nFile Type: ${file.type}\nFile Size: ${file.size} bytes\nDocument Description: This is a professional resume document containing contact information, work experience, education, skills, and career objectives.\n\nPlease extract all available information from this resume file and provide realistic professional data based on the filename and context.`);
+                  resolve(`Document: ${file.name}\nFile Type: ${file.type}\nFile Size: ${file.size} bytes\nDocument Description: This is a professional resume document containing contact information, work experience, education, skills, and career objectives.\n\nOnly extract information explicitly present. Do not infer from filename or context. If a field is not present, leave it empty.`);
                 }
               } else {
-                // For .doc files, provide enhanced context
-                resolve(`Document: ${file.name}\nFile Type: ${file.type}\nFile Size: ${file.size} bytes\nDocument Description: This is a professional resume document containing contact information, work experience, education, skills, and career objectives.\n\nPlease extract all available information from this resume file and provide realistic professional data based on the filename and context.`);
+                // For .doc or other Word types, provide conservative fallback
+                resolve(`Document: ${file.name}\nFile Type: ${file.type}\nFile Size: ${file.size} bytes\nDocument Description: This is a professional resume document containing contact information, work experience, education, skills, and career objectives.\n\nOnly extract information explicitly present. Do not infer from filename or context. If a field is not present, leave it empty.`);
               }
             } catch (error) {
               console.error('Word document extraction error:', error);
               // Fallback for Word processing errors
-              resolve(`Document: ${file.name}\nFile Type: ${file.type}\nFile Size: ${file.size} bytes\nDocument Description: This is a professional resume document containing contact information, work experience, education, skills, and career objectives.\n\nPlease extract all available information from this resume file and provide realistic professional data based on the filename and context.`);
+              resolve(`Document: ${file.name}\nFile Type: ${file.type}\nFile Size: ${file.size} bytes\nDocument Description: This is a professional resume document containing contact information, work experience, education, skills, and career objectives.\n\nOnly extract information explicitly present. Do not infer from filename or context. If a field is not present, leave it empty.`);
             }
           };
           reader.onerror = () => reject(new Error("Failed to read Word document"));
@@ -148,7 +148,7 @@ export function DocumentUploadParser({ serviceTypes, onClientCreated }: Document
         });
       } else {
         // Fallback for unknown file types
-        return `Document: ${file.name}\nType: ${file.type}\nSize: ${file.size} bytes\nDocument Description: This appears to be a resume or professional document.\n\nPlease extract standard resume information and provide realistic professional data based on the filename.`;
+        return `Document: ${file.name}\nType: ${file.type}\nSize: ${file.size} bytes\nDocument Description: This appears to be a resume or professional document.\n\nOnly extract information explicitly present. Do not infer from filename or context. If a field is not present, leave it empty.`;
       }
     } catch (error) {
       console.error('Error extracting text from file:', error);

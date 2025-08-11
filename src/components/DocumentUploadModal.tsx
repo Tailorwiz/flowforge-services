@@ -141,8 +141,7 @@ File Type: ${file.type}
 File Size: ${file.size} bytes
 Document Description: This is a professional resume document containing contact information, work experience, education, skills, and career objectives.
 
-Please extract all available information from this resume file and provide realistic professional data based on the filename and context.
-        `;
+Please extract ONLY information explicitly present in this resume. Do not guess or infer from the filename or context. If any field is not found, use empty string (or empty array for array fields).`;
         return fileContext.trim();
       }
     } catch (error) {
