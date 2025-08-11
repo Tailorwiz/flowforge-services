@@ -119,7 +119,7 @@ export function ClientManager() {
       .from("clients")
       .insert([{
         ...newClient,
-        user_id: "00000000-0000-0000-0000-000000000000", // Replace with actual user ID when auth is implemented
+        user_id: null, // Clients can exist without being linked to a user initially
         estimated_delivery_date: estimatedDeliveryDate.toISOString().split('T')[0],
         payment_status: "pending"
       }])
