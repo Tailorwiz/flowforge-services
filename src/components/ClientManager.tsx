@@ -213,6 +213,71 @@ export function ClientManager() {
     console.log('New selected clients:', Array.from(newSelected));
   };
 
+  // Comprehensive client deletion function
+  const deleteClientCompletely = async (clientId: string) => {
+    try {
+      // Call the database function to delete all client data
+      const { data, error } = await supabase.rpc('delete_customer_completely', {
+        client_id_param: clientId
+      });
+
+      if (error) throw error;
+
+      const result = data as { success: boolean; error?: string; user_id_to_delete?: string };
+      
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to delete client');
+      }
+
+      // If there's an associated auth user, delete it too
+      if (result.user_id_to_delete) {
+        try {
+          const { error: authError } = await supabase.functions.invoke('delete-auth-user', {
+            body: { user_id: result.user_id_to_delete }
+          });
+
+          if (authError) {
+            console.error('Failed to delete auth user:', authError);
+            // Don't throw here - the main client data is already deleted
+          }
+        } catch (authError) {
+          console.error('Failed to delete auth user:', authError);
+          // Don't throw here - the main client data is already deleted
+        }
+      }
+
+      return result;
+    } catch (error) {
+      console.error('Error in deleteClientCompletely:', error);
+      throw error;
+    }
+  };
+
+  // Individual client deletion
+  const deleteClient = async (clientId: string, clientName: string) => {
+    if (!confirm(`Are you sure you want to PERMANENTLY delete ${clientName}? This will remove ALL their data including login credentials, history, messages, and files. This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      const result = await deleteClientCompletely(clientId);
+      
+      toast({
+        title: "Success",
+        description: `${clientName} and all associated data has been permanently deleted`
+      });
+
+      fetchClients();
+    } catch (error) {
+      console.error('Delete client error:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete client completely",
+        variant: "destructive"
+      });
+    }
+  };
+
   // Bulk action functions
   const bulkDeleteClients = async () => {
     console.log('Bulk delete called with selected clients:', Array.from(selectedClients));
@@ -222,24 +287,41 @@ export function ClientManager() {
       return;
     }
     
-    if (!confirm(`Are you sure you want to delete ${selectedClients.size} client(s)? This action cannot be undone.`)) {
+    if (!confirm(`Are you sure you want to PERMANENTLY delete ${selectedClients.size} client(s)? This will remove ALL their data including login credentials, history, messages, and files. This action cannot be undone.`)) {
       console.log('User cancelled deletion');
       return;
     }
 
     setBulkActionLoading(true);
+    let successCount = 0;
+    let errorCount = 0;
+
     try {
-      const { error } = await supabase
-        .from("clients")
-        .delete()
-        .in("id", Array.from(selectedClients));
+      // Delete each client completely
+      for (const clientId of selectedClients) {
+        try {
+          await deleteClientCompletely(clientId);
+          successCount++;
+        } catch (error) {
+          console.error(`Failed to delete client ${clientId}:`, error);
+          errorCount++;
+        }
+      }
 
-      if (error) throw error;
+      if (successCount > 0) {
+        toast({
+          title: "Success",
+          description: `${successCount} client(s) permanently deleted${errorCount > 0 ? `, ${errorCount} failed` : ''}`
+        });
+      }
 
-      toast({
-        title: "Success",
-        description: `${selectedClients.size} client(s) deleted successfully`
-      });
+      if (errorCount > 0 && successCount === 0) {
+        toast({
+          title: "Error", 
+          description: "Failed to delete any clients",
+          variant: "destructive"
+        });
+      }
 
       setSelectedClients(new Set());
       fetchClients();
@@ -719,6 +801,18 @@ export function ClientManager() {
                         <p className="text-muted-foreground">{client.email}</p>
                       </div>
                       <div className="flex items-center gap-2">
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            deleteClient(client.id, client.name);
+                          }}
+                          className="flex items-center gap-1 text-xs"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                          Delete
+                        </Button>
                         <label className="flex items-center gap-2 text-sm">
                           <input
                             type="checkbox"
