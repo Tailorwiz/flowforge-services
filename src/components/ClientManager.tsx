@@ -215,11 +215,16 @@ export function ClientManager() {
 
   // Comprehensive client deletion function
   const deleteClientCompletely = async (clientId: string) => {
+    console.log('deleteClientCompletely called with clientId:', clientId);
+    
     try {
+      console.log('Calling supabase.rpc delete_customer_completely...');
       // Call the database function to delete all client data
       const { data, error } = await supabase.rpc('delete_customer_completely', {
         client_id_param: clientId
       });
+      
+      console.log('RPC response:', { data, error });
 
       if (error) throw error;
 
@@ -255,9 +260,14 @@ export function ClientManager() {
 
   // Individual client deletion
   const deleteClient = async (clientId: string, clientName: string) => {
+    console.log('deleteClient called with:', { clientId, clientName });
+    
     if (!confirm(`Are you sure you want to PERMANENTLY delete ${clientName}? This will remove ALL their data including login credentials, history, messages, and files. This action cannot be undone.`)) {
+      console.log('User cancelled deletion');
       return;
     }
+    
+    console.log('User confirmed deletion, proceeding...');
 
     try {
       const result = await deleteClientCompletely(clientId);
