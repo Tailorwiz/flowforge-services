@@ -208,10 +208,10 @@ const handler = async (req: Request): Promise<Response> => {
     const recipientEmail = "marcus@tailorwiz.com"; // Change this after verifying domain
     
     console.log("Attempting to send email to:", recipientEmail);
-    console.log("From address:", "marcus@tailorwiz.com");
+    console.log("From address:", "onboarding@resend.dev");
     
     const emailResponse = await resend.emails.send({
-      from: "RDR Project Portal Daily Digest <marcus@tailorwiz.com>",
+      from: "RDR Project Portal Daily Digest <onboarding@resend.dev>",
       to: [recipientEmail],
       subject: `Daily Digest - ${today.toLocaleDateString()} (${rushClients.length + dueToday.length + dueTomorrow.length + overdue.length} items)`,
       html: digestContent,
