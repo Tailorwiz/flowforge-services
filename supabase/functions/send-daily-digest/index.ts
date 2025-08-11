@@ -330,20 +330,22 @@ function generateDigestHTML(data: {
             
             return `
               <div style="padding: 12px 0; border-bottom: 1px solid #e0f2fe; ${isToday ? 'background-color: #fef3c7; border-radius: 6px; padding: 12px; margin: 8px 0;' : ''}">
-                <div style="display: flex; justify-content: space-between; align-items: start; flex-wrap: wrap;">
-                  <div style="flex: 1; min-width: 200px;">
-                    <strong style="color: ${isToday ? '#d97706' : '#1e40af'};">${appointment.event_type}</strong>
-                    ${isToday ? '<span style="background: #f59e0b; color: white; padding: 2px 8px; border-radius: 12px; font-size: 12px; margin-left: 8px;">TODAY</span>' : ''}
-                    ${isTomorrow ? '<span style="background: #3b82f6; color: white; padding: 2px 8px; border-radius: 12px; font-size: 12px; margin-left: 8px;">TOMORROW</span>' : ''}<br>
-                    <span style="color: #666; font-size: 14px;">👤 ${appointment.invitees[0]?.name || 'Guest'}</span><br>
-                    <span style="color: #666; font-size: 14px;">📧 ${appointment.invitees[0]?.email || ''}</span>
-                  </div>
-                  <div style="text-align: right; min-width: 120px;">
-                    <strong style="color: #1e40af;">${appointmentDate.toLocaleDateString()}</strong><br>
-                    <span style="color: #666; font-size: 14px;">🕐 ${appointmentDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span><br>
-                    <span style="color: #666; font-size: 12px;">${appointment.location.type === 'zoom' ? '💻 Video Call' : appointment.location.type === 'phone' ? '📞 Phone Call' : '📍 ' + appointment.location.type}</span>
-                  </div>
-                </div>
+                <table style="width: 100%; border-collapse: collapse;">
+                  <tr>
+                    <td style="vertical-align: top; width: 60%;">
+                      <strong style="color: ${isToday ? '#d97706' : '#1e40af'};">${appointment.event_type}</strong>
+                      ${isToday ? '<span style="background: #f59e0b; color: white; padding: 2px 8px; border-radius: 12px; font-size: 12px; margin-left: 8px;">TODAY</span>' : ''}
+                      ${isTomorrow ? '<span style="background: #3b82f6; color: white; padding: 2px 8px; border-radius: 12px; font-size: 12px; margin-left: 8px;">TOMORROW</span>' : ''}<br>
+                      <span style="color: #666; font-size: 14px;">👤 ${appointment.invitees[0]?.name || 'Guest'}</span><br>
+                      <span style="color: #666; font-size: 14px;">📧 ${appointment.invitees[0]?.email || ''}</span>
+                    </td>
+                    <td style="vertical-align: top; text-align: right; width: 40%;">
+                      <strong style="color: #1e40af;">${appointmentDate.toLocaleDateString()}</strong><br>
+                      <span style="color: #666; font-size: 14px;">🕐 ${appointmentDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span><br>
+                      <span style="color: #666; font-size: 12px;">${appointment.location.type === 'zoom' ? '💻 Video Call' : appointment.location.type === 'phone' ? '📞 Phone Call' : '📍 ' + appointment.location.type}</span>
+                    </td>
+                  </tr>
+                </table>
                 ${appointment.location.join_url ? `
                   <div style="margin-top: 8px;">
                     <a href="${appointment.location.join_url}" style="background-color: #3b82f6; color: white; padding: 6px 12px; text-decoration: none; border-radius: 4px; font-size: 12px;">Join Meeting</a>
@@ -367,24 +369,24 @@ function generateDigestHTML(data: {
       <!-- Summary Stats -->
       <div style="background-color: #f8fafc; padding: 20px; border-radius: 12px; margin-bottom: 30px;">
         <h2 style="color: #1e40af; margin-bottom: 20px; text-align: center;">📈 Overview</h2>
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px;">
-          <div style="background: white; padding: 15px; border-radius: 8px; text-align: center; border-left: 4px solid #ef4444;">
+        <div style="display: flex; flex-wrap: wrap; gap: 15px; justify-content: center;">
+          <div style="background: white; padding: 15px; border-radius: 8px; text-align: center; border-left: 4px solid #ef4444; min-width: 120px;">
             <div style="font-size: 24px; font-weight: bold; color: #ef4444;">${rushClients.length}</div>
             <div style="font-size: 12px; color: #666;">🚨 RUSH Orders</div>
           </div>
-          <div style="background: white; padding: 15px; border-radius: 8px; text-align: center; border-left: 4px solid #64748b;">
+          <div style="background: white; padding: 15px; border-radius: 8px; text-align: center; border-left: 4px solid #64748b; min-width: 120px;">
             <div style="font-size: 24px; font-weight: bold; color: #64748b;">${totalClients}</div>
             <div style="font-size: 12px; color: #666;">👥 Total Clients</div>
           </div>
-          <div style="background: white; padding: 15px; border-radius: 8px; text-align: center; border-left: 4px solid #3b82f6;">
+          <div style="background: white; padding: 15px; border-radius: 8px; text-align: center; border-left: 4px solid #3b82f6; min-width: 120px;">
             <div style="font-size: 24px; font-weight: bold; color: #3b82f6;">${activeProjects}</div>
             <div style="font-size: 12px; color: #666;">📊 Active Projects</div>
           </div>
-          <div style="background: white; padding: 15px; border-radius: 8px; text-align: center; border-left: 4px solid #f59e0b;">
+          <div style="background: white; padding: 15px; border-radius: 8px; text-align: center; border-left: 4px solid #f59e0b; min-width: 120px;">
             <div style="font-size: 24px; font-weight: bold; color: #f59e0b;">${dueToday.length}</div>
             <div style="font-size: 12px; color: #666;">⏰ Due Today</div>
           </div>
-          <div style="background: white; padding: 15px; border-radius: 8px; text-align: center; border-left: 4px solid #ef4444;">
+          <div style="background: white; padding: 15px; border-radius: 8px; text-align: center; border-left: 4px solid #ef4444; min-width: 120px;">
             <div style="font-size: 24px; font-weight: bold; color: #ef4444;">${overdue.length}</div>
             <div style="font-size: 12px; color: #666;">🚨 Overdue</div>
           </div>
