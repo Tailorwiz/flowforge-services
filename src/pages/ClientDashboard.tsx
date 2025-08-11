@@ -200,8 +200,8 @@ export default function ClientDashboard() {
   const fetchTrainingMaterials = async () => {
     if (!client?.id) return;
     try {
-      // Get service type ID from client data
-      const serviceTypeId = client.service_types?.id;
+      // Get service type ID from client data (try multiple possible locations)
+      const serviceTypeId = client.service_types?.id || (client as any).service_type_id;
       const currentClientId = client.id;
       
       console.log('Client data for training:', { 
