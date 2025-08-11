@@ -11,7 +11,6 @@ import { Loader2, Clock, Mail, Settings } from 'lucide-react';
 
 interface DigestPreferences {
   id?: string;
-  user_id?: string;
   enabled: boolean;
   send_time: string;
   timezone: string;
@@ -23,6 +22,7 @@ interface DigestPreferences {
   include_appointments: boolean;
   created_at?: string;
   updated_at?: string;
+  user_id?: string;
 }
 
 export const DailyDigestSettings = () => {
@@ -54,13 +54,27 @@ export const DailyDigestSettings = () => {
         .select('*')
         .maybeSingle();
 
-      if (error && error.code !== 'PGRST116') {
+      if (error) {
         console.error('Error fetching preferences:', error);
         return;
       }
 
       if (data) {
-        setPreferences(data);
+        setPreferences({
+          enabled: data.enabled ?? preferences.enabled,
+          send_time: data.send_time ?? preferences.send_time,
+          timezone: data.timezone ?? preferences.timezone,
+          recipient_email: data.recipient_email ?? preferences.recipient_email,
+          include_due_today: data.include_due_today ?? preferences.include_due_today,
+          include_due_tomorrow: data.include_due_tomorrow ?? preferences.include_due_tomorrow,
+          include_overdue: data.include_overdue ?? preferences.include_overdue,
+          include_new_uploads: data.include_new_uploads ?? preferences.include_new_uploads,
+          include_appointments: data.include_appointments ?? preferences.include_appointments,
+          id: data.id,
+          created_at: data.created_at,
+          updated_at: data.updated_at,
+          user_id: data.user_id,
+        });
       }
     } catch (error) {
       console.error('Error:', error);
@@ -72,14 +86,13 @@ export const DailyDigestSettings = () => {
   const savePreferences = async () => {
     setSaving(true);
     try {
-      const { data: user } = await supabase.auth.getUser();
-      if (!user.user) {
-        throw new Error('User not authenticated');
-      }
+      // Get current user ID
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('No authenticated user');
 
-      // Prepare data for upsert
+      // Only include the fields that are in the database
       const updateData = {
-        user_id: user.user.id,
+        user_id: user.id,
         enabled: preferences.enabled,
         send_time: preferences.send_time,
         timezone: preferences.timezone,
@@ -89,9 +102,8 @@ export const DailyDigestSettings = () => {
         include_overdue: preferences.include_overdue,
         include_new_uploads: preferences.include_new_uploads,
         include_appointments: preferences.include_appointments,
-        updated_at: new Date().toISOString(),
       };
-
+      
       const { data, error } = await supabase
         .from('daily_digest_preferences')
         .upsert(updateData)
@@ -100,7 +112,8 @@ export const DailyDigestSettings = () => {
 
       if (error) throw error;
 
-      setPreferences(data);
+      // Update state with the returned data
+      setPreferences(prev => ({ ...prev, ...data }));
       toast({
         title: "Settings saved",
         description: "Daily digest preferences have been updated successfully.",

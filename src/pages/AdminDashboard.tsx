@@ -448,6 +448,7 @@ export default function AdminDashboard() {
         <TabsContent value="settings" className="mt-6">
           <DailyDigestSettings />
         </TabsContent>
+
       </Tabs>
 
       {/* Form Detail Modal/Sidebar */}
