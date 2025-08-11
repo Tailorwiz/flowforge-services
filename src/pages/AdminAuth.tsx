@@ -32,7 +32,7 @@ export default function AdminAuth() {
             .maybeSingle();
           
           if (userRole?.role === 'admin') {
-            navigate("/");
+            navigate("/admin/dashboard");
           } else {
             navigate("/portal");
           }
@@ -56,7 +56,7 @@ export default function AdminAuth() {
               .maybeSingle();
             
             if (userRole?.role === 'admin') {
-              navigate("/");
+              navigate("/admin/dashboard");
             } else {
               // If not admin, show error and sign out
               toast({

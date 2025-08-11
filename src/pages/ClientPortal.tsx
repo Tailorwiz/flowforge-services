@@ -264,14 +264,14 @@ export default function ClientPortal() {
         // Load saved progress after profile is set
         setTimeout(() => loadSavedProgress(), 100);
       } else {
-        // If no client record exists but the user is an admin, provide a minimal profile to access the portal
+        // If no client record exists and the user is an admin, only create a temporary view when explicitly on /portal
         const { data: userRole } = await supabase
           .from('user_roles')
           .select('role')
           .eq('user_id', user?.id)
           .maybeSingle();
 
-        if (userRole?.role === 'admin') {
+        if (userRole?.role === 'admin' && location.pathname === '/portal') {
           setProfile({
             id: user?.id || 'admin',
             name:
