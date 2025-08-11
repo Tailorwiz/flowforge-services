@@ -33,7 +33,7 @@ import {
   CreditCard,
   History
 } from "lucide-react";
-import { SMSTest } from "@/components/SMSTest";
+
 
 interface Client {
   id: string;
@@ -391,10 +391,6 @@ export function AdminCommandCenter() {
         </div>
       </div>
 
-      {/* SMS Test Section */}
-      <div className="flex justify-end">
-        <SMSTest />
-      </div>
 
       {/* Quick Stats */}
       <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
