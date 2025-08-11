@@ -122,10 +122,11 @@ export default function ResumeUpload({ clientId, onUploadComplete, onClose }: Re
 
       if (uploadError) throw uploadError;
 
-      // Get public URL
-      const { data: { publicUrl } } = supabase.storage
+      // Create a signed URL for access (bucket is private)
+      const { data: signed } = await supabase.storage
         .from('resumes')
-        .getPublicUrl(filePath);
+        .createSignedUrl(filePath, 60 * 60);
+      const signedUrl = signed?.signedUrl || null;
 
       // Save to database using the document_uploads table
       const { data: dbData, error: dbError } = await (supabase as any).rpc('create_document_upload', {
@@ -146,7 +147,7 @@ export default function ResumeUpload({ clientId, onUploadComplete, onClose }: Re
       setUploadedFiles(prev => 
         prev.map(f => 
           f.id === fileId 
-            ? { ...f, status: 'completed', uploadProgress: 100, url: publicUrl }
+            ? { ...f, status: 'completed', uploadProgress: 100, url: signedUrl || undefined }
             : f
         )
       );

@@ -165,16 +165,36 @@ export default function ClientDashboard() {
   };
 
   const fetchClientFiles = async () => {
-    // Mock files data - would integrate with actual file storage
-    setFiles([
-      {
-        id: "1",
-        name: "Resume.pdf",
-        type: "application/pdf",
-        uploaded_at: new Date().toISOString(),
-        url: "#"
-      }
-    ]);
+    if (!client?.id) return;
+    try {
+      const { data, error } = await supabase
+        .from('document_uploads' as any)
+        .select('id, original_name, file_path, bucket_name, created_at, mime_type')
+        .eq('client_id', client.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      const files = await Promise.all((data || []).map(async (row: any) => {
+        let url: string | null = null;
+        try {
+          const { data: signed } = await supabase.storage.from(row.bucket_name).createSignedUrl(row.file_path, 60 * 60);
+          url = signed?.signedUrl || supabase.storage.from(row.bucket_name).getPublicUrl(row.file_path).data.publicUrl;
+        } catch (_) {}
+        return {
+          id: row.id,
+          name: row.original_name,
+          type: row.mime_type || 'application/octet-stream',
+          uploaded_at: row.created_at,
+          url: url || undefined,
+        } as ClientFile;
+      }));
+
+      setFiles(files);
+    } catch (error) {
+      console.error('Error fetching client files:', error);
+      setFiles([]);
+    }
   };
 
   const fetchTrainingMaterials = async () => {

@@ -277,17 +277,44 @@ const [loadingClientData, setLoadingClientData] = useState(false);
 
   const fetchClientFiles = async (clientId: string) => {
     try {
+      // Fetch uploaded documents for this client
       const { data, error } = await supabase
-        .from("client_history")
-        .select("id, description, created_at, metadata")
-        .eq("client_id", clientId)
-        .eq("action_type", "file_uploaded")
-        .order("created_at", { ascending: false });
+        .from('document_uploads' as any)
+        .select('id, original_name, file_path, bucket_name, created_at, file_size')
+        .eq('client_id', clientId)
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setClientFiles(data || []);
+
+      // Generate accessible URLs (signed for private buckets)
+      const filesWithUrls = await Promise.all((data || []).map(async (row: any) => {
+        let url: string | null = null;
+        const bucket = row.bucket_name;
+        const path = row.file_path;
+        try {
+          if (bucket && path) {
+            // Try signed URL (works for private); fall back to public if bucket is public
+            const { data: signed } = await supabase.storage.from(bucket).createSignedUrl(path, 60 * 60);
+            url = signed?.signedUrl || supabase.storage.from(bucket).getPublicUrl(path).data.publicUrl;
+          }
+        } catch (_) {}
+        return {
+          id: row.id,
+          description: row.original_name || 'Uploaded file',
+          created_at: row.created_at,
+          metadata: {
+            fileName: row.original_name,
+            fileSize: row.file_size,
+            fileUrl: url,
+            filePath: path,
+            bucketName: bucket,
+          },
+        } as ClientFile;
+      }));
+
+      setClientFiles(filesWithUrls);
     } catch (error) {
-      console.error("Error fetching client files:", error);
+      console.error('Error fetching client files:', error);
       setClientFiles([]);
     }
   };
