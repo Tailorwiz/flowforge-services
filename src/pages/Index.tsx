@@ -10,6 +10,7 @@ import { NotificationCenter } from "@/components/NotificationCenter";
 import TrainingMaterialUpload from "@/components/TrainingMaterialUpload";
 import AdminDashboard from "./AdminDashboard";
 import { AdminDeliveryManager } from "@/components/AdminDeliveryManager";
+import CalendlyAppointments from "@/components/CalendlyAppointments";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/components/AuthProvider";
 import { 
@@ -42,7 +43,7 @@ import {
 
 const Index = () => {
   const [searchParams] = useSearchParams();
-  const [activeTab, setActiveTab] = useState<'digest' | 'command' | 'clients' | 'training' | 'reminders' | 'notifications' | 'services' | 'profile' | 'intake-review' | 'deliveries'>('digest');
+  const [activeTab, setActiveTab] = useState<'digest' | 'command' | 'clients' | 'training' | 'reminders' | 'notifications' | 'services' | 'profile' | 'intake-review' | 'deliveries' | 'appointments'>('digest');
   const [userProfile, setUserProfile] = useState<any>(null);
   const [dashboardStats, setDashboardStats] = useState({
     rushCount: 0,
@@ -135,7 +136,7 @@ const Index = () => {
   // Handle URL tab parameter
   useEffect(() => {
     const tabFromUrl = searchParams.get('tab');
-    if (tabFromUrl && ['digest', 'command', 'clients', 'training', 'reminders', 'notifications', 'services', 'profile', 'intake-review', 'deliveries'].includes(tabFromUrl)) {
+    if (tabFromUrl && ['digest', 'command', 'clients', 'training', 'reminders', 'notifications', 'services', 'profile', 'intake-review', 'deliveries', 'appointments'].includes(tabFromUrl)) {
       setActiveTab(tabFromUrl as any);
     }
   }, [searchParams]);
@@ -239,6 +240,7 @@ const Index = () => {
     { id: 'deliveries', label: 'Delivery Manager', icon: Package, color: 'text-emerald-600' },
     { id: 'clients', label: 'Client Management', icon: Users, color: 'text-blue-600' },
     { id: 'digest', label: 'Daily Digest', icon: Calendar, color: 'text-green-600' },
+    { id: 'appointments', label: 'Appointments', icon: Calendar, color: 'text-blue-500' },
     { id: 'training', label: 'Training Materials', icon: BookOpen, color: 'text-purple-600' },
     { id: 'reminders', label: 'Reminders', icon: Clock, color: 'text-orange-600' },
     { id: 'notifications', label: 'Notifications', icon: Bell, color: 'text-red-600' },
@@ -384,6 +386,7 @@ const Index = () => {
             {activeTab === 'intake-review' && <AdminDashboard />}
             {activeTab === 'deliveries' && <AdminDeliveryManager />}
             {activeTab === 'clients' && <ClientManager />}
+            {activeTab === 'appointments' && <CalendlyAppointments />}
             {activeTab === 'training' && <TrainingMaterialUpload />}
             {activeTab === 'reminders' && <ReminderManager />}
             {activeTab === 'notifications' && <NotificationCenter />}

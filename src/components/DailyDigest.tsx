@@ -15,6 +15,7 @@ import {
   TrendingUp,
   Users
 } from "lucide-react";
+import CalendlyAppointments from "./CalendlyAppointments";
 
 interface DigestData {
   dueToday: any[];
@@ -439,6 +440,9 @@ export function DailyDigest() {
           </CardContent>
         </Card>
       )}
+
+      {/* Upcoming Appointments */}
+      <CalendlyAppointments showInDigest={true} maxItems={5} />
 
       {/* All Clear Message */}
       {rushClients.length === 0 && overdue.length === 0 && dueToday.length === 0 && dueTomorrow.length === 0 && newUploads.length === 0 && (
