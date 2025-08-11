@@ -370,7 +370,7 @@ export function DocumentUploadParser({ serviceTypes, onClientCreated }: Document
           email: parsedData.email,
           phone: parsedData.phone,
           service_type_id: selectedServiceType,
-          user_id: user.id,
+          user_id: null,
           estimated_delivery_date: estimatedDeliveryDate.toISOString().split('T')[0],
           payment_status: "pending",
           status: "active"

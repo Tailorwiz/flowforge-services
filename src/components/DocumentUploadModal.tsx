@@ -372,7 +372,7 @@ Please extract all available information from this resume file and provide reali
           email: editingData.email,
           phone: editingData.phone,
           service_type_id: selectedServiceType,
-          user_id: "00000000-0000-0000-0000-000000000000",
+          user_id: null,
           estimated_delivery_date: estimatedDeliveryDate.toISOString().split('T')[0],
           payment_status: "pending",
           status: "active"
