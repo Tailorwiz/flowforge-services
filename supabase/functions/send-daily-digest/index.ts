@@ -203,7 +203,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Send digest email
     const emailResponse = await resend.emails.send({
-      from: "RDR Project Portal Daily Digest <digest@resend.dev>",
+      from: "RDR Project Portal Daily Digest <marcus@tailorwiz.com>",
       to: [userEmail || digestPrefs.recipient_email],
       subject: `Daily Digest - ${today.toLocaleDateString()} (${rushClients.length + dueToday.length + dueTomorrow.length + overdue.length} items)`,
       html: digestContent,
