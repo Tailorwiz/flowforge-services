@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { ClientManager } from "@/components/ClientManager";
 import { ServiceTypeAdmin } from "@/components/ServiceTypeAdmin";
 import { ReminderManager } from "@/components/ReminderManager";
@@ -41,6 +41,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 const Index = () => {
+  const [searchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState<'digest' | 'command' | 'clients' | 'training' | 'reminders' | 'notifications' | 'services' | 'profile' | 'intake-review' | 'deliveries'>('digest');
   const [userProfile, setUserProfile] = useState<any>(null);
   const [dashboardStats, setDashboardStats] = useState({
@@ -131,6 +132,14 @@ const Index = () => {
   };
 
   // Listen for real-time profile updates
+  // Handle URL tab parameter
+  useEffect(() => {
+    const tabFromUrl = searchParams.get('tab');
+    if (tabFromUrl && ['digest', 'command', 'clients', 'training', 'reminders', 'notifications', 'services', 'profile', 'intake-review', 'deliveries'].includes(tabFromUrl)) {
+      setActiveTab(tabFromUrl as any);
+    }
+  }, [searchParams]);
+
   useEffect(() => {
     if (user) {
       const channel = supabase
