@@ -144,7 +144,10 @@ export function ClientManager() {
     const { data, error } = await supabase
       .from("clients")
       .insert([{
-        ...newClient,
+        name: newClient.name,
+        email: newClient.email,
+        service_type_id: newClient.service_type_id,
+        phone: newClient.phone,
         user_id: null, // Clients can exist without being linked to a user initially
         estimated_delivery_date: estimatedDeliveryDate.toISOString().split('T')[0],
         payment_status: "pending"
