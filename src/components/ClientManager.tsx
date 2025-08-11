@@ -158,7 +158,8 @@ export function ClientManager() {
     console.log('Client creation result:', { data, error });
 
     if (error) {
-      toast({ title: "Error", description: "Failed to add client", variant: "destructive" });
+      console.error('Client creation error:', error);
+      toast({ title: "Error", description: `Failed to add client: ${error.message}`, variant: "destructive" });
     } else {
       // Trigger onboarding automation
       await triggerOnboardingAutomation(data.id, newClient.service_type_id);
