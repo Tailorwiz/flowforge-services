@@ -2107,6 +2107,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      delete_customer_completely: {
+        Args: { client_id_param: string }
+        Returns: Json
+      }
       generate_compelling_summary: {
         Args: { lesson_title: string; lesson_content: string }
         Returns: string
