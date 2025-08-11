@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, Clock, ExternalLink, User, Video, Phone } from 'lucide-react';
+import { Calendar, Clock, ExternalLink, User, Video, Phone, RefreshCw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 interface CalendlyEvent {
   id: string;
@@ -31,90 +32,69 @@ interface CalendlyAppointmentsProps {
 export default function CalendlyAppointments({ showInDigest = false, maxItems }: CalendlyAppointmentsProps) {
   const [appointments, setAppointments] = useState<CalendlyEvent[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const { toast } = useToast();
 
-  // For now, we'll use mock data since Calendly API requires authentication setup
-  // In production, you would fetch from Calendly API
+  // Fetch real Calendly appointments
   useEffect(() => {
     fetchAppointments();
   }, []);
 
-  const fetchAppointments = async () => {
+  const fetchAppointments = async (isRefresh = false) => {
+    if (isRefresh) {
+      setRefreshing(true);
+    } else {
+      setLoading(true);
+    }
+    
     try {
-      // Mock data for demonstration
-      // In production, you would call Calendly API:
-      // const response = await fetch('https://api.calendly.com/scheduled_events', {
-      //   headers: { 'Authorization': 'Bearer YOUR_ACCESS_TOKEN' }
-      // });
+      const { data, error } = await supabase.functions.invoke('fetch-calendly-appointments');
       
-      const mockEvents: CalendlyEvent[] = [
-        {
-          id: '1',
-          name: 'Resume Consultation',
-          status: 'active',
-          start_time: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(), // 2 hours from now
-          end_time: new Date(Date.now() + 3 * 60 * 60 * 1000).toISOString(),
-          event_type: 'Resume Clarity Research & Review Interview Session',
-          location: {
-            type: 'zoom',
-            join_url: 'https://zoom.us/j/123456789'
-          },
-          invitees: [{
-            name: 'John Smith',
-            email: 'john@example.com'
-          }]
-        },
-        {
-          id: '2',
-          name: 'Career Strategy Call',
-          status: 'active',
-          start_time: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // tomorrow
-          end_time: new Date(Date.now() + 25 * 60 * 60 * 1000).toISOString(),
-          event_type: 'Career Strategy Session',
-          location: {
-            type: 'phone',
-            phone_number: '+1-555-0123'
-          },
-          invitees: [{
-            name: 'Sarah Johnson',
-            email: 'sarah@example.com'
-          }]
-        },
-        {
-          id: '3',
-          name: 'LinkedIn Optimization Review',
-          status: 'active',
-          start_time: new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString(), // day after tomorrow
-          end_time: new Date(Date.now() + 49 * 60 * 60 * 1000).toISOString(),
-          event_type: 'LinkedIn Profile Review',
-          location: {
-            type: 'zoom',
-            join_url: 'https://zoom.us/j/987654321'
-          },
-          invitees: [{
-            name: 'Mike Wilson',
-            email: 'mike@example.com'
-          }]
+      if (error) {
+        console.error('Error fetching appointments:', error);
+        throw new Error(error.message || 'Failed to fetch appointments');
+      }
+
+      if (data?.success && data?.appointments) {
+        // Filter upcoming appointments and limit if needed
+        const upcomingEvents = data.appointments
+          .filter((event: CalendlyEvent) => new Date(event.start_time) > new Date())
+          .sort((a: CalendlyEvent, b: CalendlyEvent) => 
+            new Date(a.start_time).getTime() - new Date(b.start_time).getTime()
+          );
+
+        setAppointments(maxItems ? upcomingEvents.slice(0, maxItems) : upcomingEvents);
+        
+        if (isRefresh) {
+          toast({
+            title: "Appointments refreshed",
+            description: `Found ${upcomingEvents.length} upcoming appointments`,
+          });
         }
-      ];
-
-      // Filter upcoming appointments and limit if needed
-      const upcomingEvents = mockEvents
-        .filter(event => new Date(event.start_time) > new Date())
-        .sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime());
-
-      setAppointments(maxItems ? upcomingEvents.slice(0, maxItems) : upcomingEvents);
+      } else {
+        throw new Error('Invalid response from Calendly API');
+      }
       
     } catch (error) {
       console.error('Error fetching appointments:', error);
+      
+      // Show user-friendly error message
       toast({
         title: "Error loading appointments",
-        description: "Failed to load Calendly appointments. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to load Calendly appointments. Please try again.",
         variant: "destructive",
       });
+      
+      // Fallback to empty array instead of mock data
+      setAppointments([]);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
+  };
+
+  const handleRefresh = () => {
+    fetchAppointments(true);
   };
 
   const getLocationIcon = (type: string) => {
@@ -204,16 +184,29 @@ export default function CalendlyAppointments({ showInDigest = false, maxItems }:
             <Calendar className="w-5 h-5" />
             {showInDigest ? `Upcoming Appointments (${appointments.length})` : "Calendly Appointments"}
           </div>
-          {!showInDigest && (
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => window.open('https://calendly.com/resultsdrivenresumes', '_blank')}
-            >
-              <ExternalLink className="w-4 h-4 mr-2" />
-              Open Calendly
-            </Button>
-          )}
+          <div className="flex gap-2">
+            {!showInDigest && (
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={handleRefresh}
+                disabled={refreshing}
+              >
+                <RefreshCw className={`w-4 h-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
+                Refresh
+              </Button>
+            )}
+            {!showInDigest && (
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => window.open('https://calendly.com/resultsdrivenresumes', '_blank')}
+              >
+                <ExternalLink className="w-4 h-4 mr-2" />
+                Open Calendly
+              </Button>
+            )}
+          </div>
         </CardTitle>
       </CardHeader>
       <CardContent>
