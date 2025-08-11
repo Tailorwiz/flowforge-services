@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
+import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/use-toast";
 import { 
   ArrowLeft, 
@@ -23,7 +24,10 @@ import {
   Target,
   TrendingUp,
   Download,
-  Eye
+  Eye,
+  Edit2,
+  Save,
+  X
 } from "lucide-react";
 import { MessagingCenter } from '@/components/MessagingCenter';
 
@@ -84,6 +88,10 @@ export default function ClientDashboard() {
   const [hasNewUploads, setHasNewUploads] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [userRole, setUserRole] = useState<'admin' | 'client'>('client');
+  const [editingStartDate, setEditingStartDate] = useState(false);
+  const [editingTargetDate, setEditingTargetDate] = useState(false);
+  const [tempStartDate, setTempStartDate] = useState("");
+  const [tempTargetDate, setTempTargetDate] = useState("");
 
   useEffect(() => {
     if (!clientId) return;
@@ -321,6 +329,66 @@ export default function ClientDashboard() {
     }
   };
 
+  const updateStartDate = async () => {
+    if (!client || !tempStartDate) return;
+    
+    try {
+      const { error } = await supabase
+        .from('clients')
+        .update({ 
+          created_at: new Date(tempStartDate).toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', client.id);
+
+      if (error) throw error;
+
+      setClient({ ...client, created_at: new Date(tempStartDate).toISOString() });
+      setEditingStartDate(false);
+      toast({
+        title: "Start date updated",
+        description: "The project start date has been updated successfully.",
+      });
+    } catch (error) {
+      console.error('Error updating start date:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update start date. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const updateTargetDate = async () => {
+    if (!client || !tempTargetDate) return;
+    
+    try {
+      const { error } = await supabase
+        .from('clients')
+        .update({ 
+          estimated_delivery_date: tempTargetDate,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', client.id);
+
+      if (error) throw error;
+
+      setClient({ ...client, estimated_delivery_date: tempTargetDate });
+      setEditingTargetDate(false);
+      toast({
+        title: "Target date updated",
+        description: "The estimated delivery date has been updated successfully.",
+      });
+    } catch (error) {
+      console.error('Error updating target date:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update target date. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -401,7 +469,49 @@ export default function ClientDashboard() {
               )}
               <div className="flex items-center gap-2">
                 <Calendar className="w-4 h-4 text-muted-foreground" />
-                <span className="text-sm">Started: {new Date(client.created_at).toLocaleDateString()}</span>
+                {editingStartDate ? (
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="date"
+                      value={tempStartDate}
+                      onChange={(e) => setTempStartDate(e.target.value)}
+                      className="text-sm h-8 w-36"
+                    />
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-6 w-6 p-0"
+                      onClick={updateStartDate}
+                    >
+                      <Save className="w-3 h-3" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-6 w-6 p-0"
+                      onClick={() => setEditingStartDate(false)}
+                    >
+                      <X className="w-3 h-3" />
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm">Started: {new Date(client.created_at).toLocaleDateString()}</span>
+                    {userRole === 'admin' && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-6 w-6 p-0"
+                        onClick={() => {
+                          setTempStartDate(new Date(client.created_at).toISOString().split('T')[0]);
+                          setEditingStartDate(true);
+                        }}
+                      >
+                        <Edit2 className="w-3 h-3" />
+                      </Button>
+                    )}
+                  </div>
+                )}
               </div>
               <div className="pt-2">
                 <Badge variant="outline">${(client.service_types.price_cents / 100).toFixed(2)}</Badge>
@@ -459,7 +569,49 @@ export default function ClientDashboard() {
                 {client.estimated_delivery_date && (
                   <div>
                     <p className="text-sm text-muted-foreground">Target Date</p>
-                    <p className="font-medium">{new Date(client.estimated_delivery_date).toLocaleDateString()}</p>
+                    {editingTargetDate ? (
+                      <div className="flex items-center gap-2">
+                        <Input
+                          type="date"
+                          value={tempTargetDate}
+                          onChange={(e) => setTempTargetDate(e.target.value)}
+                          className="text-sm h-8 w-36"
+                        />
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-6 w-6 p-0"
+                          onClick={updateTargetDate}
+                        >
+                          <Save className="w-3 h-3" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-6 w-6 p-0"
+                          onClick={() => setEditingTargetDate(false)}
+                        >
+                          <X className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <p className="font-medium">{new Date(client.estimated_delivery_date).toLocaleDateString()}</p>
+                        {userRole === 'admin' && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-6 w-6 p-0"
+                            onClick={() => {
+                              setTempTargetDate(client.estimated_delivery_date || '');
+                              setEditingTargetDate(true);
+                            }}
+                          >
+                            <Edit2 className="w-3 h-3" />
+                          </Button>
+                        )}
+                      </div>
+                    )}
                   </div>
                 )}
                 {daysUntilDelivery !== null && (
