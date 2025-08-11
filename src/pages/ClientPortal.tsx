@@ -214,15 +214,27 @@ export default function ClientPortal() {
         .eq('id', user?.id)
         .maybeSingle();
 
-      // Check if user exists as a client
-      const { data: clientData } = await supabase
+      // Check if user exists as a client (prefer user_id to satisfy RLS)
+      const { data: clientDataByUserId } = await supabase
         .from('clients')
         .select(`
           *,
           service_types (name)
         `)
-        .eq('email', user?.email)
+        .eq('user_id', user?.id)
         .maybeSingle();
+
+      // Fallback: if not found, try matching by email (works for admins)
+      const clientData = clientDataByUserId ?? (
+        await supabase
+          .from('clients')
+          .select(`
+            *,
+            service_types (name)
+          `)
+          .eq('email', user?.email)
+          .maybeSingle()
+      ).data;
 
       if (clientData) {
         setProfile({
