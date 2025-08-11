@@ -17,8 +17,7 @@ import {
   Calendar, 
   Clock, 
   AlertTriangle, 
-  FileText, 
-  MessageSquare, 
+  FileText,
   CheckSquare,
   Users,
   Filter,
@@ -32,8 +31,10 @@ import {
   MapPin,
   CreditCard,
   History,
-  BookOpen
+  BookOpen,
+  MessageSquare
 } from "lucide-react";
+import { MessagingCenter } from '@/components/MessagingCenter';
 
 
 interface Client {
@@ -99,12 +100,23 @@ export function AdminCommandCenter() {
   const [viewingClient, setViewingClient] = useState<ExtendedClient | null>(null);
   const [clientFiles, setClientFiles] = useState<ClientFile[]>([]);
   const [clientHistory, setClientHistory] = useState<ClientHistory[]>([]);
-const [loadingClientData, setLoadingClientData] = useState(false);
+  const [loadingClientData, setLoadingClientData] = useState(false);
   const [clientTrainingMaterials, setClientTrainingMaterials] = useState<any[]>([]);
+  const [currentUser, setCurrentUser] = useState<any>(null);
 
   useEffect(() => {
+    fetchCurrentUser();
     fetchClientsData();
   }, []);
+
+  const fetchCurrentUser = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      setCurrentUser(user);
+    } catch (error) {
+      console.error('Error fetching current user:', error);
+    }
+  };
 
   const fetchClientsData = async () => {
     try {
@@ -737,10 +749,11 @@ const [loadingClientData, setLoadingClientData] = useState(false);
           {viewingClient && (
             <div className="flex-1 overflow-hidden">
               <Tabs defaultValue="overview" className="h-full flex flex-col">
-                <TabsList className="grid w-full grid-cols-5">
+                <TabsList className="grid w-full grid-cols-6">
                   <TabsTrigger value="overview">Overview</TabsTrigger>
                   <TabsTrigger value="files">Files ({clientFiles.length})</TabsTrigger>
                   <TabsTrigger value="training">Training ({clientTrainingMaterials.length})</TabsTrigger>
+                  <TabsTrigger value="messages">Messages</TabsTrigger>
                   <TabsTrigger value="history">Activity History</TabsTrigger>
                   <TabsTrigger value="details">Service Details</TabsTrigger>
                 </TabsList>
@@ -961,9 +974,21 @@ const [loadingClientData, setLoadingClientData] = useState(false);
                         <p>No training materials assigned for this client</p>
                       </div>
                     )}
-                  </TabsContent>
+                   </TabsContent>
 
-                  {/* Activity History Tab */}
+                   {/* Messages Tab */}
+                   <TabsContent value="messages">
+                     {currentUser && (
+                       <MessagingCenter
+                         clientId={viewingClient.id}
+                         clientName={viewingClient.name}
+                         userRole="admin"
+                         currentUserId={currentUser.id}
+                       />
+                     )}
+                   </TabsContent>
+
+                   {/* Activity History Tab */}
                   <TabsContent value="history" className="space-y-4">
                     {loadingClientData ? (
                       <div className="flex items-center justify-center py-8">

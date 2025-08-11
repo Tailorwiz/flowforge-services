@@ -306,12 +306,14 @@ export type Database = {
           intake_form_submitted: boolean | null
           is_rush: boolean
           name: string
+          next_action: string | null
           payment_status: string | null
           phone: string | null
           resume_uploaded: boolean | null
           rush_deadline: string | null
           service_type_id: string | null
           session_booked: boolean | null
+          start_date: string | null
           status: string | null
           stripe_customer_id: string | null
           updated_at: string
@@ -325,12 +327,14 @@ export type Database = {
           intake_form_submitted?: boolean | null
           is_rush?: boolean
           name: string
+          next_action?: string | null
           payment_status?: string | null
           phone?: string | null
           resume_uploaded?: boolean | null
           rush_deadline?: string | null
           service_type_id?: string | null
           session_booked?: boolean | null
+          start_date?: string | null
           status?: string | null
           stripe_customer_id?: string | null
           updated_at?: string
@@ -344,12 +348,14 @@ export type Database = {
           intake_form_submitted?: boolean | null
           is_rush?: boolean
           name?: string
+          next_action?: string | null
           payment_status?: string | null
           phone?: string | null
           resume_uploaded?: boolean | null
           rush_deadline?: string | null
           service_type_id?: string | null
           session_booked?: boolean | null
+          start_date?: string | null
           status?: string | null
           stripe_customer_id?: string | null
           updated_at?: string
@@ -1115,6 +1121,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      messages: {
+        Row: {
+          attachment_name: string | null
+          attachment_url: string | null
+          client_id: string
+          created_at: string
+          id: string
+          message: string
+          message_type: string
+          read_at: string | null
+          sender_id: string
+          sender_type: string
+          updated_at: string
+        }
+        Insert: {
+          attachment_name?: string | null
+          attachment_url?: string | null
+          client_id: string
+          created_at?: string
+          id?: string
+          message: string
+          message_type?: string
+          read_at?: string | null
+          sender_id: string
+          sender_type: string
+          updated_at?: string
+        }
+        Update: {
+          attachment_name?: string | null
+          attachment_url?: string | null
+          client_id?: string
+          created_at?: string
+          id?: string
+          message?: string
+          message_type?: string
+          read_at?: string | null
+          sender_id?: string
+          sender_type?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       modules: {
         Row: {

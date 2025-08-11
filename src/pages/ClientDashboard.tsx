@@ -25,6 +25,7 @@ import {
   Download,
   Eye
 } from "lucide-react";
+import { MessagingCenter } from '@/components/MessagingCenter';
 
 interface ClientData {
   id: string;
@@ -81,6 +82,8 @@ export default function ClientDashboard() {
   const [trainingMaterials, setTrainingMaterials] = useState<TrainingMaterial[]>([]);
   const [loading, setLoading] = useState(true);
   const [hasNewUploads, setHasNewUploads] = useState(false);
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [userRole, setUserRole] = useState<'admin' | 'client'>('client');
 
   useEffect(() => {
     if (!clientId) return;
@@ -94,6 +97,7 @@ export default function ClientDashboard() {
       return;
     }
 
+    fetchCurrentUser();
     fetchClientData();
     fetchClientHistory();
     fetchClientFiles();
@@ -123,6 +127,26 @@ export default function ClientDashboard() {
       supabase.removeChannel(channel);
     };
   }, [clientId]);
+
+  const fetchCurrentUser = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        setCurrentUser(user);
+        
+        // Check if user is admin
+        const { data: roles } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', user.id);
+        
+        const isAdmin = roles?.some(r => r.role === 'admin') || false;
+        setUserRole(isAdmin ? 'admin' : 'client');
+      }
+    } catch (error) {
+      console.error('Error fetching current user:', error);
+    }
+  };
 
   const fetchClientData = async () => {
     try {
@@ -656,18 +680,14 @@ export default function ClientDashboard() {
 
           {/* Messages Tab */}
           <TabsContent value="messages">
-            <Card>
-              <CardHeader>
-                <CardTitle>Message History</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-8 text-muted-foreground">
-                  <Mail className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                  <p>No messages sent yet</p>
-                  <p className="text-sm">Email communications will appear here</p>
-                </div>
-              </CardContent>
-            </Card>
+            {currentUser && (
+              <MessagingCenter
+                clientId={client.id}
+                clientName={client.name}
+                userRole={userRole}
+                currentUserId={currentUser.id}
+              />
+            )}
           </TabsContent>
 
           {/* Status Tracker Tab */}
