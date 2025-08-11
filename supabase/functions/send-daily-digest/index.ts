@@ -67,8 +67,23 @@ const handler = async (req: Request): Promise<Response> => {
     let dueToday: any[] = [];
     let dueTomorrow: any[] = [];
     let overdue: any[] = [];
+    let rushClients: any[] = [];
     let newUploads: any[] = [];
     let appointments: any[] = [];
+    let totalClients = 0;
+    let activeProjects = 0;
+
+    // Fetch RUSH clients first (highest priority)
+    const { data: rushData } = await supabase
+      .from("clients")
+      .select(`
+        id, name, email, estimated_delivery_date, is_rush, rush_deadline,
+        service_types (name)
+      `)
+      .eq("is_rush", true)
+      .eq("status", "active");
+    
+    rushClients = rushData || [];
 
     // Fetch due today
     if (digestPrefs.include_due_today) {
@@ -79,7 +94,8 @@ const handler = async (req: Request): Promise<Response> => {
           service_types (name)
         `)
         .eq("estimated_delivery_date", todayStr)
-        .eq("status", "active");
+        .eq("status", "active")
+        .eq("is_rush", false); // Exclude rush clients to avoid duplication
       
       dueToday = data || [];
     }
@@ -93,7 +109,8 @@ const handler = async (req: Request): Promise<Response> => {
           service_types (name)
         `)
         .eq("estimated_delivery_date", tomorrowStr)
-        .eq("status", "active");
+        .eq("status", "active")
+        .eq("is_rush", false); // Exclude rush clients
       
       dueTomorrow = data || [];
     }
@@ -107,7 +124,8 @@ const handler = async (req: Request): Promise<Response> => {
           service_types (name)
         `)
         .lt("estimated_delivery_date", todayStr)
-        .eq("status", "active");
+        .eq("status", "active")
+        .eq("is_rush", false); // Exclude rush clients
       
       overdue = data || [];
     }
@@ -149,13 +167,29 @@ const handler = async (req: Request): Promise<Response> => {
       appointments = [];
     }
 
+    // Fetch total stats
+    const { count: totalClientsCount } = await supabase
+      .from("clients")
+      .select("*", { count: "exact", head: true });
+
+    const { count: activeProjectsCount } = await supabase
+      .from("clients")
+      .select("*", { count: "exact", head: true })
+      .eq("status", "active");
+
+    totalClients = totalClientsCount || 0;
+    activeProjects = activeProjectsCount || 0;
+
     // Create digest content
     const digestContent = generateDigestHTML({
       dueToday,
       dueTomorrow,
       overdue,
+      rushClients,
       newUploads,
       appointments,
+      totalClients,
+      activeProjects,
       date: today.toLocaleDateString()
     });
 
@@ -163,7 +197,7 @@ const handler = async (req: Request): Promise<Response> => {
     const emailResponse = await resend.emails.send({
       from: "RDR Project Portal Daily Digest <digest@resend.dev>",
       to: [userEmail],
-      subject: `Daily Digest - ${today.toLocaleDateString()} (${dueToday.length + dueTomorrow.length + overdue.length} items)`,
+      subject: `Daily Digest - ${today.toLocaleDateString()} (${rushClients.length + dueToday.length + dueTomorrow.length + overdue.length} items)`,
       html: digestContent,
     });
 
@@ -172,10 +206,14 @@ const handler = async (req: Request): Promise<Response> => {
     return new Response(JSON.stringify({
       success: true,
       digest_data: {
+        rush_clients: rushClients.length,
         due_today: dueToday.length,
         due_tomorrow: dueTomorrow.length,
         overdue: overdue.length,
-        new_uploads: newUploads.length
+        new_uploads: newUploads.length,
+        appointments: appointments.length,
+        total_clients: totalClients,
+        active_projects: activeProjects
       },
       email_response: emailResponse
     }), {
@@ -199,11 +237,14 @@ function generateDigestHTML(data: {
   dueToday: any[];
   dueTomorrow: any[];
   overdue: any[];
+  rushClients: any[];
   newUploads: any[];
   appointments: any[];
+  totalClients: number;
+  activeProjects: number;
   date: string;
 }): string {
-  const { dueToday, dueTomorrow, overdue, newUploads, appointments, date } = data;
+  const { dueToday, dueTomorrow, overdue, rushClients, newUploads, appointments, totalClients, activeProjects, date } = data;
   
   const createClientList = (clients: any[], title: string, urgencyClass: string = "") => {
     if (!clients.length) return "";
@@ -243,6 +284,38 @@ function generateDigestHTML(data: {
     `;
   };
 
+  const createRushClientsList = (clients: any[]) => {
+    if (!clients.length) return "";
+    
+    return `
+      <div style="margin-bottom: 30px;">
+        <h3 style="color: #dc2626; margin-bottom: 15px; font-weight: bold;">🚨 RUSH ORDERS - IMMEDIATE ATTENTION (${clients.length})</h3>
+        <div style="background-color: #fef2f2; padding: 15px; border-radius: 8px; border: 2px solid #ef4444;">
+          ${clients.map(client => {
+            const hoursUntilRushDeadline = client.rush_deadline ? 
+              Math.ceil((new Date(client.rush_deadline).getTime() - new Date().getTime()) / (1000 * 60 * 60)) : null;
+            
+            return `
+              <div style="padding: 10px 0; border-bottom: 1px solid #fecaca; background-color: #fef2f2; margin: 5px 0; border-radius: 6px; padding: 12px;">
+                <div style="display: flex; justify-content: space-between; align-items: start;">
+                  <div>
+                    <strong style="color: #dc2626;">${client.name}</strong> - ${client.service_types?.name || 'Service'}<br>
+                    <span style="color: #666; font-size: 14px;">${client.email}</span>
+                    ${client.rush_deadline ? `<br><span style="color: #dc2626; font-size: 12px; font-weight: bold;">Rush Deadline: ${new Date(client.rush_deadline).toLocaleString()}</span>` : ''}
+                  </div>
+                  <div style="text-align: right;">
+                    <span style="background: #dc2626; color: white; padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: bold;">🚨 RUSH</span>
+                    ${hoursUntilRushDeadline !== null ? `<br><span style="color: #dc2626; font-size: 11px; font-weight: bold;">${hoursUntilRushDeadline > 0 ? hoursUntilRushDeadline + 'h remaining' : 'OVERDUE!'}</span>` : ''}
+                  </div>
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      </div>
+    `;
+  };
+
   const createAppointmentsList = (appointments: any[]) => {
     if (!appointments.length) return "";
     
@@ -257,15 +330,15 @@ function generateDigestHTML(data: {
             
             return `
               <div style="padding: 12px 0; border-bottom: 1px solid #e0f2fe; ${isToday ? 'background-color: #fef3c7; border-radius: 6px; padding: 12px; margin: 8px 0;' : ''}">
-                <div style="display: flex; justify-content: space-between; align-items: start;">
-                  <div>
+                <div style="display: flex; justify-content: space-between; align-items: start; flex-wrap: wrap;">
+                  <div style="flex: 1; min-width: 200px;">
                     <strong style="color: ${isToday ? '#d97706' : '#1e40af'};">${appointment.event_type}</strong>
                     ${isToday ? '<span style="background: #f59e0b; color: white; padding: 2px 8px; border-radius: 12px; font-size: 12px; margin-left: 8px;">TODAY</span>' : ''}
                     ${isTomorrow ? '<span style="background: #3b82f6; color: white; padding: 2px 8px; border-radius: 12px; font-size: 12px; margin-left: 8px;">TOMORROW</span>' : ''}<br>
                     <span style="color: #666; font-size: 14px;">👤 ${appointment.invitees[0]?.name || 'Guest'}</span><br>
                     <span style="color: #666; font-size: 14px;">📧 ${appointment.invitees[0]?.email || ''}</span>
                   </div>
-                  <div style="text-align: right;">
+                  <div style="text-align: right; min-width: 120px;">
                     <strong style="color: #1e40af;">${appointmentDate.toLocaleDateString()}</strong><br>
                     <span style="color: #666; font-size: 14px;">🕐 ${appointmentDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span><br>
                     <span style="color: #666; font-size: 12px;">${appointment.location.type === 'zoom' ? '💻 Video Call' : appointment.location.type === 'phone' ? '📞 Phone Call' : '📍 ' + appointment.location.type}</span>
@@ -291,14 +364,42 @@ function generateDigestHTML(data: {
         <p style="margin: 10px 0 0 0; font-size: 16px; opacity: 0.9;">${date}</p>
       </div>
 
+      <!-- Summary Stats -->
+      <div style="background-color: #f8fafc; padding: 20px; border-radius: 12px; margin-bottom: 30px;">
+        <h2 style="color: #1e40af; margin-bottom: 20px; text-align: center;">📈 Overview</h2>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px;">
+          <div style="background: white; padding: 15px; border-radius: 8px; text-align: center; border-left: 4px solid #ef4444;">
+            <div style="font-size: 24px; font-weight: bold; color: #ef4444;">${rushClients.length}</div>
+            <div style="font-size: 12px; color: #666;">🚨 RUSH Orders</div>
+          </div>
+          <div style="background: white; padding: 15px; border-radius: 8px; text-align: center; border-left: 4px solid #64748b;">
+            <div style="font-size: 24px; font-weight: bold; color: #64748b;">${totalClients}</div>
+            <div style="font-size: 12px; color: #666;">👥 Total Clients</div>
+          </div>
+          <div style="background: white; padding: 15px; border-radius: 8px; text-align: center; border-left: 4px solid #3b82f6;">
+            <div style="font-size: 24px; font-weight: bold; color: #3b82f6;">${activeProjects}</div>
+            <div style="font-size: 12px; color: #666;">📊 Active Projects</div>
+          </div>
+          <div style="background: white; padding: 15px; border-radius: 8px; text-align: center; border-left: 4px solid #f59e0b;">
+            <div style="font-size: 24px; font-weight: bold; color: #f59e0b;">${dueToday.length}</div>
+            <div style="font-size: 12px; color: #666;">⏰ Due Today</div>
+          </div>
+          <div style="background: white; padding: 15px; border-radius: 8px; text-align: center; border-left: 4px solid #ef4444;">
+            <div style="font-size: 24px; font-weight: bold; color: #ef4444;">${overdue.length}</div>
+            <div style="font-size: 12px; color: #666;">🚨 Overdue</div>
+          </div>
+        </div>
+      </div>
+
       <div style="background-color: #fff; padding: 30px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+        ${rushClients.length ? createRushClientsList(rushClients) : ""}
         ${overdue.length ? createClientList(overdue, "🚨 OVERDUE PROJECTS", "color: #dc2626; font-weight: bold;") : ""}
         ${dueToday.length ? createClientList(dueToday, "⏰ DUE TODAY") : ""}
         ${dueTomorrow.length ? createClientList(dueTomorrow, "📅 DUE TOMORROW") : ""}
         ${createUploadsList(newUploads)}
         ${createAppointmentsList(appointments)}
 
-        ${!dueToday.length && !dueTomorrow.length && !overdue.length && !newUploads.length && !appointments.length ? `
+        ${!rushClients.length && !dueToday.length && !dueTomorrow.length && !overdue.length && !newUploads.length && !appointments.length ? `
           <div style="text-align: center; padding: 40px; color: #666;">
             <h3 style="color: #10b981; margin-bottom: 10px;">🎉 All caught up!</h3>
             <p>No urgent items requiring attention today. Great work!</p>
