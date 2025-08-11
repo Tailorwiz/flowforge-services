@@ -200,8 +200,21 @@ export default function ClientDashboard() {
   const fetchTrainingMaterials = async () => {
     if (!client?.id) return;
     try {
-      const serviceTypeId = (client as any).service_types?.id || (client as any).service_type_id;
+      // Get service type ID from client data
+      const serviceTypeId = client.service_types?.id;
       const currentClientId = client.id;
+      
+      console.log('Client data for training:', { 
+        clientId: currentClientId, 
+        serviceTypeId, 
+        serviceTypes: client.service_types 
+      });
+
+      if (!serviceTypeId) {
+        console.log('No service type ID found for client');
+        setTrainingMaterials([]);
+        return;
+      }
 
       // Fetch assigned-by-service and manual client access in parallel
       const [serviceMap, manualAccess] = await Promise.all([
@@ -209,11 +222,16 @@ export default function ClientDashboard() {
         supabase.from("client_training_access").select("training_material_id").eq("client_id", currentClientId),
       ]);
 
+      console.log('Training material assignments:', { serviceMap: serviceMap.data, manualAccess: manualAccess.data });
+
       const serviceIds = (serviceMap.data || []).map((r: any) => r.training_material_id);
       const manualIds = (manualAccess.data || []).map((r: any) => r.training_material_id);
       const materialIds = Array.from(new Set([...serviceIds, ...manualIds])).filter(Boolean);
 
+      console.log('Material IDs to fetch:', materialIds);
+
       if (materialIds.length === 0) {
+        console.log('No training materials assigned to this client');
         setTrainingMaterials([]);
         return;
       }
@@ -226,6 +244,7 @@ export default function ClientDashboard() {
         .order("created_at", { ascending: false });
 
       if (error) throw error;
+      console.log('Fetched training materials:', materials);
       setTrainingMaterials(materials || []);
     } catch (error) {
       console.error('Error fetching training materials:', error);
