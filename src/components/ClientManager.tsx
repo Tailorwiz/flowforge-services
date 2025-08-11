@@ -50,7 +50,8 @@ export function ClientManager() {
     name: "",
     email: "",
     service_type_id: "",
-    phone: ""
+    phone: "",
+    preventAutoLink: false // New option to prevent auto-linking to existing users
   });
 
   useEffect(() => {
@@ -160,7 +161,7 @@ export function ClientManager() {
       await triggerOnboardingAutomation(data.id, newClient.service_type_id);
       
       toast({ title: "Success", description: "Client added and onboarding triggered" });
-      setNewClient({ name: "", email: "", service_type_id: "", phone: "" });
+      setNewClient({ name: "", email: "", service_type_id: "", phone: "", preventAutoLink: false });
       setIsAddingClient(false);
       fetchClients();
     }
