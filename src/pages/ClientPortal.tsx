@@ -263,6 +263,37 @@ export default function ClientPortal() {
         
         // Load saved progress after profile is set
         setTimeout(() => loadSavedProgress(), 100);
+      } else {
+        // If no client record exists but the user is an admin, provide a minimal profile to access the portal
+        const { data: userRole } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', user?.id)
+          .maybeSingle();
+
+        if (userRole?.role === 'admin') {
+          setProfile({
+            id: user?.id || 'admin',
+            name:
+              profileData?.display_name ||
+              [profileData?.first_name, profileData?.last_name].filter(Boolean).join(' ') ||
+              (user?.email?.split('@')[0] || 'Admin User'),
+            email: user?.email || '',
+            avatar_url: profileData?.avatar_url,
+            service_type: 'Admin Access',
+            estimated_delivery_date: undefined,
+            status: 'active',
+            progress_step: 1,
+            first_name: profileData?.first_name,
+            last_name: profileData?.last_name,
+            phone: profileData?.phone,
+            location: profileData?.location,
+            job_title: profileData?.job_title,
+            industry: profileData?.industry,
+            website: profileData?.website,
+            bio: profileData?.bio,
+          });
+        }
       }
     } catch (error) {
       console.error('Error fetching client profile:', error);
@@ -783,7 +814,7 @@ export default function ClientPortal() {
             </p>
             <div className="space-y-3">
               <Button 
-                onClick={() => window.location.href = '/auth'} 
+                onClick={() => window.location.href = '/customer/login'} 
                 variant="outline" 
                 className="w-full"
               >
