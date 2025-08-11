@@ -1006,6 +1006,66 @@ export type Database = {
         }
         Relationships: []
       }
+      lesson_videos: {
+        Row: {
+          captions_path: string | null
+          captions_url: string | null
+          created_at: string
+          duration: number | null
+          error_message: string | null
+          file_path: string
+          file_size: number
+          file_url: string | null
+          generation_status: string
+          id: string
+          is_full_lesson: boolean | null
+          lesson_id: string
+          metadata: Json | null
+          prompt: string | null
+          segments_count: number | null
+          updated_at: string
+          video_type: string
+        }
+        Insert: {
+          captions_path?: string | null
+          captions_url?: string | null
+          created_at?: string
+          duration?: number | null
+          error_message?: string | null
+          file_path: string
+          file_size?: number
+          file_url?: string | null
+          generation_status?: string
+          id?: string
+          is_full_lesson?: boolean | null
+          lesson_id: string
+          metadata?: Json | null
+          prompt?: string | null
+          segments_count?: number | null
+          updated_at?: string
+          video_type?: string
+        }
+        Update: {
+          captions_path?: string | null
+          captions_url?: string | null
+          created_at?: string
+          duration?: number | null
+          error_message?: string | null
+          file_path?: string
+          file_size?: number
+          file_url?: string | null
+          generation_status?: string
+          id?: string
+          is_full_lesson?: boolean | null
+          lesson_id?: string
+          metadata?: Json | null
+          prompt?: string | null
+          segments_count?: number | null
+          updated_at?: string
+          video_type?: string
+        }
+        Relationships: []
+      }
       lessons: {
         Row: {
           content: string
@@ -1631,6 +1691,33 @@ export type Database = {
         }
         Relationships: []
       }
+      search_events: {
+        Row: {
+          created_at: string
+          id: string
+          query: string
+          results_count: number | null
+          session_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          query: string
+          results_count?: number | null
+          session_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          query?: string
+          results_count?: number | null
+          session_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       service_email_templates: {
         Row: {
           created_at: string
@@ -1925,11 +2012,45 @@ export type Database = {
         }
         Relationships: []
       }
+      user_sessions: {
+        Row: {
+          created_at: string
+          id: string
+          ip_address: unknown | null
+          last_activity: string
+          session_id: string
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          ip_address?: unknown | null
+          last_activity?: string
+          session_id: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          ip_address?: unknown | null
+          last_activity?: string
+          session_id?: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      generate_compelling_summary: {
+        Args: { lesson_title: string; lesson_content: string }
+        Returns: string
+      }
       has_role: {
         Args: {
           _user_id: string
