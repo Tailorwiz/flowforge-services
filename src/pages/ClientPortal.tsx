@@ -337,50 +337,49 @@ export default function ClientPortal() {
 
   const fetchTrainingMaterials = async () => {
     try {
-      const { data } = await supabase
+      if (!user) return;
+
+      // Find the current client's id and service type
+      const { data: clientRow } = await supabase
+        .from('clients')
+        .select('id, service_type_id, service_types (id)')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      const clientId = clientRow?.id;
+      const serviceTypeId = (clientRow as any)?.service_type_id || (clientRow as any)?.service_types?.id;
+
+      if (!clientId || !serviceTypeId) {
+        setTrainingMaterials([]);
+        return;
+      }
+
+      // Fetch assignments by service and any manual client access in parallel
+      const [serviceMap, manualAccess] = await Promise.all([
+        supabase.from('service_training_materials').select('training_material_id').eq('service_type_id', serviceTypeId),
+        supabase.from('client_training_access').select('training_material_id').eq('client_id', clientId),
+      ]);
+
+      const serviceIds = (serviceMap.data || []).map((r: any) => r.training_material_id);
+      const manualIds = (manualAccess.data || []).map((r: any) => r.training_material_id);
+      const materialIds = Array.from(new Set([...serviceIds, ...manualIds])).filter(Boolean);
+
+      if (materialIds.length === 0) {
+        setTrainingMaterials([]);
+        return;
+      }
+
+      const { data: materials, error } = await supabase
         .from('training_materials')
         .select('*')
+        .in('id', materialIds)
         .eq('is_active', true);
-      
-      // Add sample training programs with full-size photos if no data
-      const sampleMaterials = data && data.length > 0 ? data : [
-        {
-          id: 1,
-          name: 'Java Programming Fundamentals',
-          description: 'Learn the basics of Java programming with hands-on exercises and real-world examples.',
-          content_url: '#',
-          thumbnail_url: 'https://images.unsplash.com/photo-1461749280684-dccba630e2f6?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80',
-          is_active: true
-        },
-        {
-          id: 2,
-          name: 'Web Development Bootcamp',
-          description: 'Complete guide to modern web development covering HTML, CSS, JavaScript, and frameworks.',
-          content_url: '#',
-          thumbnail_url: 'https://images.unsplash.com/photo-1487058792275-0ad4aaf24ca7?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80',
-          is_active: true
-        },
-        {
-          id: 3,
-          name: 'Advanced MacBook Development',
-          description: 'Master development workflows on MacBook with professional coding environments and tools.',
-          content_url: '#',
-          thumbnail_url: 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80',
-          is_active: true
-        },
-        {
-          id: 4,
-          name: 'UI/UX Design Principles',
-          description: 'Learn design fundamentals for creating beautiful and functional user interfaces.',
-          content_url: '#',
-          thumbnail_url: 'https://images.unsplash.com/photo-1483058712412-4245e9b90334?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80',
-          is_active: true
-        }
-      ];
-      
-      setTrainingMaterials(sampleMaterials);
+
+      if (error) throw error;
+      setTrainingMaterials(materials || []);
     } catch (error) {
       console.error('Error fetching training materials:', error);
+      setTrainingMaterials([]);
     }
   };
 

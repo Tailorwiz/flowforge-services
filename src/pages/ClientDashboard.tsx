@@ -179,17 +179,34 @@ export default function ClientDashboard() {
 
   const fetchTrainingMaterials = async () => {
     if (!client?.id) return;
-    
     try {
-      // Get all active materials (for now, we'll implement access control later)
-      const { data: allMaterials, error: allError } = await supabase
+      const serviceTypeId = (client as any).service_types?.id || (client as any).service_type_id;
+      const currentClientId = client.id;
+
+      // Fetch assigned-by-service and manual client access in parallel
+      const [serviceMap, manualAccess] = await Promise.all([
+        supabase.from("service_training_materials").select("training_material_id").eq("service_type_id", serviceTypeId),
+        supabase.from("client_training_access").select("training_material_id").eq("client_id", currentClientId),
+      ]);
+
+      const serviceIds = (serviceMap.data || []).map((r: any) => r.training_material_id);
+      const manualIds = (manualAccess.data || []).map((r: any) => r.training_material_id);
+      const materialIds = Array.from(new Set([...serviceIds, ...manualIds])).filter(Boolean);
+
+      if (materialIds.length === 0) {
+        setTrainingMaterials([]);
+        return;
+      }
+
+      const { data: materials, error } = await supabase
         .from("training_materials")
         .select("*")
+        .in("id", materialIds)
         .eq("is_active", true)
         .order("created_at", { ascending: false });
 
-      if (allError) throw allError;
-      setTrainingMaterials(allMaterials || []);
+      if (error) throw error;
+      setTrainingMaterials(materials || []);
     } catch (error) {
       console.error('Error fetching training materials:', error);
     }

@@ -31,7 +31,8 @@ import {
   Mail,
   MapPin,
   CreditCard,
-  History
+  History,
+  BookOpen
 } from "lucide-react";
 
 
@@ -98,7 +99,8 @@ export function AdminCommandCenter() {
   const [viewingClient, setViewingClient] = useState<ExtendedClient | null>(null);
   const [clientFiles, setClientFiles] = useState<ClientFile[]>([]);
   const [clientHistory, setClientHistory] = useState<ClientHistory[]>([]);
-  const [loadingClientData, setLoadingClientData] = useState(false);
+const [loadingClientData, setLoadingClientData] = useState(false);
+  const [clientTrainingMaterials, setClientTrainingMaterials] = useState<any[]>([]);
 
   useEffect(() => {
     fetchClientsData();
@@ -314,7 +316,33 @@ export function AdminCommandCenter() {
     try {
       await Promise.all([
         fetchClientFiles(client.id),
-        fetchClientHistory(client.id)
+        fetchClientHistory(client.id),
+        (async () => {
+          // Fetch training materials allowed for this client (by service type + manual access)
+          const serviceTypeId = (client as any).service_types?.id || (client as any).service_type_id;
+          const [serviceMap, manualAccess] = await Promise.all([
+            supabase.from('service_training_materials').select('training_material_id').eq('service_type_id', serviceTypeId),
+            supabase.from('client_training_access').select('training_material_id').eq('client_id', client.id),
+          ]);
+
+          const serviceIds = (serviceMap.data || []).map((r: any) => r.training_material_id);
+          const manualIds = (manualAccess.data || []).map((r: any) => r.training_material_id);
+          const materialIds = Array.from(new Set([...serviceIds, ...manualIds])).filter(Boolean);
+
+          if (materialIds.length === 0) {
+            setClientTrainingMaterials([]);
+            return;
+          }
+
+          const { data: materials } = await supabase
+            .from('training_materials')
+            .select('*')
+            .in('id', materialIds)
+            .eq('is_active', true)
+            .order('created_at', { ascending: false });
+
+          setClientTrainingMaterials(materials || []);
+        })()
       ]);
     } catch (error) {
       console.error("Error loading client data:", error);
@@ -682,9 +710,10 @@ export function AdminCommandCenter() {
           {viewingClient && (
             <div className="flex-1 overflow-hidden">
               <Tabs defaultValue="overview" className="h-full flex flex-col">
-                <TabsList className="grid w-full grid-cols-4">
+                <TabsList className="grid w-full grid-cols-5">
                   <TabsTrigger value="overview">Overview</TabsTrigger>
                   <TabsTrigger value="files">Files ({clientFiles.length})</TabsTrigger>
+                  <TabsTrigger value="training">Training ({clientTrainingMaterials.length})</TabsTrigger>
                   <TabsTrigger value="history">Activity History</TabsTrigger>
                   <TabsTrigger value="details">Service Details</TabsTrigger>
                 </TabsList>
@@ -856,6 +885,53 @@ export function AdminCommandCenter() {
                         <FileText className="w-8 h-8 mx-auto mb-2 opacity-50" />
                         <p className="text-muted-foreground">No files uploaded yet</p>
                         <p className="text-sm text-muted-foreground">Files will appear here once the client uploads them</p>
+                      </div>
+                    )}
+                  </TabsContent>
+
+                  {/* Training Tab */}
+                  <TabsContent value="training" className="space-y-4">
+                    {loadingClientData ? (
+                      <div className="flex items-center justify-center py-8">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                        <p className="ml-2">Loading training...</p>
+                      </div>
+                    ) : clientTrainingMaterials.length > 0 ? (
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {clientTrainingMaterials.map((material: any) => (
+                          <Card key={material.id} className="group hover:shadow-md transition-shadow">
+                            <CardContent className="p-4">
+                              <div className="flex flex-col gap-3">
+                                <div className="w-full aspect-[16/9] bg-muted rounded-md flex items-center justify-center overflow-hidden">
+                                  {material.thumbnail_url ? (
+                                    <img src={material.thumbnail_url} alt={`${material.name} training thumbnail`} className="w-full h-full object-cover" />
+                                  ) : (
+                                    <BookOpen className="w-8 h-8 text-muted-foreground" />
+                                  )}
+                                </div>
+                                <div>
+                                  <h4 className="font-medium">{material.name}</h4>
+                                  {material.description && (
+                                    <p className="text-sm text-muted-foreground line-clamp-2 mt-1">{material.description}</p>
+                                  )}
+                                </div>
+                                {material.content_url && (
+                                  <Button asChild size="sm" className="self-start">
+                                    <a href={material.content_url} target="_blank" rel="noopener noreferrer">
+                                      <BookOpen className="w-4 h-4 mr-2" />
+                                      Open Material
+                                    </a>
+                                  </Button>
+                                )}
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-8 text-muted-foreground">
+                        <BookOpen className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                        <p>No training materials assigned for this client</p>
                       </div>
                     )}
                   </TabsContent>
