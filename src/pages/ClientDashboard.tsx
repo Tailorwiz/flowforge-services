@@ -101,7 +101,6 @@ export default function ClientDashboard() {
     fetchClientData();
     fetchClientHistory();
     fetchClientFiles();
-    fetchTrainingMaterials();
     
     // Set up real-time listener for new uploads
     const channel = supabase
@@ -161,6 +160,11 @@ export default function ClientDashboard() {
 
       if (error) throw error;
       setClient(data);
+      
+      // Fetch training materials after client data is loaded
+      if (data) {
+        fetchTrainingMaterialsForClient(data);
+      }
     } catch (error) {
       console.error('Error fetching client:', error);
       toast({
@@ -170,6 +174,59 @@ export default function ClientDashboard() {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchTrainingMaterialsForClient = async (clientData: ClientData) => {
+    try {
+      // Get service type ID from client data (try multiple possible locations)
+      const serviceTypeId = clientData.service_types?.id || (clientData as any).service_type_id;
+      const currentClientId = clientData.id;
+      
+      console.log('Client data for training:', { 
+        clientId: currentClientId, 
+        serviceTypeId, 
+        serviceTypes: clientData.service_types 
+      });
+
+      if (!serviceTypeId) {
+        console.log('No service type ID found for client');
+        setTrainingMaterials([]);
+        return;
+      }
+
+      // Fetch assigned-by-service and manual client access in parallel
+      const [serviceMap, manualAccess] = await Promise.all([
+        supabase.from("service_training_materials").select("training_material_id").eq("service_type_id", serviceTypeId),
+        supabase.from("client_training_access").select("training_material_id").eq("client_id", currentClientId),
+      ]);
+
+      console.log('Training material assignments:', { serviceMap: serviceMap.data, manualAccess: manualAccess.data });
+
+      const serviceIds = (serviceMap.data || []).map((r: any) => r.training_material_id);
+      const manualIds = (manualAccess.data || []).map((r: any) => r.training_material_id);
+      const materialIds = Array.from(new Set([...serviceIds, ...manualIds])).filter(Boolean);
+
+      console.log('Material IDs to fetch:', materialIds);
+
+      if (materialIds.length === 0) {
+        console.log('No training materials assigned to this client');
+        setTrainingMaterials([]);
+        return;
+      }
+
+      const { data: materials, error } = await supabase
+        .from("training_materials")
+        .select("*")
+        .in("id", materialIds)
+        .eq("is_active", true)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      console.log('Fetched training materials:', materials);
+      setTrainingMaterials(materials || []);
+    } catch (error) {
+      console.error('Error fetching training materials:', error);
     }
   };
 
@@ -218,60 +275,6 @@ export default function ClientDashboard() {
     } catch (error) {
       console.error('Error fetching client files:', error);
       setFiles([]);
-    }
-  };
-
-  const fetchTrainingMaterials = async () => {
-    if (!client?.id) return;
-    try {
-      // Get service type ID from client data (try multiple possible locations)
-      const serviceTypeId = client.service_types?.id || (client as any).service_type_id;
-      const currentClientId = client.id;
-      
-      console.log('Client data for training:', { 
-        clientId: currentClientId, 
-        serviceTypeId, 
-        serviceTypes: client.service_types 
-      });
-
-      if (!serviceTypeId) {
-        console.log('No service type ID found for client');
-        setTrainingMaterials([]);
-        return;
-      }
-
-      // Fetch assigned-by-service and manual client access in parallel
-      const [serviceMap, manualAccess] = await Promise.all([
-        supabase.from("service_training_materials").select("training_material_id").eq("service_type_id", serviceTypeId),
-        supabase.from("client_training_access").select("training_material_id").eq("client_id", currentClientId),
-      ]);
-
-      console.log('Training material assignments:', { serviceMap: serviceMap.data, manualAccess: manualAccess.data });
-
-      const serviceIds = (serviceMap.data || []).map((r: any) => r.training_material_id);
-      const manualIds = (manualAccess.data || []).map((r: any) => r.training_material_id);
-      const materialIds = Array.from(new Set([...serviceIds, ...manualIds])).filter(Boolean);
-
-      console.log('Material IDs to fetch:', materialIds);
-
-      if (materialIds.length === 0) {
-        console.log('No training materials assigned to this client');
-        setTrainingMaterials([]);
-        return;
-      }
-
-      const { data: materials, error } = await supabase
-        .from("training_materials")
-        .select("*")
-        .in("id", materialIds)
-        .eq("is_active", true)
-        .order("created_at", { ascending: false });
-
-      if (error) throw error;
-      console.log('Fetched training materials:', materials);
-      setTrainingMaterials(materials || []);
-    } catch (error) {
-      console.error('Error fetching training materials:', error);
     }
   };
 
