@@ -49,9 +49,13 @@ export const DailyDigestSettings = () => {
 
   const fetchPreferences = async () => {
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('No authenticated user');
+
       const { data, error } = await supabase
         .from('daily_digest_preferences')
         .select('*')
+        .eq('user_id', user.id)
         .maybeSingle();
 
       if (error) {

@@ -31,9 +31,10 @@ const handler = async (req: Request): Promise<Response> => {
     const { data: preferences, error: prefError } = await supabase
       .from("daily_digest_preferences")
       .select("*")
-      .maybeSingle();
+      .limit(1)
+      .single();
 
-    if (prefError) {
+    if (prefError && prefError.code !== 'PGRST116') {
       console.error("Error fetching preferences:", prefError);
       return new Response(
         JSON.stringify({ error: 'Failed to fetch digest preferences' }),
