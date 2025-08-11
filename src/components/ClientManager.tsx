@@ -106,14 +106,39 @@ export function ClientManager() {
   };
 
   const addClient = async () => {
+    console.log('addClient called with data:', newClient);
+    
     if (!newClient.name || !newClient.email || !newClient.service_type_id) {
       toast({ title: "Error", description: "Please fill in all required fields", variant: "destructive" });
       return;
+    }
+    
+    console.log('Checking if client email already exists...');
+    
+    // Check if email already exists as a user account
+    const { data: existingProfile } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("email", newClient.email.toLowerCase())
+      .single();
+      
+    if (existingProfile) {
+      toast({ 
+        title: "Warning", 
+        description: `Email ${newClient.email} already exists as a user account. The new client will be linked to existing user data.`,
+        variant: "destructive"
+      });
     }
 
     const serviceType = serviceTypes.find(st => st.id === newClient.service_type_id);
     const estimatedDeliveryDate = new Date();
     estimatedDeliveryDate.setDate(estimatedDeliveryDate.getDate() + (serviceType?.default_timeline_days || 7));
+
+    console.log('Creating client with data:', {
+      ...newClient,
+      estimated_delivery_date: estimatedDeliveryDate.toISOString().split('T')[0],
+      payment_status: "pending"
+    });
 
     const { data, error } = await supabase
       .from("clients")
@@ -125,6 +150,8 @@ export function ClientManager() {
       }])
       .select()
       .single();
+      
+    console.log('Client creation result:', { data, error });
 
     if (error) {
       toast({ title: "Error", description: "Failed to add client", variant: "destructive" });
