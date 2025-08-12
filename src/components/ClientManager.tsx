@@ -269,9 +269,12 @@ export function ClientManager() {
       // If there's an associated auth user, delete it too
       if (result.user_id_to_delete) {
         try {
-          const { error: authError } = await supabase.functions.invoke('delete-auth-user', {
+          console.log('Calling edge function to delete auth user:', result.user_id_to_delete);
+          const { data: authResult, error: authError } = await supabase.functions.invoke('delete-auth-user', {
             body: { user_id: result.user_id_to_delete }
           });
+
+          console.log('Auth deletion result:', { authResult, authError });
 
           if (authError) {
             console.error('Failed to delete auth user:', authError);

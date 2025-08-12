@@ -2111,6 +2111,10 @@ export type Database = {
         Args: { client_id_param: string }
         Returns: Json
       }
+      delete_user_completely: {
+        Args: { user_id_param: string }
+        Returns: Json
+      }
       generate_compelling_summary: {
         Args: { lesson_title: string; lesson_content: string }
         Returns: string
