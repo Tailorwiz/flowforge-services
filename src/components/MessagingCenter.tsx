@@ -70,11 +70,13 @@ export const MessagingCenter: React.FC<MessagingCenterProps> = ({
       // Add sender names to messages
       const messagesWithNames = messagesData?.map(msg => {
         const profile = profileMap.get(msg.sender_id);
+        const displayName = profile 
+          ? `${profile.first_name || ''} ${profile.last_name || ''}`.trim()
+          : msg.sender_type === 'admin' ? 'Admin' : 'Client';
+        
         return {
           ...msg,
-          sender_name: profile 
-            ? `${profile.first_name} ${profile.last_name}`.trim()
-            : msg.sender_type === 'admin' ? 'Admin' : 'Client'
+          sender_name: displayName || (msg.sender_type === 'admin' ? 'Admin' : 'Client')
         };
       }) || [];
 
@@ -226,11 +228,13 @@ export const MessagingCenter: React.FC<MessagingCenterProps> = ({
             .eq('id', payload.new.sender_id)
             .single();
 
+          const displayName = profile 
+            ? `${profile.first_name || ''} ${profile.last_name || ''}`.trim()
+            : payload.new.sender_type === 'admin' ? 'Admin' : 'Client';
+
           const newMessage = {
             ...payload.new,
-            sender_name: profile 
-              ? `${profile.first_name} ${profile.last_name}`.trim()
-              : payload.new.sender_type === 'admin' ? 'Admin' : 'Client'
+            sender_name: displayName || (payload.new.sender_type === 'admin' ? 'Admin' : 'Client')
           } as Message;
 
           setMessages(prev => {
