@@ -288,8 +288,11 @@ const ProgressTracker: React.FC<ProgressTrackerProps> = ({
     console.log('*** Resume upload should now be visible ***');
   };
 
-  const handleResumeUploadComplete = () => {
+  const handleResumeUploadComplete = async () => {
     setShowResumeUpload(false);
+    
+    // Refetch client data to get updated resume_uploaded status
+    await fetchClientData();
     markStepCompleted(2);
     
     toast({
