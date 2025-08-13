@@ -747,6 +747,34 @@ export default function ClientPortal() {
     ));
   };
 
+  // Download PDF function
+  const downloadPDF = async (fileUrl: string, fileName: string) => {
+    try {
+      const response = await fetch(fileUrl);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${fileName.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      
+      toast({
+        title: "Download Started",
+        description: `${fileName} is being downloaded.`
+      });
+    } catch (error) {
+      console.error('Download error:', error);
+      toast({
+        title: "Download Failed",
+        description: "Unable to download the file. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
   if (authLoading || loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
@@ -756,7 +784,7 @@ export default function ClientPortal() {
         </div>
       </div>
     );
-  };
+  }
 
   // Profile photo upload modal
   if (needsPhotoUpload) {
@@ -1387,12 +1415,23 @@ export default function ClientPortal() {
                       <CardContent className="p-4">
                         <h3 className="text-lg font-bold mb-2 text-center">{material.name}</h3>
                         <p className="text-sm text-slate-600 mb-4 text-center">{material.description}</p>
-                        <Button size="lg" className="w-full" asChild>
-                          <a href={material.content_url} target="_blank" rel="noopener noreferrer">
-                            <BookOpen className="w-5 h-5 mr-2" />
-                            Start Reading
-                          </a>
-                        </Button>
+                        <div className="flex gap-2">
+                          <Button size="lg" className="flex-1" asChild>
+                            <a href={material.content_url} target="_blank" rel="noopener noreferrer">
+                              <BookOpen className="w-5 h-5 mr-2" />
+                              Start Reading
+                            </a>
+                          </Button>
+                          <Button 
+                            size="lg" 
+                            variant="outline" 
+                            className="flex-1"
+                            onClick={() => downloadPDF(material.content_url, material.name)}
+                          >
+                            <Download className="w-5 h-5 mr-2" />
+                            Download PDF
+                          </Button>
+                        </div>
                       </CardContent>
                     </Card>
                   )) : (
