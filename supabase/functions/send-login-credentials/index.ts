@@ -88,7 +88,8 @@ const handler = async (req: Request): Promise<Response> => {
     // Check if there was an error in the response
     if (emailResponse.error) {
       console.error("Resend API error:", emailResponse.error);
-      throw new Error(`Email sending failed: ${emailResponse.error.message}`);
+      const errorMessage = emailResponse.error.message || emailResponse.error.error || JSON.stringify(emailResponse.error);
+      throw new Error(`Email sending failed: ${errorMessage}`);
     }
 
     if (!emailResponse.data) {
