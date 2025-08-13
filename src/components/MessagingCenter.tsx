@@ -340,7 +340,7 @@ export const MessagingCenter: React.FC<MessagingCenterProps> = ({
                 {!isOwnMessage(message) && (
                   <Avatar className="h-8 w-8 mt-1">
                     <AvatarFallback className="text-xs">
-                      {message.sender_type === 'admin' ? 'A' : 'C'}
+                      {message.sender_type === 'admin' ? 'Admin' : 'Customer'}
                     </AvatarFallback>
                   </Avatar>
                 )}
@@ -358,7 +358,7 @@ export const MessagingCenter: React.FC<MessagingCenterProps> = ({
                   
                   <div className={`flex items-center gap-2 mt-1 ${isOwnMessage(message) ? 'justify-end' : 'justify-start'}`}>
                     <span className="text-xs text-muted-foreground">
-                      {message.sender_name} - {message.sender_type === 'admin' ? 'Admin' : 'Customer'}
+                      {message.sender_name}
                     </span>
                     <span className="text-xs text-muted-foreground flex items-center gap-1">
                       <Clock className="h-3 w-3" />
@@ -375,7 +375,7 @@ export const MessagingCenter: React.FC<MessagingCenterProps> = ({
                 {isOwnMessage(message) && (
                   <Avatar className="h-8 w-8 mt-1 order-2">
                     <AvatarFallback className="text-xs">
-                      {message.sender_type === 'admin' ? 'A' : 'C'}
+                      {message.sender_type === 'admin' ? 'Admin' : 'Customer'}
                     </AvatarFallback>
                   </Avatar>
                 )}
