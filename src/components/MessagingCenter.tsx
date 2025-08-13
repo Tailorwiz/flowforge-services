@@ -79,13 +79,23 @@ export const MessagingCenter: React.FC<MessagingCenterProps> = ({
       // Add sender names to messages
       const messagesWithNames = messagesData?.map(msg => {
         const profile = profileMap.get(msg.sender_id);
-        const displayName = profile 
-          ? `${profile.first_name || ''} ${profile.last_name || ''}`.trim()
-          : msg.sender_type === 'admin' ? 'Admin' : 'Client';
+        let displayName;
+        
+        if (msg.sender_type === 'admin') {
+          // For admin messages, show actual name or default to "Marcus Hall"
+          displayName = profile 
+            ? `${profile.first_name || ''} ${profile.last_name || ''}`.trim()
+            : 'Marcus Hall';
+        } else {
+          // For client messages, show client name or "Client"
+          displayName = profile 
+            ? `${profile.first_name || ''} ${profile.last_name || ''}`.trim()
+            : 'Client';
+        }
         
         return {
           ...msg,
-          sender_name: displayName || (msg.sender_type === 'admin' ? 'Admin' : 'Client')
+          sender_name: displayName || (msg.sender_type === 'admin' ? 'Marcus Hall' : 'Client')
         };
       }) || [];
 
@@ -237,13 +247,22 @@ export const MessagingCenter: React.FC<MessagingCenterProps> = ({
             .eq('id', payload.new.sender_id)
             .single();
 
-          const displayName = profile 
-            ? `${profile.first_name || ''} ${profile.last_name || ''}`.trim()
-            : payload.new.sender_type === 'admin' ? 'Admin' : 'Client';
+          let displayName;
+          if (payload.new.sender_type === 'admin') {
+            // For admin messages, show actual name or default to "Marcus Hall"
+            displayName = profile 
+              ? `${profile.first_name || ''} ${profile.last_name || ''}`.trim()
+              : 'Marcus Hall';
+          } else {
+            // For client messages, show client name or "Client"
+            displayName = profile 
+              ? `${profile.first_name || ''} ${profile.last_name || ''}`.trim()
+              : 'Client';
+          }
 
           const newMessage = {
             ...payload.new,
-            sender_name: displayName || (payload.new.sender_type === 'admin' ? 'Admin' : 'Client')
+            sender_name: displayName || (payload.new.sender_type === 'admin' ? 'Marcus Hall' : 'Client')
           } as Message;
 
           setMessages(prev => {
