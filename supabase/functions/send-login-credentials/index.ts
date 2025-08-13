@@ -26,7 +26,7 @@ const handler = async (req: Request): Promise<Response> => {
     console.log('Sending login credentials to:', { client_email, client_name });
 
     const emailResponse = await resend.emails.send({
-      from: "RDR Project Portal <admin@resultsdrivenresumes.com>",
+      from: "RDR Project Portal <onboarding@resend.dev>",
       to: [client_email],
       subject: "Your RDR Project Portal Login Details",
       html: `
@@ -67,7 +67,12 @@ const handler = async (req: Request): Promise<Response> => {
       `,
     });
 
-    console.log("Login credentials email sent successfully:", emailResponse);
+    console.log("Login credentials email response:", emailResponse);
+
+    // Check if there was an error in the response
+    if (emailResponse.error) {
+      throw new Error(`Email sending failed: ${emailResponse.error.message}`);
+    }
 
     return new Response(JSON.stringify({ 
       success: true, 
