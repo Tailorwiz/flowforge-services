@@ -1388,11 +1388,7 @@ export default function ClientPortal() {
 
         {/* Main Content Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6 bg-white shadow-sm border">
-            <TabsTrigger value="deliveries" className="flex items-center gap-2">
-              <Package className="w-4 h-4" />
-              Completed Document Deliveries
-            </TabsTrigger>
+          <TabsList className="grid w-full grid-cols-5 bg-white shadow-sm border">
             <TabsTrigger value="documents" className="flex items-center gap-2">
               <FileText className="w-4 h-4" />
               My Uploaded Documents
@@ -1420,10 +1416,6 @@ export default function ClientPortal() {
             </TabsTrigger>
           </TabsList>
 
-          {/* Deliveries Tab */}
-          <TabsContent value="deliveries" id="deliveries-section">
-            <ClientDeliveries />
-          </TabsContent>
 
           {/* Documents Tab */}
           <TabsContent value="documents">
@@ -1977,6 +1969,19 @@ export default function ClientPortal() {
             </Card>
           </TabsContent>
         </Tabs>
+
+        {/* Your Deliveries Section */}
+        <Card className="mt-8 shadow-lg border-0">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Package className="w-5 h-5 text-primary" />
+              Your Deliveries
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ClientDeliveries />
+          </CardContent>
+        </Card>
 
         {/* Floating Help Button */}
         <div className="fixed bottom-6 right-6">
