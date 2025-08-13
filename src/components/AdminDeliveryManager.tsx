@@ -28,7 +28,16 @@ interface Client {
   id: string;
   name: string;
   email: string;
+  service_type_id?: string;
   service_types?: { name: string };
+}
+
+interface ServiceDeliverable {
+  id: string;
+  deliverable_name: string;
+  deliverable_category: string;
+  description?: string;
+  quantity: number;
 }
 
 interface Delivery {
@@ -60,6 +69,7 @@ export function AdminDeliveryManager() {
   const [deliveries, setDeliveries] = useState<Delivery[]>([]);
   const [revisionRequests, setRevisionRequests] = useState<RevisionRequest[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
+  const [serviceDeliverables, setServiceDeliverables] = useState<ServiceDeliverable[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedRevisionRequest, setSelectedRevisionRequest] = useState<RevisionRequest | null>(null);
@@ -131,13 +141,31 @@ export function AdminDeliveryManager() {
     const { data, error } = await supabase
       .from('clients')
       .select(`
-        id, name, email,
+        id, name, email, service_type_id,
         service_types (name)
       `)
       .order('name');
 
     if (error) throw error;
     setClients(data || []);
+  };
+
+  const fetchServiceDeliverablesForClient = async (clientId: string) => {
+    const client = clients.find(c => c.id === clientId);
+    if (!client?.service_type_id) return;
+
+    const { data, error } = await supabase
+      .from('service_deliverables')
+      .select('*')
+      .eq('service_type_id', client.service_type_id)
+      .order('deliverable_order');
+
+    if (error) {
+      console.error('Error fetching service deliverables:', error);
+      return;
+    }
+
+    setServiceDeliverables(data || []);
   };
 
   const uploadFile = async (file: File): Promise<string> => {
@@ -338,9 +366,10 @@ export function AdminDeliveryManager() {
             <div className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="client">Client</Label>
-                <Select value={newDelivery.client_id} onValueChange={(value) => 
-                  setNewDelivery(prev => ({ ...prev, client_id: value }))
-                }>
+                <Select value={newDelivery.client_id} onValueChange={(value) => {
+                  setNewDelivery(prev => ({ ...prev, client_id: value, document_type: '' }));
+                  fetchServiceDeliverablesForClient(value);
+                }}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select client" />
                   </SelectTrigger>
@@ -355,19 +384,24 @@ export function AdminDeliveryManager() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="document_type">Document Type</Label>
-                <Select value={newDelivery.document_type} onValueChange={(value) => 
-                  setNewDelivery(prev => ({ ...prev, document_type: value }))
-                }>
+                <Label htmlFor="document_type">Deliverable Type</Label>
+                <Select 
+                  value={newDelivery.document_type} 
+                  onValueChange={(value) => setNewDelivery(prev => ({ ...prev, document_type: value }))}
+                  disabled={!newDelivery.client_id}
+                >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select document type" />
+                    <SelectValue placeholder={newDelivery.client_id ? "Select deliverable type" : "Select client first"} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="resume">Resume</SelectItem>
-                    <SelectItem value="cover_letter">Cover Letter</SelectItem>
-                    <SelectItem value="linkedin">LinkedIn Profile</SelectItem>
-                    <SelectItem value="biography">Biography</SelectItem>
-                    <SelectItem value="other">Other</SelectItem>
+                    {serviceDeliverables.map((deliverable) => (
+                      <SelectItem key={deliverable.id} value={deliverable.deliverable_name.toLowerCase().replace(/\s+/g, '_')}>
+                        {deliverable.deliverable_name}
+                        {deliverable.description && (
+                          <span className="text-muted-foreground ml-2">- {deliverable.description}</span>
+                        )}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
