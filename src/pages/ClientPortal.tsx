@@ -640,6 +640,13 @@ export default function ClientPortal() {
   const handleResumeUploadClick = () => {
     console.log('*** Opening resume upload modal ***');
     setShowResumeUpload(true);
+    
+    // Show appropriate toast based on whether documents already exist
+    const hasUploaded = profile?.progress_step && profile.progress_step > 2;
+    toast({
+      title: hasUploaded ? "Add More Documents" : "Resume Upload",
+      description: hasUploaded ? "Upload additional documents to your project." : "Upload your resume and supporting documents.",
+    });
   };
 
   const handleSessionBookingClick = () => {
@@ -1250,8 +1257,8 @@ export default function ClientPortal() {
                   const isCompleted = profile.progress_step > step.id;
                   const isCurrent = profile.progress_step === step.id;
                   const IconComponent = step.icon;
-                  // Make intake form always clickable, others only when current
-                  const isClickable = step.id === 1 || (step.id === profile.progress_step && !isCompleted);
+                  // Make intake form and resume upload always clickable, others only when current
+                  const isClickable = step.id === 1 || step.id === 2 || (step.id === profile.progress_step && !isCompleted);
                   
                   console.log(`Step ${step.id}: progress_step=${profile.progress_step}, isCompleted=${isCompleted}, isClickable=${isClickable}`);
                   
@@ -1290,7 +1297,7 @@ export default function ClientPortal() {
                           In Progress
                         </Badge>
                       )}
-                      {(isClickable || step.id === 1) && (
+                      {(isClickable || step.id === 1 || step.id === 2) && (
                         <Button 
                           variant="outline" 
                           size="sm"
@@ -1298,10 +1305,13 @@ export default function ClientPortal() {
                             e.stopPropagation();
                             if (step.id === 1) {
                               handleIntakeFormClick();
+                            } else if (step.id === 2) {
+                              handleResumeUploadClick();
                             }
                           }}
                         >
-                          {isCompleted && step.id === 1 ? 'Update' : 'Start'} →
+                          {isCompleted && step.id === 1 ? 'Update' : 
+                           isCompleted && step.id === 2 ? 'Add More' : 'Start'} →
                         </Button>
                       )}
                     </div>
