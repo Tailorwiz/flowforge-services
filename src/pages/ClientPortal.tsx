@@ -1395,7 +1395,7 @@ export default function ClientPortal() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                   {trainingMaterials.length > 0 ? trainingMaterials.map((material) => (
                     <Card key={material.id} className="border border-slate-200 hover:shadow-lg transition-shadow overflow-hidden">
                       <div className="relative bg-white">
@@ -1415,8 +1415,8 @@ export default function ClientPortal() {
                       <CardContent className="p-4">
                         <h3 className="text-lg font-bold mb-2 text-center">{material.name}</h3>
                         <p className="text-sm text-slate-600 mb-4 text-center">{material.description}</p>
-                        <div className="flex gap-2">
-                          <Button size="lg" className="flex-1" asChild>
+                        <div className="flex flex-col gap-2">
+                          <Button size="lg" className="w-full" asChild>
                             <a href={material.content_url} target="_blank" rel="noopener noreferrer">
                               <BookOpen className="w-5 h-5 mr-2" />
                               Start Reading
@@ -1425,7 +1425,7 @@ export default function ClientPortal() {
                           <Button 
                             size="lg" 
                             variant="secondary" 
-                            className="flex-1"
+                            className="w-full"
                             onClick={() => downloadPDF(material.content_url, material.name)}
                           >
                             <Download className="w-5 h-5 mr-2" />
