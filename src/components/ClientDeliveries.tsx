@@ -390,7 +390,7 @@ export function ClientDeliveries() {
                     <div className="space-y-2 border-t pt-3">
                       <h4 className="font-medium text-xs text-muted-foreground">Delivered Items:</h4>
                       {matchingDeliveries.map((delivery) => (
-                        <div key={delivery.id} className="border rounded p-3 space-y-2 bg-muted/30">
+                        <div key={delivery.id} className={`border rounded p-3 space-y-2 ${delivery.status === 'approved' ? 'bg-green-50 border-green-200' : 'bg-muted/30'}`}>
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
                               <FileText className="h-3 w-3" />
