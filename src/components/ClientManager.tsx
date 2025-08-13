@@ -1054,7 +1054,7 @@ export function ClientManager() {
                       </div>
                     
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                        <div>
+                        <div onClick={(e) => e.stopPropagation()}>
                           <Label className="text-sm font-medium">Service Type</Label>
                           <Select
                             value={client.service_type_id}
