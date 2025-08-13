@@ -151,13 +151,13 @@ export function AdminDeliveryManager() {
     const filePath = `deliveries/${fileName}`;
 
     const { error } = await supabase.storage
-      .from('client-documents')
+      .from('client-deliveries')
       .upload(filePath, file);
 
     if (error) throw error;
 
     const { data } = supabase.storage
-      .from('client-documents')
+      .from('client-deliveries')
       .getPublicUrl(filePath);
 
     return data.publicUrl;
@@ -186,11 +186,12 @@ export function AdminDeliveryManager() {
           client_id: newDelivery.client_id,
           document_type: newDelivery.document_type || 'document',
           document_title: newDelivery.document_title,
-          file_path: fileUrl,
+          file_path: `deliveries/${Date.now()}.${newDelivery.file.name.split('.').pop()}`,
           file_url: fileUrl,
           file_size: newDelivery.file.size,
           mime_type: newDelivery.file.type,
-          status: 'delivered'
+          status: 'delivered',
+          delivered_at: new Date().toISOString()
         })
         .select()
         .single();
