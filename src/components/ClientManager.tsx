@@ -75,6 +75,14 @@ interface ClientDelivery {
   file_path?: string;
 }
 
+interface ExpectedDeliverable {
+  deliverable_name: string;
+  deliverable_category: string;
+  expected_quantity: number;
+  delivered_quantity: number;
+  completion_percentage: number;
+}
+
 export function ClientManager() {
   const navigate = useNavigate();
   const [serviceTypes, setServiceTypes] = useState<ServiceType[]>([]);
@@ -89,6 +97,7 @@ export function ClientManager() {
   const [viewingClient, setViewingClient] = useState<Client | null>(null);
   const [clientFiles, setClientFiles] = useState<ClientFile[]>([]);
   const [clientDeliveries, setClientDeliveries] = useState<ClientDelivery[]>([]);
+  const [expectedDeliverables, setExpectedDeliverables] = useState<ExpectedDeliverable[]>([]);
   const [clientProgress, setClientProgress] = useState<ClientProgress[]>([]);
   const [clientHistory, setClientHistory] = useState<ClientHistory[]>([]);
   const [loadingClientDetails, setLoadingClientDetails] = useState(false);
@@ -198,6 +207,20 @@ export function ClientManager() {
     }
   };
 
+  const fetchExpectedDeliverables = async (clientId: string) => {
+    try {
+      const { data, error } = await supabase.rpc('get_client_deliverable_progress', {
+        client_id_param: clientId
+      });
+
+      if (error) throw error;
+      setExpectedDeliverables(data || []);
+    } catch (error) {
+      console.error('Error fetching expected deliverables:', error);
+      setExpectedDeliverables([]);
+    }
+  };
+
   const fetchClientProgress = async (clientId: string) => {
     try {
       const { data, error } = await supabase
@@ -242,6 +265,7 @@ export function ClientManager() {
       
       await Promise.all([
         fetchClientFiles(client.id),
+        fetchExpectedDeliverables(client.id),
         fetchClientProgress(client.id),
         fetchClientHistory(client.id),
         (async () => {
@@ -1298,88 +1322,118 @@ export function ClientManager() {
                       </div>
                     ) : (
                       <div className="space-y-6">
-                        {/* Expected Deliverables Overview */}
+                        {/* Expected Deliverables from Service Package */}
                         <Card className="border border-rdr-navy/20 bg-rdr-navy/5">
                           <CardHeader>
                             <CardTitle className="text-rdr-navy flex items-center gap-2">
                               <Package className="w-5 h-5" />
-                              Expected Deliverables Progress
+                              Service Package Deliverables
                             </CardTitle>
                           </CardHeader>
                           <CardContent>
-                            <div className="text-sm text-muted-foreground mb-2">
+                            <div className="text-sm text-muted-foreground mb-4">
                               Service Type: {viewingClient.service_types?.name || 'Not assigned'}
                             </div>
-                            {viewingClient.service_type_id && (
-                              <div className="text-xs text-muted-foreground">
-                                This shows the expected deliverables for this service package and their completion status.
+                            
+                            {expectedDeliverables.length > 0 ? (
+                              <div className="space-y-3">
+                                {expectedDeliverables.map((deliverable, index) => (
+                                  <div key={index} className="flex items-center justify-between p-3 bg-white rounded-lg border">
+                                    <div className="flex-1">
+                                      <div className="flex items-center gap-2 mb-1">
+                                        <h4 className="font-medium text-rdr-navy">{deliverable.deliverable_name}</h4>
+                                        <Badge variant="outline" className="text-xs">
+                                          {deliverable.deliverable_category}
+                                        </Badge>
+                                      </div>
+                                      <div className="text-sm text-muted-foreground">
+                                        Expected: {deliverable.expected_quantity} • 
+                                        Delivered: {deliverable.delivered_quantity} • 
+                                        Progress: {deliverable.completion_percentage}%
+                                      </div>
+                                    </div>
+                                    <div className="ml-4">
+                                      <Badge 
+                                        variant={deliverable.completion_percentage >= 100 ? 'default' : 'secondary'}
+                                        className={
+                                          deliverable.completion_percentage >= 100 ? 'bg-green-500 text-white' :
+                                          deliverable.completion_percentage > 0 ? 'bg-yellow-500 text-white' :
+                                          'bg-gray-400 text-white'
+                                        }
+                                      >
+                                        {deliverable.completion_percentage >= 100 ? 'Complete' :
+                                         deliverable.completion_percentage > 0 ? 'In Progress' : 'Pending'}
+                                      </Badge>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <div className="text-center py-4 text-muted-foreground">
+                                <Package className="w-6 h-6 mx-auto mb-2 opacity-50" />
+                                <p>No deliverables defined for this service type</p>
                               </div>
                             )}
                           </CardContent>
                         </Card>
 
-                        {/* Actual Deliverables */}
-                        {clientDeliveries.length > 0 ? (
+                        {/* Actual Delivered Items */}
+                        {clientDeliveries.length > 0 && (
                           <div className="space-y-4">
-                            <h3 className="text-lg font-semibold mb-4">Delivered Items</h3>
-                        {clientDeliveries.map((delivery) => (
-                          <Card key={delivery.id} className="border border-border shadow-sm">
-                            <CardContent className="p-4">
-                              <div className="flex justify-between items-start">
-                                <div className="flex-1">
-                                  <div className="flex items-center gap-2 mb-2">
-                                    <Package className="w-4 h-4 text-rdr-navy" />
-                                    <h4 className="font-semibold text-rdr-navy">{delivery.document_title}</h4>
-                                    <Badge 
-                                      variant={delivery.status === 'delivered' ? 'default' : 
-                                               delivery.status === 'approved' ? 'default' : 'secondary'}
-                                      className={
-                                        delivery.status === 'delivered' ? 'bg-blue-500 text-white' :
-                                        delivery.status === 'approved' ? 'bg-green-500 text-white' :
-                                        'bg-gray-500 text-white'
-                                      }
-                                    >
-                                      {delivery.status}
-                                    </Badge>
-                                  </div>
-                                  <p className="text-sm text-muted-foreground mb-2">
-                                    Type: {delivery.document_type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                                  </p>
-                                  <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                                    <div className="flex items-center gap-1">
-                                      <Calendar className="w-3 h-3" />
-                                      Delivered: {format(new Date(delivery.delivered_at), 'MMM d, yyyy')}
+                            <h3 className="text-lg font-semibold mb-4">Delivered Files</h3>
+                            {clientDeliveries.map((delivery) => (
+                              <Card key={delivery.id} className="border border-border shadow-sm">
+                                <CardContent className="p-4">
+                                  <div className="flex justify-between items-start">
+                                    <div className="flex-1">
+                                      <div className="flex items-center gap-2 mb-2">
+                                        <File className="w-4 h-4 text-rdr-navy" />
+                                        <h4 className="font-semibold text-rdr-navy">{delivery.document_title}</h4>
+                                        <Badge 
+                                          variant={delivery.status === 'delivered' ? 'default' : 
+                                                   delivery.status === 'approved' ? 'default' : 'secondary'}
+                                          className={
+                                            delivery.status === 'delivered' ? 'bg-blue-500 text-white' :
+                                            delivery.status === 'approved' ? 'bg-green-500 text-white' :
+                                            'bg-gray-500 text-white'
+                                          }
+                                        >
+                                          {delivery.status}
+                                        </Badge>
+                                      </div>
+                                      <p className="text-sm text-muted-foreground mb-2">
+                                        Type: {delivery.document_type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                                      </p>
+                                      <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                                        <div className="flex items-center gap-1">
+                                          <Calendar className="w-3 h-3" />
+                                          Delivered: {format(new Date(delivery.delivered_at), 'MMM d, yyyy')}
+                                        </div>
+                                        {delivery.approved_at && (
+                                          <div className="flex items-center gap-1">
+                                            <CheckCircle className="w-3 h-3 text-green-500" />
+                                            Approved: {format(new Date(delivery.approved_at), 'MMM d, yyyy')}
+                                          </div>
+                                        )}
+                                      </div>
                                     </div>
-                                    {delivery.approved_at && (
-                                      <div className="flex items-center gap-1">
-                                        <CheckCircle className="w-3 h-3 text-green-500" />
-                                        Approved: {format(new Date(delivery.approved_at), 'MMM d, yyyy')}
+                                    {delivery.file_url && (
+                                      <div className="ml-4">
+                                        <Button
+                                          variant="outline"
+                                          size="sm"
+                                          onClick={() => window.open(delivery.file_url, '_blank')}
+                                          className="flex items-center gap-2"
+                                        >
+                                          <Download className="w-3 h-3" />
+                                          Download
+                                        </Button>
                                       </div>
                                     )}
                                   </div>
-                                </div>
-                                {delivery.file_url && (
-                                  <div className="ml-4">
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      onClick={() => window.open(delivery.file_url, '_blank')}
-                                      className="flex items-center gap-2"
-                                    >
-                                      <Download className="w-3 h-3" />
-                                      Download
-                                    </Button>
-                                  </div>
-                                )}
-                              </div>
-                            </CardContent>
-                          </Card>
-                         ))}
-                       </div>
-                        ) : (
-                          <div className="text-center py-8 text-muted-foreground">
-                            <Package className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                            <p>No delivered items found for this client</p>
+                                </CardContent>
+                              </Card>
+                            ))}
                           </div>
                         )}
                       </div>
