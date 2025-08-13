@@ -563,6 +563,7 @@ export type Database = {
           approved_at: string | null
           client_id: string
           created_at: string
+          deliverable_instance: number | null
           delivered_at: string
           document_title: string
           document_type: string
@@ -572,6 +573,7 @@ export type Database = {
           id: string
           mime_type: string | null
           project_id: string | null
+          service_deliverable_id: string | null
           status: string
           updated_at: string
         }
@@ -579,6 +581,7 @@ export type Database = {
           approved_at?: string | null
           client_id: string
           created_at?: string
+          deliverable_instance?: number | null
           delivered_at?: string
           document_title: string
           document_type: string
@@ -588,6 +591,7 @@ export type Database = {
           id?: string
           mime_type?: string | null
           project_id?: string | null
+          service_deliverable_id?: string | null
           status?: string
           updated_at?: string
         }
@@ -595,6 +599,7 @@ export type Database = {
           approved_at?: string | null
           client_id?: string
           created_at?: string
+          deliverable_instance?: number | null
           delivered_at?: string
           document_title?: string
           document_type?: string
@@ -604,10 +609,19 @@ export type Database = {
           id?: string
           mime_type?: string | null
           project_id?: string | null
+          service_deliverable_id?: string | null
           status?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "deliveries_service_deliverable_id_fkey"
+            columns: ["service_deliverable_id"]
+            isOneToOne: false
+            referencedRelation: "service_deliverables"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       delivery_comments: {
         Row: {
@@ -1777,6 +1791,50 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: []
+      }
+      service_deliverables: {
+        Row: {
+          created_at: string | null
+          deliverable_category: string
+          deliverable_name: string
+          deliverable_order: number
+          description: string | null
+          id: string
+          quantity: number
+          service_type_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          deliverable_category: string
+          deliverable_name: string
+          deliverable_order?: number
+          description?: string | null
+          id?: string
+          quantity?: number
+          service_type_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          deliverable_category?: string
+          deliverable_name?: string
+          deliverable_order?: number
+          description?: string | null
+          id?: string
+          quantity?: number
+          service_type_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_deliverables_service_type_id_fkey"
+            columns: ["service_type_id"]
+            isOneToOne: false
+            referencedRelation: "service_types"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       service_email_templates: {
         Row: {
