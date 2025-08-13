@@ -9,7 +9,7 @@ import { AdminCommandCenter } from "@/components/AdminCommandCenter";
 import { NotificationCenter } from "@/components/NotificationCenter";
 import TrainingMaterialUpload from "@/components/TrainingMaterialUpload";
 import { AdminDeliveryManager } from "@/components/AdminDeliveryManager";
-import { AdminClientProgress } from "@/components/AdminClientProgress";
+
 import CalendlyAppointments from "@/components/CalendlyAppointments";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/components/AuthProvider";
@@ -237,7 +237,7 @@ const Index = () => {
   const sidebarItems = [
     { id: 'command', label: 'Command Center', icon: LayoutDashboard, color: 'text-rdr-navy' },
     { id: 'deliveries', label: 'Delivery Manager', icon: Package, color: 'text-emerald-600' },
-    { id: 'progress', label: 'Client Progress', icon: FileText, color: 'text-blue-500' },
+    
     { id: 'clients', label: 'Client Management', icon: Users, color: 'text-blue-600' },
     { id: 'digest', label: 'Daily Digest', icon: Calendar, color: 'text-green-600' },
     { id: 'training', label: 'Training Materials', icon: BookOpen, color: 'text-purple-600' },
@@ -383,7 +383,7 @@ const Index = () => {
             {activeTab === 'digest' && <DailyDigest />}
             {activeTab === 'command' && <AdminCommandCenter />}
             {activeTab === 'deliveries' && <AdminDeliveryManager />}
-            {activeTab === 'progress' && <AdminClientProgress />}
+            
             {activeTab === 'clients' && <ClientManager />}
             {activeTab === 'training' && <TrainingMaterialUpload />}
             {activeTab === 'reminders' && <ReminderManager />}
