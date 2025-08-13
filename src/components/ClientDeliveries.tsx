@@ -75,6 +75,8 @@ export function ClientDeliveries() {
     try {
       setLoading(true);
       
+      console.log('ClientDeliveries: Fetching data for user:', user?.id, user?.email);
+      
       // First, get the client data by user_id
       const { data: clientData, error: clientError } = await supabase
         .from('clients')
@@ -91,15 +93,17 @@ export function ClientDeliveries() {
         .single();
 
       if (clientError) {
-        console.error('Error fetching client:', clientError);
+        console.error('ClientDeliveries: Error fetching client:', clientError);
+        console.log('ClientDeliveries: Checked user_id:', user?.id);
         return;
       }
 
       if (!clientData) {
-        console.log('No client found for email:', user?.email);
+        console.log('ClientDeliveries: No client found for user_id:', user?.id, 'email:', user?.email);
         return;
       }
 
+      console.log('ClientDeliveries: Found client:', clientData);
       setClient(clientData);
 
       // Get service deliverables using raw query to avoid type issues
@@ -119,8 +123,9 @@ export function ClientDeliveries() {
         .order('created_at', { ascending: false });
 
       if (deliveriesError) {
-        console.error('Error fetching deliveries:', deliveriesError);
+        console.error('ClientDeliveries: Error fetching deliveries:', deliveriesError);
       } else {
+        console.log('ClientDeliveries: Found deliveries:', deliveriesData);
         setDeliveries((deliveriesData || []) as Delivery[]);
       }
 
