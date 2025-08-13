@@ -76,7 +76,11 @@ export const MessagingCenter: React.FC<MessagingCenterProps> = ({
           const adminProfile = profileMap.get(adminMessage.sender_id);
           if (adminProfile) {
             setOtherPartyName(`${adminProfile.first_name || ''} ${adminProfile.last_name || ''}`.trim());
+          } else {
+            setOtherPartyName('Admin');
           }
+        } else {
+          setOtherPartyName('Admin');
         }
       } else {
         // For admins, use the clientName prop
