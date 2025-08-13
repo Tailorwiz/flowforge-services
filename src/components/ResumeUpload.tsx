@@ -14,7 +14,8 @@ import {
   CheckCircle, 
   AlertCircle,
   Loader2,
-  Eye
+  Eye,
+  Plus
 } from 'lucide-react';
 
 interface ResumeUploadProps {
@@ -50,6 +51,7 @@ export default function ResumeUpload({ clientId, onUploadComplete, onClose }: Re
   const { user } = useAuth();
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
   const [isUploading, setIsUploading] = useState(false);
+  const [showCompleteDialog, setShowCompleteDialog] = useState(false);
   const abortControllers = useRef<Map<string, AbortController>>(new Map());
 
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
@@ -222,12 +224,45 @@ export default function ResumeUpload({ clientId, onUploadComplete, onClose }: Re
       return;
     }
 
-    toast({
-      title: "Upload Complete!",
-      description: `Successfully uploaded ${completedUploads.length} file(s).`,
-    });
+    setShowCompleteDialog(true);
+  };
 
-    onUploadComplete?.();
+  const handleUploadMore = () => {
+    setShowCompleteDialog(false);
+    // Show a success message for the current uploads
+    const completedUploads = uploadedFiles.filter(f => f.status === 'completed');
+    toast({
+      title: "Files Saved!",
+      description: `${completedUploads.length} file(s) have been uploaded. You can now add more files.`,
+    });
+  };
+
+  const handleFinishUploading = async () => {
+    const completedUploads = uploadedFiles.filter(f => f.status === 'completed');
+    
+    // Update the client's resume_uploaded status
+    try {
+      const { error } = await supabase
+        .from('clients')
+        .update({ resume_uploaded: true })
+        .eq('id', clientId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Upload Complete!",
+        description: `Successfully uploaded ${completedUploads.length} file(s). Your documents are now available to our team.`,
+      });
+
+      onUploadComplete?.();
+    } catch (error) {
+      console.error('Error updating client status:', error);
+      toast({
+        title: "Upload Complete!",
+        description: `Successfully uploaded ${completedUploads.length} file(s).`,
+      });
+      onUploadComplete?.();
+    }
   };
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -347,6 +382,35 @@ export default function ResumeUpload({ clientId, onUploadComplete, onClose }: Re
           </div>
         </CardContent>
       </Card>
+
+      {/* Completion Dialog */}
+      {showCompleteDialog && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <Card className="max-w-md w-full">
+            <CardHeader>
+              <CardTitle>Upload Complete!</CardTitle>
+              <p className="text-sm text-muted-foreground">
+                {uploadedFiles.filter(f => f.status === 'completed').length} file(s) have been uploaded successfully.
+              </p>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-sm">
+                Would you like to upload additional files, or are you finished uploading documents?
+              </p>
+              <div className="flex flex-col gap-2">
+                <Button onClick={handleUploadMore} variant="outline" className="w-full">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Upload More Files
+                </Button>
+                <Button onClick={handleFinishUploading} className="w-full">
+                  <CheckCircle className="w-4 h-4 mr-2" />
+                  I'm Done - Finish Upload
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }
