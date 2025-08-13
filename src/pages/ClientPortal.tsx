@@ -1971,17 +1971,19 @@ export default function ClientPortal() {
         </Tabs>
 
         {/* Your Deliveries Section */}
-        <Card className="mt-8 shadow-lg border-0">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Package className="w-5 h-5 text-primary" />
-              Your Deliveries
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ClientDeliveries />
-          </CardContent>
-        </Card>
+        <div className="mt-8 mb-8" id="deliveries-section">
+          <Card className="shadow-lg border">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-xl">
+                <Package className="w-5 h-5 text-primary" />
+                Your Deliveries
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ClientDeliveries />
+            </CardContent>
+          </Card>
+        </div>
 
         {/* Floating Help Button */}
         <div className="fixed bottom-6 right-6">
