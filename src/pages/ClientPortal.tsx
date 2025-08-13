@@ -393,6 +393,11 @@ export default function ClientPortal() {
         return;
       }
 
+      toast({
+        title: "Preparing Download",
+        description: `Preparing ${doc.name} for download...`,
+      });
+
       // Get signed URL for download
       const { data, error } = await supabase.storage
         .from(doc.bucket_name)
@@ -401,17 +406,29 @@ export default function ClientPortal() {
       if (error) throw error;
 
       if (data?.signedUrl) {
-        // Create a temporary link and trigger download
+        // Fetch the file as a blob to force download
+        const response = await fetch(data.signedUrl);
+        if (!response.ok) throw new Error('Failed to fetch file');
+        
+        const blob = await response.blob();
+        
+        // Create blob URL and trigger download
+        const blobUrl = URL.createObjectURL(blob);
         const link = document.createElement('a');
-        link.href = data.signedUrl;
+        link.href = blobUrl;
         link.download = doc.name;
+        link.style.display = 'none';
+        
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
+        
+        // Clean up blob URL
+        URL.revokeObjectURL(blobUrl);
 
         toast({
-          title: "Download Started",
-          description: `Downloading ${doc.name}...`,
+          title: "Download Complete",
+          description: `${doc.name} has been downloaded to your downloads folder.`,
         });
       }
     } catch (error) {
