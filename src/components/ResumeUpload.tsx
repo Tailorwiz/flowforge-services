@@ -381,7 +381,7 @@ export default function ResumeUpload({ clientId, onUploadComplete, onClose }: Re
           <div className="flex gap-4">
             <Button 
               onClick={handleComplete}
-              disabled={isUploading || uploadedFiles.filter(f => f.status === 'completed').length === 0}
+              disabled={isUploading || uploadedFiles.filter(f => f.status === 'completed').length === 0 || uploadedFiles.some(f => f.status === 'error')}
               className="flex-1"
             >
               {isUploading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
