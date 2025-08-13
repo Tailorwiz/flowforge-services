@@ -131,17 +131,26 @@ export default function ResumeUpload({ clientId, onUploadComplete, onClose }: Re
       const signedUrl = signed?.signedUrl || null;
 
       // Save to database using the document_uploads table
-      const { data: dbData, error: dbError } = await (supabase as any).rpc('create_document_upload', {
-        p_client_id: clientId,
-        p_intake_form_id: null,
-        p_file_name: file.name,
-        p_file_path: filePath,
-        p_file_size: file.size,
-        p_mime_type: file.type,
-        p_bucket_name: 'resumes',
-        p_upload_type: 'resume',
-        p_document_category: getDocumentCategory(file.type)
-      });
+      const { data: dbData, error: dbError } = await supabase
+        .from('document_uploads')
+        .insert({
+          client_id: clientId,
+          uploaded_by: user?.id,
+          intake_form_id: null,
+          file_name: file.name,
+          original_name: file.name,
+          file_path: filePath,
+          file_size: file.size,
+          mime_type: file.type,
+          bucket_name: 'resumes',
+          document_type: 'resume',
+          status: 'active',
+          metadata: {
+            upload_type: 'resume',
+            document_category: getDocumentCategory(file.type)
+          }
+        })
+        .select();
 
       if (dbError) throw dbError;
 
