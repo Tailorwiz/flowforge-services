@@ -1348,7 +1348,7 @@ export default function ClientPortal() {
             </TabsTrigger>
             <TabsTrigger value="documents" className="flex items-center gap-2">
               <FileText className="w-4 h-4" />
-              Documents
+              My Uploaded Documents
             </TabsTrigger>
             <TabsTrigger value="action-items" className="flex items-center gap-2">
               <ListTodo className="w-4 h-4" />
