@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/hooks/use-toast";
 import { Plus, Calendar, CheckCircle, Search, ArrowUpDown, ExternalLink, Trash2, Users, Archive, Mail, RefreshCw, Send, ChevronDown, ChevronUp, FileText, BarChart3, Timer, Download, Eye, XCircle, User, Package, Clock, AlertTriangle, History, BookOpen, MessageSquare, File, Phone, MapPin, CreditCard } from "lucide-react";
+import { format } from "date-fns";
 import { DocumentUploadParser } from "./DocumentUploadParser";
 import { DocumentUploadModal } from "./DocumentUploadModal";
 import { MessagingCenter } from '@/components/MessagingCenter';
@@ -63,6 +64,17 @@ interface ClientHistory {
   created_at: string;
 }
 
+interface ClientDelivery {
+  id: string;
+  document_title: string;
+  document_type: string;
+  status: string;
+  delivered_at: string;
+  approved_at?: string;
+  file_url?: string;
+  file_path?: string;
+}
+
 export function ClientManager() {
   const navigate = useNavigate();
   const [serviceTypes, setServiceTypes] = useState<ServiceType[]>([]);
@@ -76,6 +88,7 @@ export function ClientManager() {
   const [expandedClient, setExpandedClient] = useState<string | null>(null);
   const [viewingClient, setViewingClient] = useState<Client | null>(null);
   const [clientFiles, setClientFiles] = useState<ClientFile[]>([]);
+  const [clientDeliveries, setClientDeliveries] = useState<ClientDelivery[]>([]);
   const [clientProgress, setClientProgress] = useState<ClientProgress[]>([]);
   const [clientHistory, setClientHistory] = useState<ClientHistory[]>([]);
   const [loadingClientDetails, setLoadingClientDetails] = useState(false);
@@ -169,6 +182,22 @@ export function ClientManager() {
     }
   };
 
+  const fetchClientDeliveries = async (clientId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('deliveries')
+        .select('*')
+        .eq('client_id', clientId)
+        .order('delivered_at', { ascending: false });
+
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching client deliveries:', error);
+      return [];
+    }
+  };
+
   const fetchClientProgress = async (clientId: string) => {
     try {
       const { data, error } = await supabase
@@ -208,6 +237,9 @@ export function ClientManager() {
     setLoadingClientDetails(true);
     
     try {
+      const deliveries = await fetchClientDeliveries(client.id);
+      setClientDeliveries(deliveries);
+      
       await Promise.all([
         fetchClientFiles(client.id),
         fetchClientProgress(client.id),
@@ -1180,8 +1212,9 @@ export function ClientManager() {
               </DialogHeader>
 
               <Tabs defaultValue="overview" className="mt-6">
-                <TabsList className="grid w-full grid-cols-7">
+                <TabsList className="grid w-full grid-cols-8">
                   <TabsTrigger value="overview">Overview</TabsTrigger>
+                  <TabsTrigger value="deliverables">Deliverables</TabsTrigger>
                   <TabsTrigger value="files">Files</TabsTrigger>
                   <TabsTrigger value="progress">Progress</TabsTrigger>
                   <TabsTrigger value="activity">Activity</TabsTrigger>
@@ -1254,6 +1287,103 @@ export function ClientManager() {
                           </Card>
                         </div>
                       </>
+                    )}
+                  </TabsContent>
+
+                  {/* Deliverables Tab */}
+                  <TabsContent value="deliverables" className="space-y-4">
+                    {loadingClientDetails ? (
+                      <div className="flex items-center justify-center py-8">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                        <p className="ml-2">Loading deliverables...</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-6">
+                        {/* Expected Deliverables Overview */}
+                        <Card className="border border-rdr-navy/20 bg-rdr-navy/5">
+                          <CardHeader>
+                            <CardTitle className="text-rdr-navy flex items-center gap-2">
+                              <Package className="w-5 h-5" />
+                              Expected Deliverables Progress
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="text-sm text-muted-foreground mb-2">
+                              Service Type: {viewingClient.service_types?.name || 'Not assigned'}
+                            </div>
+                            {viewingClient.service_type_id && (
+                              <div className="text-xs text-muted-foreground">
+                                This shows the expected deliverables for this service package and their completion status.
+                              </div>
+                            )}
+                          </CardContent>
+                        </Card>
+
+                        {/* Actual Deliverables */}
+                        {clientDeliveries.length > 0 ? (
+                          <div className="space-y-4">
+                            <h3 className="text-lg font-semibold mb-4">Delivered Items</h3>
+                        {clientDeliveries.map((delivery) => (
+                          <Card key={delivery.id} className="border border-border shadow-sm">
+                            <CardContent className="p-4">
+                              <div className="flex justify-between items-start">
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <Package className="w-4 h-4 text-rdr-navy" />
+                                    <h4 className="font-semibold text-rdr-navy">{delivery.document_title}</h4>
+                                    <Badge 
+                                      variant={delivery.status === 'delivered' ? 'default' : 
+                                               delivery.status === 'approved' ? 'default' : 'secondary'}
+                                      className={
+                                        delivery.status === 'delivered' ? 'bg-blue-500 text-white' :
+                                        delivery.status === 'approved' ? 'bg-green-500 text-white' :
+                                        'bg-gray-500 text-white'
+                                      }
+                                    >
+                                      {delivery.status}
+                                    </Badge>
+                                  </div>
+                                  <p className="text-sm text-muted-foreground mb-2">
+                                    Type: {delivery.document_type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                                  </p>
+                                  <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                                    <div className="flex items-center gap-1">
+                                      <Calendar className="w-3 h-3" />
+                                      Delivered: {format(new Date(delivery.delivered_at), 'MMM d, yyyy')}
+                                    </div>
+                                    {delivery.approved_at && (
+                                      <div className="flex items-center gap-1">
+                                        <CheckCircle className="w-3 h-3 text-green-500" />
+                                        Approved: {format(new Date(delivery.approved_at), 'MMM d, yyyy')}
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                                {delivery.file_url && (
+                                  <div className="ml-4">
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => window.open(delivery.file_url, '_blank')}
+                                      className="flex items-center gap-2"
+                                    >
+                                      <Download className="w-3 h-3" />
+                                      Download
+                                    </Button>
+                                  </div>
+                                )}
+                              </div>
+                            </CardContent>
+                          </Card>
+                         ))}
+                       </div>
+                        ) : (
+                          <div className="text-center py-8 text-muted-foreground">
+                            <Package className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                            <p>No delivered items found for this client</p>
+                          </div>
+                        )}
+                      </div>
                     )}
                   </TabsContent>
 
