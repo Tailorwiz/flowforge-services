@@ -132,24 +132,34 @@ const ProgressTracker: React.FC<ProgressTrackerProps> = ({
   };
 
   const handleStepClick = async (stepId: number) => {
-    console.log('Progress Tracker: Step clicked:', stepId);
+    console.log('*** STEP CLICK DEBUG ***');
+    console.log('Step clicked:', stepId);
+    console.log('Current states - showIntakeForm:', showIntakeForm, 'showResumeUpload:', showResumeUpload);
     
-    switch (stepId) {
-      case 1:
-        console.log('Progress Tracker: Opening intake form');
-        openIntakeForm();
-        break;
-      case 2:
-        console.log('Progress Tracker: Opening resume upload');
-        openResumeUpload();
-        break;
-      case 3:
-        console.log('Progress Tracker: Opening session booking');
-        openSessionBooking();
-        break;
-      default:
-        console.log('Progress Tracker: No action available for step', stepId);
-    }
+    // Force close all modals first
+    setShowIntakeForm(false);
+    setShowResumeUpload(false);
+    setShowCalendlyBooking(false);
+    
+    // Wait a moment for state to update
+    setTimeout(() => {
+      switch (stepId) {
+        case 1:
+          console.log('*** EXECUTING CASE 1 - OPENING INTAKE FORM ***');
+          setShowIntakeForm(true);
+          break;
+        case 2:
+          console.log('*** EXECUTING CASE 2 - OPENING RESUME UPLOAD ***');
+          setShowResumeUpload(true);
+          break;
+        case 3:
+          console.log('*** EXECUTING CASE 3 - OPENING SESSION BOOKING ***');
+          setShowCalendlyBooking(true);
+          break;
+        default:
+          console.log('*** NO MATCHING CASE FOR STEP ***', stepId);
+      }
+    }, 100);
   };
 
   const markStepCompleted = async (stepNumber: number) => {
@@ -270,7 +280,12 @@ const ProgressTracker: React.FC<ProgressTrackerProps> = ({
   };
 
   const openResumeUpload = () => {
+    console.log('*** OPENING RESUME UPLOAD ***');
+    console.log('Current showIntakeForm state:', showIntakeForm);
+    console.log('Current showResumeUpload state:', showResumeUpload);
     setShowResumeUpload(true);
+    setShowIntakeForm(false); // Ensure intake form is closed
+    console.log('*** Resume upload should now be visible ***');
   };
 
   const handleResumeUploadComplete = () => {
@@ -473,7 +488,10 @@ const ProgressTracker: React.FC<ProgressTrackerProps> = ({
                   
                   {/* Intake Form Collapsible */}
                   {step.id === 1 && showIntakeForm && (
-                    <Collapsible open={showIntakeForm} onOpenChange={setShowIntakeForm}>
+                    <Collapsible open={showIntakeForm} onOpenChange={(open) => {
+                      console.log('*** INTAKE FORM COLLAPSIBLE CHANGE ***', open);
+                      setShowIntakeForm(open);
+                    }}>
                       <CollapsibleContent className="mt-4">
                         <div className="bg-slate-50 p-6 rounded-lg border border-slate-200">
                           <h4 className="text-lg font-semibold text-rdr-navy mb-4">Intake Questionnaire</h4>
