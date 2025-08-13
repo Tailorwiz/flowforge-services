@@ -1,44 +1,24 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "npm:resend@2.0.0";
 
+const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-serve(async (req) => {
-  // Handle CORS preflight requests
+const handler = async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    console.log("=== FUNCTION START ===");
-    
-    const body = await req.json();
-    console.log("Request body:", body);
-    
-    const { client_name, client_email } = body;
-    console.log("Extracted data:", { client_name, client_email });
+    const { client_name, client_email } = await req.json();
 
-    // Get API key
-    const apiKey = Deno.env.get("RESEND_API_KEY");
-    if (!apiKey) {
-      console.error("No RESEND_API_KEY found");
-      return new Response(
-        JSON.stringify({ success: false, error: "RESEND_API_KEY not configured" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-    console.log("API key found");
+    console.log("Sending login credentials email:", { client_name, client_email });
 
-    // Initialize Resend
-    const resend = new Resend(apiKey);
-    console.log("Resend initialized");
-
-    // Send email
-    console.log("Sending email...");
-    const result = await resend.emails.send({
+    const emailResponse = await resend.emails.send({
       from: "Login Credentials <onboarding@resend.dev>",
       to: [client_email],
       subject: "Your Login Credentials",
@@ -53,27 +33,26 @@ serve(async (req) => {
       `,
     });
 
-    console.log("Email result:", result);
+    console.log("Email sent successfully:", emailResponse);
 
-    if (result.error) {
-      console.error("Resend error:", result.error);
-      return new Response(
-        JSON.stringify({ success: false, error: result.error.message || "Email failed" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
+    return new Response(JSON.stringify({
+      success: true,
+      message: "Login credentials sent successfully"
+    }), {
+      status: 200,
+      headers: { "Content-Type": "application/json", ...corsHeaders },
+    });
 
-    console.log("SUCCESS!");
+  } catch (error: any) {
+    console.error("Error in send-login-credentials function:", error);
     return new Response(
-      JSON.stringify({ success: true, message: "Email sent successfully" }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
-
-  } catch (error) {
-    console.error("FUNCTION ERROR:", error);
-    return new Response(
-      JSON.stringify({ success: false, error: error.message }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      JSON.stringify({ error: error.message }),
+      {
+        status: 500,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      }
     );
   }
-});
+};
+
+serve(handler);
