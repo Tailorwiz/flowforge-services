@@ -112,6 +112,12 @@ export const MessagingCenter: React.FC<MessagingCenterProps> = ({
     try {
       setLoading(true);
       
+      console.log('=== DEBUGGING MESSAGE SEND ===');
+      console.log('clientId:', clientId);
+      console.log('currentUserId:', currentUserId);
+      console.log('userRole:', userRole);
+      console.log('message:', newMessage.trim());
+      
       const messageData = {
         client_id: clientId,
         sender_id: currentUserId,
@@ -120,14 +126,28 @@ export const MessagingCenter: React.FC<MessagingCenterProps> = ({
         message_type: 'text' as const,
       };
 
-      console.log('Sending message:', messageData);
+      console.log('Message data to insert:', messageData);
       
-      const { error } = await supabase
+      // Validate required fields
+      if (!clientId) {
+        throw new Error('Client ID is missing');
+      }
+      if (!currentUserId) {
+        throw new Error('Current user ID is missing');
+      }
+      if (!userRole) {
+        throw new Error('User role is missing');
+      }
+      
+      const { data, error } = await supabase
         .from('messages')
-        .insert(messageData);
+        .insert(messageData)
+        .select('*');
+
+      console.log('Insert result:', { data, error });
 
       if (error) {
-        console.error('Error sending message:', error);
+        console.error('Supabase error details:', error);
         throw error;
       }
 
@@ -142,7 +162,7 @@ export const MessagingCenter: React.FC<MessagingCenterProps> = ({
       console.error('Error sending message:', error);
       toast({
         title: "Error",
-        description: "Failed to send message. Please try again.",
+        description: `Failed to send message: ${error.message}`,
         variant: "destructive",
       });
     } finally {
