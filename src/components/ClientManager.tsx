@@ -7,10 +7,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/hooks/use-toast";
-import { Plus, Calendar, CheckCircle, Search, ArrowUpDown, ExternalLink, Trash2, Users, Archive, Mail, RefreshCw, Send, ChevronDown, ChevronUp, FileText, BarChart3, Timer, Download, Eye, XCircle } from "lucide-react";
+import { Plus, Calendar, CheckCircle, Search, ArrowUpDown, ExternalLink, Trash2, Users, Archive, Mail, RefreshCw, Send, ChevronDown, ChevronUp, FileText, BarChart3, Timer, Download, Eye, XCircle, User, Package, Clock, AlertTriangle, History, BookOpen, MessageSquare, File, Phone, MapPin, CreditCard } from "lucide-react";
 import { DocumentUploadParser } from "./DocumentUploadParser";
 import { DocumentUploadModal } from "./DocumentUploadModal";
+import { MessagingCenter } from '@/components/MessagingCenter';
 
 interface ServiceType {
   id: string;
@@ -70,10 +73,13 @@ export function ClientManager() {
   const [selectedClients, setSelectedClients] = useState<Set<string>>(new Set());
   const [bulkActionLoading, setBulkActionLoading] = useState(false);
   const [expandedClient, setExpandedClient] = useState<string | null>(null);
+  const [viewingClient, setViewingClient] = useState<Client | null>(null);
   const [clientFiles, setClientFiles] = useState<ClientFile[]>([]);
   const [clientProgress, setClientProgress] = useState<ClientProgress[]>([]);
   const [clientHistory, setClientHistory] = useState<ClientHistory[]>([]);
   const [loadingClientDetails, setLoadingClientDetails] = useState(false);
+  const [clientTrainingMaterials, setClientTrainingMaterials] = useState<any[]>([]);
+  const [currentUser, setCurrentUser] = useState<any>(null);
   const [newClient, setNewClient] = useState({
     name: "",
     email: "",
@@ -83,9 +89,19 @@ export function ClientManager() {
   });
 
   useEffect(() => {
+    fetchCurrentUser();
     fetchServiceTypes();
     fetchClients();
   }, []);
+
+  const fetchCurrentUser = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      setCurrentUser(user);
+    } catch (error) {
+      console.error('Error fetching current user:', error);
+    }
+  };
 
   const fetchServiceTypes = async () => {
     const { data, error } = await supabase
@@ -185,23 +201,51 @@ export function ClientManager() {
     }
   };
 
-  const toggleClientExpansion = async (clientId: string) => {
-    if (expandedClient === clientId) {
-      setExpandedClient(null);
-      setClientFiles([]);
-      setClientProgress([]);
-      setClientHistory([]);
-    } else {
-      setLoadingClientDetails(true);
-      setExpandedClient(clientId);
-      
-      // Fetch all client details in parallel
+
+  const handleViewClient = async (client: Client) => {
+    setViewingClient(client);
+    setLoadingClientDetails(true);
+    
+    try {
       await Promise.all([
-        fetchClientFiles(clientId),
-        fetchClientProgress(clientId),
-        fetchClientHistory(clientId)
+        fetchClientFiles(client.id),
+        fetchClientProgress(client.id),
+        fetchClientHistory(client.id),
+        (async () => {
+          // Fetch training materials allowed for this client (by service type + manual access)
+          const serviceTypeId = client.service_types?.id || client.service_type_id;
+          const [serviceMap, manualAccess] = await Promise.all([
+            supabase.from('service_training_materials').select('training_material_id').eq('service_type_id', serviceTypeId),
+            supabase.from('client_training_access').select('training_material_id').eq('client_id', client.id),
+          ]);
+
+          const serviceIds = (serviceMap.data || []).map((r: any) => r.training_material_id);
+          const manualIds = (manualAccess.data || []).map((r: any) => r.training_material_id);
+          const materialIds = Array.from(new Set([...serviceIds, ...manualIds])).filter(Boolean);
+
+          if (materialIds.length === 0) {
+            setClientTrainingMaterials([]);
+            return;
+          }
+
+          const { data: materials } = await supabase
+            .from('training_materials')
+            .select('*')
+            .in('id', materialIds)
+            .eq('is_active', true)
+            .order('created_at', { ascending: false });
+
+          setClientTrainingMaterials(materials || []);
+        })()
       ]);
-      
+    } catch (error) {
+      console.error("Error loading client data:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load client information",
+        variant: "destructive"
+      });
+    } finally {
       setLoadingClientDetails(false);
     }
   };
@@ -969,7 +1013,7 @@ export function ClientManager() {
                   <div className="flex-1">
                     <div 
                       className="cursor-pointer"
-                      onClick={() => toggleClientExpansion(client.id)}
+                      onClick={() => handleViewClient(client)}
                     >
                       <div className="flex justify-between items-start mb-4">
                         <div>
@@ -1111,128 +1155,6 @@ export function ClientManager() {
                         )}
                       </div>
                     </div>
-                    
-                    {/* Expanded Client Details */}
-                    {expandedClient === client.id && (
-                      <div className="mt-6 border-t pt-6">
-                        {loadingClientDetails ? (
-                          <div className="flex items-center justify-center py-8">
-                            <RefreshCw className="w-6 h-6 animate-spin mr-2" />
-                            Loading client details...
-                          </div>
-                        ) : (
-                          <div className="space-y-6">
-                            {/* Files Section */}
-                            <div>
-                              <div className="flex items-center gap-2 mb-4">
-                                <FileText className="w-5 h-5 text-rdr-navy" />
-                                <h4 className="font-semibold text-rdr-navy">Files ({clientFiles.length})</h4>
-                              </div>
-                              {clientFiles.length > 0 ? (
-                                <div className="grid gap-2">
-                                  {clientFiles.map((file) => (
-                                    <div key={file.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                                      <div className="flex items-center gap-3">
-                                        <FileText className="w-4 h-4 text-gray-500" />
-                                        <div>
-                                          <p className="text-sm font-medium">{file.name}</p>
-                                          <p className="text-xs text-gray-500">
-                                            Uploaded {new Date(file.uploaded_at).toLocaleDateString()}
-                                          </p>
-                                        </div>
-                                      </div>
-                                      {file.url && (
-                                        <Button 
-                                          variant="outline" 
-                                          size="sm"
-                                          onClick={() => window.open(file.url, '_blank')}
-                                          className="flex items-center gap-1"
-                                        >
-                                          <Eye className="w-3 h-3" />
-                                          View
-                                        </Button>
-                                      )}
-                                    </div>
-                                  ))}
-                                </div>
-                              ) : (
-                                <p className="text-sm text-gray-500">No files uploaded yet</p>
-                              )}
-                            </div>
-
-                            {/* Project Progress Section */}
-                            <div>
-                              <div className="flex items-center gap-2 mb-4">
-                                <BarChart3 className="w-5 h-5 text-rdr-navy" />
-                                <h4 className="font-semibold text-rdr-navy">Project Progress</h4>
-                              </div>
-                              {clientProgress.length > 0 ? (
-                                <div className="space-y-3">
-                                  {clientProgress.map((step) => (
-                                    <div key={step.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                                      <div className="flex items-center gap-2">
-                                        {step.status === 'completed' ? (
-                                          <CheckCircle className="w-5 h-5 text-green-500" />
-                                        ) : step.status === 'in_progress' ? (
-                                          <Timer className="w-5 h-5 text-blue-500" />
-                                        ) : (
-                                          <XCircle className="w-5 h-5 text-gray-400" />
-                                        )}
-                                      </div>
-                                      <div className="flex-1">
-                                        <div className="flex items-center justify-between">
-                                          <span className="font-medium">{step.step_name}</span>
-                                          <Badge variant={
-                                            step.status === 'completed' ? 'default' : 
-                                            step.status === 'in_progress' ? 'secondary' : 'outline'
-                                          }>
-                                            {step.status}
-                                          </Badge>
-                                        </div>
-                                        {step.completed_at && (
-                                          <p className="text-xs text-gray-500 mt-1">
-                                            Completed {new Date(step.completed_at).toLocaleDateString()}
-                                          </p>
-                                        )}
-                                      </div>
-                                    </div>
-                                  ))}
-                                </div>
-                              ) : (
-                                <p className="text-sm text-gray-500">No progress steps tracked yet</p>
-                              )}
-                            </div>
-
-                            {/* Status Tracker Section */}
-                            <div>
-                              <div className="flex items-center gap-2 mb-4">
-                                <Timer className="w-5 h-5 text-rdr-navy" />
-                                <h4 className="font-semibold text-rdr-navy">Recent Activity</h4>
-                              </div>
-                              {clientHistory.length > 0 ? (
-                                <div className="space-y-3">
-                                  {clientHistory.map((activity) => (
-                                    <div key={activity.id} className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
-                                      <div className="mt-1">
-                                        <CheckCircle className="w-4 h-4 text-blue-500" />
-                                      </div>
-                                      <div className="flex-1">
-                                        <p className="text-sm font-medium">{activity.description}</p>
-                                        <p className="text-xs text-gray-500">
-                                          {new Date(activity.created_at).toLocaleDateString()} at {new Date(activity.created_at).toLocaleTimeString()}
-                                        </p>
-                                      </div>
-                                    </div>
-                                  ))}
-                                </div>
-                              ) : (
-                                <p className="text-sm text-gray-500">No recent activity</p>
-                              )}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    )}
                   </div>
                 </div>
               </CardContent>
@@ -1240,6 +1162,296 @@ export function ClientManager() {
           );
         })}
       </div>
+
+      {/* Client Details Modal Dialog */}
+      <Dialog open={viewingClient !== null} onOpenChange={() => setViewingClient(null)}>
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+          {viewingClient && (
+            <div>
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-3">
+                  <User className="w-6 h-6" />
+                  {viewingClient.name}
+                  <Badge variant={viewingClient.status === 'active' ? 'default' : 'secondary'}>
+                    {viewingClient.status}
+                  </Badge>
+                </DialogTitle>
+              </DialogHeader>
+
+              <Tabs defaultValue="overview" className="mt-6">
+                <TabsList className="grid w-full grid-cols-6">
+                  <TabsTrigger value="overview">Overview</TabsTrigger>
+                  <TabsTrigger value="files">Files</TabsTrigger>
+                  <TabsTrigger value="progress">Progress</TabsTrigger>
+                  <TabsTrigger value="activity">Activity</TabsTrigger>
+                  <TabsTrigger value="training">Training</TabsTrigger>
+                  <TabsTrigger value="messages">Messages</TabsTrigger>
+                </TabsList>
+
+                <div className="mt-6">
+                  {/* Overview Tab */}
+                  <TabsContent value="overview" className="space-y-6">
+                    {loadingClientDetails ? (
+                      <div className="flex items-center justify-center py-8">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                        <p className="ml-2">Loading overview...</p>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <Card>
+                            <CardHeader>
+                              <CardTitle className="flex items-center gap-2">
+                                <User className="w-5 h-5" />
+                                Contact Information
+                              </CardTitle>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                              <div className="flex items-center gap-2">
+                                <Mail className="w-4 h-4 text-muted-foreground" />
+                                <span>{viewingClient.email}</span>
+                              </div>
+                              {viewingClient.phone && (
+                                <div className="flex items-center gap-2">
+                                  <Phone className="w-4 h-4 text-muted-foreground" />
+                                  <span>{viewingClient.phone}</span>
+                                </div>
+                              )}
+                              <div className="flex items-center gap-2">
+                                <CreditCard className="w-4 h-4 text-muted-foreground" />
+                                <Badge variant={viewingClient.payment_status === 'paid' ? 'default' : 'secondary'}>
+                                  {viewingClient.payment_status}
+                                </Badge>
+                              </div>
+                            </CardContent>
+                          </Card>
+
+                          <Card>
+                            <CardHeader>
+                              <CardTitle className="flex items-center gap-2">
+                                <Package className="w-5 h-5" />
+                                Service Information
+                              </CardTitle>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                              <div>
+                                <Label className="text-sm font-medium">Service Type</Label>
+                                <p className="text-lg font-semibold mt-1">{viewingClient.service_types.name}</p>
+                              </div>
+                              <div>
+                                <Label className="text-sm font-medium">Timeline</Label>
+                                <p className="mt-1">{viewingClient.service_types.default_timeline_days} days</p>
+                              </div>
+                              {viewingClient.estimated_delivery_date && (
+                                <div>
+                                  <Label className="text-sm font-medium">Estimated Delivery</Label>
+                                  <p className="mt-1">{new Date(viewingClient.estimated_delivery_date).toLocaleDateString()}</p>
+                                </div>
+                              )}
+                            </CardContent>
+                          </Card>
+                        </div>
+                      </>
+                    )}
+                  </TabsContent>
+
+                  {/* Files Tab */}
+                  <TabsContent value="files" className="space-y-4">
+                    {loadingClientDetails ? (
+                      <div className="flex items-center justify-center py-8">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                        <p className="ml-2">Loading files...</p>
+                      </div>
+                    ) : clientFiles.length > 0 ? (
+                      <div className="space-y-4">
+                        {clientFiles.map((file) => (
+                          <Card key={file.id}>
+                            <CardContent className="p-4">
+                              <div className="flex items-start justify-between">
+                                <div className="flex items-start gap-3 flex-1">
+                                  <File className="w-5 h-5 text-primary mt-1 flex-shrink-0" />
+                                  <div className="space-y-2 flex-1">
+                                    <h4 className="font-medium">{file.name}</h4>
+                                    <div className="text-sm text-muted-foreground">
+                                      <p>Uploaded: {new Date(file.uploaded_at).toLocaleString()}</p>
+                                    </div>
+                                  </div>
+                                </div>
+                                {file.url && (
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => window.open(file.url, '_blank')}
+                                  >
+                                    <Eye className="w-4 h-4 mr-2" />
+                                    View
+                                  </Button>
+                                )}
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-8">
+                        <FileText className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                        <p className="text-muted-foreground">No files uploaded yet</p>
+                        <p className="text-sm text-muted-foreground">Files will appear here once the client uploads them</p>
+                      </div>
+                    )}
+                  </TabsContent>
+
+                  {/* Progress Tab */}
+                  <TabsContent value="progress" className="space-y-4">
+                    {loadingClientDetails ? (
+                      <div className="flex items-center justify-center py-8">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                        <p className="ml-2">Loading progress...</p>
+                      </div>
+                    ) : clientProgress.length > 0 ? (
+                      <div className="space-y-3">
+                        {clientProgress.map((step) => (
+                          <Card key={step.id}>
+                            <CardContent className="p-4">
+                              <div className="flex items-center gap-3">
+                                <div className="flex items-center gap-2">
+                                  {step.status === 'completed' ? (
+                                    <CheckCircle className="w-5 h-5 text-green-500" />
+                                  ) : step.status === 'in_progress' ? (
+                                    <Timer className="w-5 h-5 text-blue-500" />
+                                  ) : (
+                                    <XCircle className="w-5 h-5 text-gray-400" />
+                                  )}
+                                </div>
+                                <div className="flex-1">
+                                  <div className="flex items-center justify-between">
+                                    <span className="font-medium">{step.step_name}</span>
+                                    <Badge variant={
+                                      step.status === 'completed' ? 'default' : 
+                                      step.status === 'in_progress' ? 'secondary' : 'outline'
+                                    }>
+                                      {step.status}
+                                    </Badge>
+                                  </div>
+                                  {step.completed_at && (
+                                    <p className="text-xs text-gray-500 mt-1">
+                                      Completed {new Date(step.completed_at).toLocaleDateString()}
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-8">
+                        <BarChart3 className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                        <p className="text-muted-foreground">No progress steps tracked yet</p>
+                      </div>
+                    )}
+                  </TabsContent>
+
+                  {/* Activity Tab */}
+                  <TabsContent value="activity" className="space-y-4">
+                    {loadingClientDetails ? (
+                      <div className="flex items-center justify-center py-8">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                        <p className="ml-2">Loading activity history...</p>
+                      </div>
+                    ) : clientHistory.length > 0 ? (
+                      <div className="space-y-3">
+                        {clientHistory.map((activity) => (
+                          <Card key={activity.id}>
+                            <CardContent className="p-4">
+                              <div className="flex items-start gap-3">
+                                <History className="w-4 h-4 mt-1" />
+                                <div className="flex-1">
+                                  <div className="flex items-center justify-between">
+                                    <h4 className="font-medium capitalize">{activity.action_type.replace('_', ' ')}</h4>
+                                    <span className="text-sm text-muted-foreground">
+                                      {new Date(activity.created_at).toLocaleString()}
+                                    </span>
+                                  </div>
+                                  <p className="text-sm text-muted-foreground mt-1">{activity.description}</p>
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-8">
+                        <History className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                        <p className="text-muted-foreground">No activity history yet</p>
+                      </div>
+                    )}
+                  </TabsContent>
+
+                  {/* Training Tab */}
+                  <TabsContent value="training" className="space-y-4">
+                    {loadingClientDetails ? (
+                      <div className="flex items-center justify-center py-8">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                        <p className="ml-2">Loading training...</p>
+                      </div>
+                    ) : clientTrainingMaterials.length > 0 ? (
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {clientTrainingMaterials.map((material: any) => (
+                          <Card key={material.id} className="group hover:shadow-md transition-shadow">
+                            <CardContent className="p-4">
+                              <div className="flex flex-col gap-3">
+                                <div className="w-full aspect-[16/9] bg-muted rounded-md flex items-center justify-center overflow-hidden">
+                                  {material.thumbnail_url ? (
+                                    <img src={material.thumbnail_url} alt={`${material.name} training thumbnail`} className="w-full h-full object-cover" />
+                                  ) : (
+                                    <BookOpen className="w-8 h-8 text-muted-foreground" />
+                                  )}
+                                </div>
+                                <div>
+                                  <h4 className="font-medium">{material.name}</h4>
+                                  {material.description && (
+                                    <p className="text-sm text-muted-foreground line-clamp-2 mt-1">{material.description}</p>
+                                  )}
+                                </div>
+                                {material.content_url && (
+                                  <Button asChild size="sm" className="self-start">
+                                    <a href={material.content_url} target="_blank" rel="noopener noreferrer">
+                                      <BookOpen className="w-4 h-4 mr-2" />
+                                      Open Material
+                                    </a>
+                                  </Button>
+                                )}
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-8 text-muted-foreground">
+                        <BookOpen className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                        <p>No training materials assigned for this client</p>
+                      </div>
+                    )}
+                  </TabsContent>
+
+                  {/* Messages Tab */}
+                  <TabsContent value="messages">
+                    {currentUser && (
+                      <MessagingCenter
+                        clientId={viewingClient.id}
+                        clientName={viewingClient.name}
+                        userRole="admin"
+                        currentUserId={currentUser.id}
+                      />
+                    )}
+                  </TabsContent>
+                </div>
+              </Tabs>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
