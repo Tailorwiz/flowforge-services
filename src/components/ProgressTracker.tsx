@@ -181,7 +181,7 @@ const ProgressTracker: React.FC<ProgressTrackerProps> = ({
 
   const openIntakeForm = () => {
     console.log('Opening intake form...');
-    setShowIntakeForm(!showIntakeForm);
+    setShowIntakeForm(true);
   };
 
   const handleInputChange = (field: string, value: string) => {
@@ -395,7 +395,7 @@ const ProgressTracker: React.FC<ProgressTrackerProps> = ({
         {/* Steps */}
         <div className="space-y-6">
           {steps.map((step) => {
-            const isClickable = step.action && (step.status === 'current' || (step.status === 'upcoming' && step.id <= currentStep));
+            const isClickable = step.action && step.status === 'current';
             console.log(`Progress Tracker: Step ${step.id} - Status: ${step.status}, Current Step: ${currentStep}, Clickable: ${isClickable}`);
             
             return (
