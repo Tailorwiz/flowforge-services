@@ -85,6 +85,8 @@ const ProgressTracker: React.FC<ProgressTrackerProps> = ({
     try {
       setLoading(true);
       
+      console.log('ProgressTracker: Fetching client data for user:', user?.id);
+      
       // Find client by user ID or use provided clientId
       let query = supabase.from('clients').select('id, status, intake_form_submitted, resume_uploaded, session_booked');
       
@@ -96,10 +98,23 @@ const ProgressTracker: React.FC<ProgressTrackerProps> = ({
       
       const { data, error } = await query.maybeSingle();
 
-      if (error) throw error;
+      if (error) {
+        console.error('ProgressTracker: Error fetching client data:', error);
+        throw error;
+      }
+
+      console.log('ProgressTracker: Client data found:', data);
 
       if (data) {
         setClientData(data);
+        
+        // Also fetch progress from client_progress table
+        const { data: progressData, error: progressError } = await supabase
+          .from('client_progress')
+          .select('*')
+          .eq('client_id', data.id);
+          
+        console.log('ProgressTracker: Progress data:', progressData);
         
         // Sync local progress with database
         const dbProgress: Record<number, boolean> = {
@@ -110,17 +125,44 @@ const ProgressTracker: React.FC<ProgressTrackerProps> = ({
           5: false  // Review complete - set manually by admin
         };
         
+        // Update based on client_progress table if available
+        if (progressData && progressData.length > 0) {
+          progressData.forEach((progress: any) => {
+            if (progress.status === 'completed') {
+              dbProgress[progress.step_number] = true;
+            }
+          });
+        }
+        
+        // Check if there are any deliveries to set step 5 as complete
+        const { data: deliveriesData } = await supabase
+          .from('deliveries')
+          .select('id, status')
+          .eq('client_id', data.id);
+          
+        if (deliveriesData && deliveriesData.length > 0) {
+          dbProgress[4] = true; // In progress
+          const allApproved = deliveriesData.every((d: any) => d.status === 'approved');
+          if (allApproved) {
+            dbProgress[5] = true; // Review complete
+          }
+        }
+        
         // Merge with local progress (prioritize database for steps 1-3)
         const mergedProgress = { ...localProgress };
         mergedProgress[1] = dbProgress[1] || localProgress[1] || false;
         mergedProgress[2] = dbProgress[2] || localProgress[2] || false;
         mergedProgress[3] = dbProgress[3] || localProgress[3] || false;
+        mergedProgress[4] = dbProgress[4] || localProgress[4] || false;
+        mergedProgress[5] = dbProgress[5] || localProgress[5] || false;
         
         saveLocalProgress(mergedProgress);
         
         // Calculate current step
         const completedSteps = Object.values(mergedProgress).filter(Boolean).length;
         setCurrentStep(Math.min(completedSteps + 1, 5));
+        
+        console.log('ProgressTracker: Final progress state:', mergedProgress, 'Current step:', completedSteps + 1);
       }
     } catch (error) {
       console.error('Error fetching client data:', error);

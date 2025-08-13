@@ -326,15 +326,93 @@ export function ClientDeliveries() {
       <div className="space-y-4">
         <h2 className="text-xl font-bold">Your Package Deliverables</h2>
         
-        {serviceDeliverables.length === 0 ? (
+        {/* Show actual deliveries if they exist, otherwise show service deliverables */}
+        {deliveries.length > 0 ? (
+          <div className="grid gap-3">
+            <h3 className="text-lg font-semibold">Your Delivered Documents</h3>
+            {deliveries.map((delivery) => (
+              <Card key={delivery.id} className="border-l-4 border-l-primary">
+                <CardContent className="p-4">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Badge 
+                          variant="secondary" 
+                          className={`${getStatusColor(delivery.status)} text-white`}
+                        >
+                          <span className="flex items-center gap-1">
+                            {getStatusIcon(delivery.status)}
+                            {delivery.status.replace('_', ' ').toUpperCase()}
+                          </span>
+                        </Badge>
+                        <span className="text-sm text-muted-foreground">
+                          {delivery.document_type.replace('_', ' ').toUpperCase()}
+                        </span>
+                      </div>
+                      
+                      <h4 className="font-semibold text-lg mb-1">{delivery.document_title}</h4>
+                      
+                      <div className="text-sm text-muted-foreground space-y-1">
+                        <p>Delivered: {format(new Date(delivery.delivered_at), 'MMM dd, yyyy \'at\' h:mm a')}</p>
+                        <p>File Size: {formatFileSize(delivery.file_size)}</p>
+                        {delivery.approved_at && (
+                          <p className="text-green-600 font-medium">
+                            Approved: {format(new Date(delivery.approved_at), 'MMM dd, yyyy \'at\' h:mm a')}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    
+                    <div className="flex flex-col gap-2 ml-4">
+                      <Button
+                        onClick={() => handleDownload(delivery.file_url, delivery.document_title)}
+                        size="sm"
+                        variant="outline"
+                        className="whitespace-nowrap"
+                      >
+                        <Download className="h-4 w-4 mr-1" />
+                        Download
+                      </Button>
+                      
+                      {delivery.status === 'delivered' && (
+                        <>
+                          <Button
+                            onClick={() => handleApproveDelivery(delivery)}
+                            size="sm"
+                            variant="default"
+                            className="whitespace-nowrap"
+                          >
+                            <CheckCircle className="h-4 w-4 mr-1" />
+                            Approve
+                          </Button>
+                          
+                          <Button
+                            onClick={() => handleRequestRevision(delivery)}
+                            size="sm"
+                            variant="outline"
+                            className="whitespace-nowrap"
+                          >
+                            <AlertCircle className="h-4 w-4 mr-1" />
+                            Request Changes
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : serviceDeliverables.length === 0 ? (
           <Card>
             <CardContent className="text-center py-6">
               <FileText className="mx-auto h-8 w-8 text-muted-foreground mb-2" />
-              <p className="text-sm text-muted-foreground">No service package found for your account.</p>
+              <p className="text-sm text-muted-foreground">No deliveries available yet.</p>
             </CardContent>
           </Card>
         ) : (
           <div className="grid gap-3">
+            <h3 className="text-lg font-semibold">Expected Package Deliverables</h3>
             {serviceDeliverables.map((deliverable) => {
               // Find matching actual deliveries for this deliverable
               const matchingDeliveries = deliveries.filter(d => 
