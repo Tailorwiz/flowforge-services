@@ -84,7 +84,8 @@ export function AdminDeliveryManager() {
       await Promise.all([
         fetchDeliveries(),
         fetchRevisionRequests(),
-        fetchClients()
+        fetchClients(),
+        fetchClientOverview()
       ]);
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -104,6 +105,17 @@ export function AdminDeliveryManager() {
 
     if (error) throw error;
     setDeliveries(data || []);
+  };
+
+  const fetchClientOverview = async () => {
+    try {
+      const { data, error } = await supabase.rpc('get_admin_client_overview');
+      if (error) throw error;
+      console.log('Admin client overview:', data);
+      // This data will show the deliverables structure for all clients
+    } catch (error) {
+      console.error('Error fetching client overview:', error);
+    }
   };
 
   const fetchRevisionRequests = async () => {

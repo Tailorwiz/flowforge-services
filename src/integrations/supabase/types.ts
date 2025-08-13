@@ -2177,6 +2177,36 @@ export type Database = {
         Args: { lesson_title: string; lesson_content: string }
         Returns: string
       }
+      get_admin_client_overview: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          client_id: string
+          client_name: string
+          client_email: string
+          service_type_id: string
+          deliverable_name: string
+          deliverable_category: string
+          deliverable_description: string
+          expected_quantity: number
+          delivery_id: string
+          document_title: string
+          document_type: string
+          file_url: string
+          delivery_status: string
+          delivered_at: string
+          approved_at: string
+        }[]
+      }
+      get_client_deliverable_progress: {
+        Args: { client_id_param: string }
+        Returns: {
+          deliverable_name: string
+          deliverable_category: string
+          expected_quantity: number
+          delivered_quantity: number
+          completion_percentage: number
+        }[]
+      }
       has_role: {
         Args: {
           _user_id: string
