@@ -74,7 +74,7 @@ export function ClientDeliveries() {
     try {
       setLoading(true);
       
-      // First, get the client data
+      // First, get the client data by user_id
       const { data: clientData, error: clientError } = await supabase
         .from('clients')
         .select(`
@@ -86,7 +86,7 @@ export function ClientDeliveries() {
           rush_deadline,
           service_type_id
         `)
-        .eq('email', user?.email)
+        .eq('user_id', user?.id)
         .single();
 
       if (clientError) {
