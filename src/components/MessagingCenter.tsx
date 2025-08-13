@@ -68,20 +68,9 @@ export const MessagingCenter: React.FC<MessagingCenterProps> = ({
       // Create a map of sender profiles
       const profileMap = new Map(profiles?.map(p => [p.id, p]) || []);
 
-      // Determine other party's name for header
+      // For clients, set admin name in header
       if (userRole === 'client') {
-        // For clients, find admin's name
-        const adminMessage = messagesData?.find(msg => msg.sender_type === 'admin');
-        if (adminMessage) {
-          const adminProfile = profileMap.get(adminMessage.sender_id);
-          if (adminProfile) {
-            setOtherPartyName(`${adminProfile.first_name || ''} ${adminProfile.last_name || ''}`.trim());
-          } else {
-            setOtherPartyName('Admin');
-          }
-        } else {
-          setOtherPartyName('Admin');
-        }
+        setOtherPartyName('Marcus Hall');
       } else {
         // For admins, use the clientName prop
         setOtherPartyName(clientName || 'Client');
