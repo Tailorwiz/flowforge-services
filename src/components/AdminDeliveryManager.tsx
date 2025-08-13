@@ -95,6 +95,7 @@ export function AdminDeliveryManager() {
   };
 
   const fetchDeliveries = async () => {
+    console.log('Fetching deliveries...');
     const { data, error } = await supabase
       .from('deliveries')
       .select(`
@@ -103,7 +104,11 @@ export function AdminDeliveryManager() {
       `)
       .order('delivered_at', { ascending: false });
 
-    if (error) throw error;
+    if (error) {
+      console.error('Error fetching deliveries:', error);
+      throw error;
+    }
+    console.log('Fetched deliveries:', data);
     setDeliveries(data || []);
   };
 
@@ -175,38 +180,55 @@ export function AdminDeliveryManager() {
 
     try {
       setLoading(true);
+      console.log('Starting delivery creation process...');
       
       // Upload file
+      console.log('Uploading file:', newDelivery.file.name);
       const fileUrl = await uploadFile(newDelivery.file);
+      console.log('File uploaded successfully:', fileUrl);
 
       // Create delivery
+      const deliveryPayload = {
+        client_id: newDelivery.client_id,
+        document_type: newDelivery.document_type || 'document',
+        document_title: newDelivery.document_title,
+        file_path: `deliveries/${Date.now()}.${newDelivery.file.name.split('.').pop()}`,
+        file_url: fileUrl,
+        file_size: newDelivery.file.size,
+        mime_type: newDelivery.file.type,
+        status: 'delivered',
+        delivered_at: new Date().toISOString()
+      };
+
+      console.log('Creating delivery with payload:', deliveryPayload);
+
       const { data: deliveryData, error } = await supabase
         .from('deliveries')
-        .insert({
-          client_id: newDelivery.client_id,
-          document_type: newDelivery.document_type || 'document',
-          document_title: newDelivery.document_title,
-          file_path: `deliveries/${Date.now()}.${newDelivery.file.name.split('.').pop()}`,
-          file_url: fileUrl,
-          file_size: newDelivery.file.size,
-          mime_type: newDelivery.file.type,
-          status: 'delivered',
-          delivered_at: new Date().toISOString()
-        })
+        .insert(deliveryPayload)
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Database error creating delivery:', error);
+        throw error;
+      }
+
+      console.log('Delivery created successfully:', deliveryData);
 
       // Send notification
       try {
+        console.log('Sending notification...');
+        const notificationPayload = {
+          delivery_id: deliveryData.id,
+          client_id: newDelivery.client_id,
+          document_title: newDelivery.document_title,
+          notification_type: 'delivery_ready'
+        };
+
+        console.log('Notification payload:', notificationPayload);
+
         const { error: notificationError } = await supabase.functions.invoke('send-delivery-notification', {
-          body: {
-            delivery_id: deliveryData.id,
-            client_id: newDelivery.client_id,
-            document_title: newDelivery.document_title,
-            notification_type: 'delivery_ready'
-          }
+          body: notificationPayload
         });
 
         if (notificationError) {
@@ -216,6 +238,7 @@ export function AdminDeliveryManager() {
             description: "Document delivered successfully. Note: Notification may have failed to send.",
           });
         } else {
+          console.log('Notification sent successfully');
           toast({
             title: "Delivery Created & Notification Sent",
             description: "The document has been delivered and the client has been notified.",
@@ -237,7 +260,9 @@ export function AdminDeliveryManager() {
         file: null
       });
       
-      fetchDeliveries();
+      console.log('Refreshing deliveries list...');
+      await fetchDeliveries();
+      console.log('Delivery process completed');
     } catch (error) {
       console.error('Error creating delivery:', error);
       toast({
