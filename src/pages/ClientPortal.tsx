@@ -1388,7 +1388,7 @@ export default function ClientPortal() {
 
         {/* Main Content Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-8 bg-white shadow-sm border">
+          <TabsList className="grid w-full grid-cols-6 bg-white shadow-sm border">
             <TabsTrigger value="deliveries" className="flex items-center gap-2">
               <Package className="w-4 h-4" />
               Completed Document Deliveries
@@ -1417,14 +1417,6 @@ export default function ClientPortal() {
                   {alerts.filter(a => !a.read).length}
                 </span>
               )}
-            </TabsTrigger>
-            <TabsTrigger value="profile" className="flex items-center gap-2">
-              <User className="w-4 h-4" />
-              Profile
-            </TabsTrigger>
-            <TabsTrigger value="help" className="flex items-center gap-2">
-              <HelpCircle className="w-4 h-4" />
-              Help
             </TabsTrigger>
           </TabsList>
 
