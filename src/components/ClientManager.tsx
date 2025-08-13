@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
-import { Plus, Calendar, CheckCircle, Search, ArrowUpDown, ExternalLink, Trash2, Users, Archive, Mail, RefreshCw, Send } from "lucide-react";
+import { Plus, Calendar, CheckCircle, Search, ArrowUpDown, ExternalLink, Trash2, Users, Archive, Mail, RefreshCw, Send, ChevronDown, ChevronUp, FileText, BarChart3, Timer, Download, Eye, XCircle } from "lucide-react";
 import { DocumentUploadParser } from "./DocumentUploadParser";
 import { DocumentUploadModal } from "./DocumentUploadModal";
 
@@ -36,6 +36,29 @@ interface Client {
   service_types: ServiceType;
 }
 
+interface ClientFile {
+  id: string;
+  name: string;
+  type: string;
+  uploaded_at: string;
+  url?: string;
+}
+
+interface ClientProgress {
+  id: string;
+  step_number: number;
+  step_name: string;
+  status: string;
+  completed_at: string | null;
+}
+
+interface ClientHistory {
+  id: string;
+  action_type: string;
+  description: string;
+  created_at: string;
+}
+
 export function ClientManager() {
   const navigate = useNavigate();
   const [serviceTypes, setServiceTypes] = useState<ServiceType[]>([]);
@@ -46,6 +69,11 @@ export function ClientManager() {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [selectedClients, setSelectedClients] = useState<Set<string>>(new Set());
   const [bulkActionLoading, setBulkActionLoading] = useState(false);
+  const [expandedClient, setExpandedClient] = useState<string | null>(null);
+  const [clientFiles, setClientFiles] = useState<ClientFile[]>([]);
+  const [clientProgress, setClientProgress] = useState<ClientProgress[]>([]);
+  const [clientHistory, setClientHistory] = useState<ClientHistory[]>([]);
+  const [loadingClientDetails, setLoadingClientDetails] = useState(false);
   const [newClient, setNewClient] = useState({
     name: "",
     email: "",
@@ -87,6 +115,94 @@ export function ClientManager() {
       toast({ title: "Error", description: "Failed to load clients", variant: "destructive" });
     } else {
       setClients(data || []);
+    }
+  };
+
+  // Functions to fetch client details for expanded view
+  const fetchClientFiles = async (clientId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('document_uploads' as any)
+        .select('id, original_name, file_path, bucket_name, created_at, mime_type')
+        .eq('client_id', clientId)
+        .eq('status', 'active')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      const files = await Promise.all((data || []).map(async (row: any) => {
+        let url: string | null = null;
+        try {
+          const { data: signed } = await supabase.storage.from(row.bucket_name).createSignedUrl(row.file_path, 60 * 60);
+          url = signed?.signedUrl || supabase.storage.from(row.bucket_name).getPublicUrl(row.file_path).data.publicUrl;
+        } catch (_) {}
+        return {
+          id: row.id,
+          name: row.original_name,
+          type: row.mime_type || 'application/octet-stream',
+          uploaded_at: row.created_at,
+          url: url || undefined,
+        } as ClientFile;
+      }));
+
+      setClientFiles(files);
+    } catch (error) {
+      console.error('Error fetching client files:', error);
+      setClientFiles([]);
+    }
+  };
+
+  const fetchClientProgress = async (clientId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('client_progress')
+        .select('*')
+        .eq('client_id', clientId)
+        .order('step_number', { ascending: true });
+
+      if (error) throw error;
+      setClientProgress(data || []);
+    } catch (error) {
+      console.error('Error fetching client progress:', error);
+      setClientProgress([]);
+    }
+  };
+
+  const fetchClientHistory = async (clientId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('client_history')
+        .select('*')
+        .eq('client_id', clientId)
+        .order('created_at', { ascending: false })
+        .limit(10);
+
+      if (error) throw error;
+      setClientHistory(data || []);
+    } catch (error) {
+      console.error('Error fetching client history:', error);
+      setClientHistory([]);
+    }
+  };
+
+  const toggleClientExpansion = async (clientId: string) => {
+    if (expandedClient === clientId) {
+      setExpandedClient(null);
+      setClientFiles([]);
+      setClientProgress([]);
+      setClientHistory([]);
+    } else {
+      setLoadingClientDetails(true);
+      setExpandedClient(clientId);
+      
+      // Fetch all client details in parallel
+      await Promise.all([
+        fetchClientFiles(clientId),
+        fetchClientProgress(clientId),
+        fetchClientHistory(clientId)
+      ]);
+      
+      setLoadingClientDetails(false);
     }
   };
 
@@ -850,145 +966,273 @@ export function ClientManager() {
                   </div>
 
                   {/* Client Content */}
-                  <div 
-                    className="flex-1"
-                    onClick={() => navigate(`/client/${client.id}`)}
-                  >
-                    <div className="flex justify-between items-start mb-4">
-                      <div>
+                  <div className="flex-1">
+                    <div 
+                      className="cursor-pointer"
+                      onClick={() => toggleClientExpansion(client.id)}
+                    >
+                      <div className="flex justify-between items-start mb-4">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <h3 className="text-xl font-semibold">
+                              {client.name}
+                            </h3>
+                            {expandedClient === client.id ? (
+                              <ChevronUp className="w-4 h-4 text-muted-foreground" />
+                            ) : (
+                              <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                            )}
+                            {client.is_rush && (
+                              <Badge variant="destructive" className="text-xs font-bold animate-pulse">
+                                🚨 RUSH
+                              </Badge>
+                            )}
+                            {isOverdue && !client.is_rush && (
+                              <Badge variant="destructive" className="text-xs">
+                                OVERDUE
+                              </Badge>
+                            )}
+                            {isUrgent && !isOverdue && !client.is_rush && (
+                              <Badge variant="secondary" className="text-xs bg-orange-100 text-orange-800">
+                                URGENT
+                              </Badge>
+                            )}
+                            {isRushUrgent && (
+                              <Badge variant="destructive" className="text-xs bg-red-600 text-white">
+                                RUSH URGENT
+                              </Badge>
+                            )}
+                          </div>
+                          <p className="text-muted-foreground">{client.email}</p>
+                        </div>
                         <div className="flex items-center gap-2">
-                          <h3 className="text-xl font-semibold">
-                            {client.name}
-                          </h3>
-                          <ExternalLink className="w-4 h-4 text-muted-foreground" />
-                          {client.is_rush && (
-                            <Badge variant="destructive" className="text-xs font-bold animate-pulse">
-                              🚨 RUSH
-                            </Badge>
-                          )}
-                          {isOverdue && !client.is_rush && (
-                            <Badge variant="destructive" className="text-xs">
-                              OVERDUE
-                            </Badge>
-                          )}
-                          {isUrgent && !isOverdue && !client.is_rush && (
-                            <Badge variant="secondary" className="text-xs bg-orange-100 text-orange-800">
-                              URGENT
-                            </Badge>
-                          )}
-                          {isRushUrgent && (
-                            <Badge variant="destructive" className="text-xs bg-red-600 text-white">
-                              RUSH URGENT
-                            </Badge>
-                          )}
-                        </div>
-                        <p className="text-muted-foreground">{client.email}</p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            sendLoginCredentials(client);
-                          }}
-                          className="flex items-center gap-1 text-xs bg-blue-50 hover:bg-blue-100"
-                        >
-                          <Send className="w-3 h-3" />
-                          Send Login
-                        </Button>
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            deleteClient(client.id, client.name);
-                          }}
-                          className="flex items-center gap-1 text-xs"
-                        >
-                          <Trash2 className="w-3 h-3" />
-                          Delete
-                        </Button>
-                        <label className="flex items-center gap-2 text-sm">
-                          <input
-                            type="checkbox"
-                            checked={client.is_rush}
-                            onChange={(e) => {
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={(e) => {
                               e.stopPropagation();
-                              toggleRushStatus(client.id, client.is_rush);
+                              sendLoginCredentials(client);
                             }}
-                            className="rounded border-gray-300"
-                          />
-                          <span className={client.is_rush ? "text-red-600 font-semibold" : ""}>
-                            RUSH (72h)
-                          </span>
-                        </label>
-                        <Badge variant={client.status === 'active' ? 'default' : 'secondary'}>
-                          {client.status}
-                        </Badge>
-                        <Badge variant={client.payment_status === 'paid' ? 'default' : 'secondary'}>
-                          {client.payment_status}
-                        </Badge>
+                            className="flex items-center gap-1 text-xs bg-blue-50 hover:bg-blue-100"
+                          >
+                            <Send className="w-3 h-3" />
+                            Send Login
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              deleteClient(client.id, client.name);
+                            }}
+                            className="flex items-center gap-1 text-xs"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                            Delete
+                          </Button>
+                          <label className="flex items-center gap-2 text-sm">
+                            <input
+                              type="checkbox"
+                              checked={client.is_rush}
+                              onChange={(e) => {
+                                e.stopPropagation();
+                                toggleRushStatus(client.id, client.is_rush);
+                              }}
+                              className="rounded border-gray-300"
+                            />
+                            <span className={client.is_rush ? "text-red-600 font-semibold" : ""}>
+                              RUSH (72h)
+                            </span>
+                          </label>
+                          <Badge variant={client.status === 'active' ? 'default' : 'secondary'}>
+                            {client.status}
+                          </Badge>
+                          <Badge variant={client.payment_status === 'paid' ? 'default' : 'secondary'}>
+                            {client.payment_status}
+                          </Badge>
+                        </div>
                       </div>
-                    </div>
-                  
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                      <div>
-                        <Label className="text-sm font-medium">Service Type</Label>
-                        <Select
-                          value={client.service_type_id}
-                          onValueChange={(value) => updateClientService(client.id, value)}
-                        >
-                          <SelectTrigger className="mt-1">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {serviceTypes.map((serviceType) => (
-                              <SelectItem key={serviceType.id} value={serviceType.id}>
-                                {serviceType.name}
-                              </SelectItem>
+                    
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                        <div>
+                          <Label className="text-sm font-medium">Service Type</Label>
+                          <Select
+                            value={client.service_type_id}
+                            onValueChange={(value) => updateClientService(client.id, value)}
+                          >
+                            <SelectTrigger className="mt-1">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {serviceTypes.map((serviceType) => (
+                                <SelectItem key={serviceType.id} value={serviceType.id}>
+                                  {serviceType.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        
+                        <div>
+                          <Label className="text-sm font-medium">
+                            {client.is_rush ? "Rush Deadline" : "Estimated Delivery"}
+                          </Label>
+                          <div className="flex items-center mt-1">
+                            <Calendar className="w-4 h-4 mr-2 text-muted-foreground" />
+                            <span className={`text-sm ${client.is_rush ? 'text-red-600 font-semibold' : ''}`}>
+                              {client.is_rush && client.rush_deadline ? 
+                                new Date(client.rush_deadline).toLocaleString() :
+                                client.estimated_delivery_date ? 
+                                new Date(client.estimated_delivery_date).toLocaleDateString() : 
+                                'Not set'
+                              }
+                            </span>
+                          </div>
+                        </div>
+                        
+                        <div>
+                          <Label className="text-sm font-medium">Tags</Label>
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {client.service_types.tags?.map((tag) => (
+                              <Badge key={tag} variant="outline" className="text-xs">
+                                {tag}
+                              </Badge>
                             ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      
-                      <div>
-                        <Label className="text-sm font-medium">
-                          {client.is_rush ? "Rush Deadline" : "Estimated Delivery"}
-                        </Label>
-                        <div className="flex items-center mt-1">
-                          <Calendar className="w-4 h-4 mr-2 text-muted-foreground" />
-                          <span className={`text-sm ${client.is_rush ? 'text-red-600 font-semibold' : ''}`}>
-                            {client.is_rush && client.rush_deadline ? 
-                              new Date(client.rush_deadline).toLocaleString() :
-                              client.estimated_delivery_date ? 
-                              new Date(client.estimated_delivery_date).toLocaleDateString() : 
-                              'Not set'
-                            }
-                          </span>
+                          </div>
                         </div>
                       </div>
                       
-                      <div>
-                        <Label className="text-sm font-medium">Tags</Label>
-                        <div className="flex flex-wrap gap-1 mt-1">
-                          {client.service_types.tags?.map((tag) => (
-                            <Badge key={tag} variant="outline" className="text-xs">
-                              {tag}
-                            </Badge>
-                          ))}
-                        </div>
+                      <div className="text-sm text-muted-foreground">
+                        Created: {new Date(client.created_at).toLocaleDateString()} • 
+                        Timeline: {client.is_rush ? '72 hours (RUSH)' : `${client.service_types.default_timeline_days} days`} • 
+                        Payment: {client.payment_status}
+                        {client.is_rush && (
+                          <span className="text-red-600 font-semibold"> • 🚨 RUSH ORDER</span>
+                        )}
                       </div>
                     </div>
                     
-                    <div className="text-sm text-muted-foreground">
-                      Created: {new Date(client.created_at).toLocaleDateString()} • 
-                      Timeline: {client.is_rush ? '72 hours (RUSH)' : `${client.service_types.default_timeline_days} days`} • 
-                      Payment: {client.payment_status}
-                      {client.is_rush && (
-                        <span className="text-red-600 font-semibold"> • 🚨 RUSH ORDER</span>
-                      )}
-                    </div>
+                    {/* Expanded Client Details */}
+                    {expandedClient === client.id && (
+                      <div className="mt-6 border-t pt-6">
+                        {loadingClientDetails ? (
+                          <div className="flex items-center justify-center py-8">
+                            <RefreshCw className="w-6 h-6 animate-spin mr-2" />
+                            Loading client details...
+                          </div>
+                        ) : (
+                          <div className="space-y-6">
+                            {/* Files Section */}
+                            <div>
+                              <div className="flex items-center gap-2 mb-4">
+                                <FileText className="w-5 h-5 text-rdr-navy" />
+                                <h4 className="font-semibold text-rdr-navy">Files ({clientFiles.length})</h4>
+                              </div>
+                              {clientFiles.length > 0 ? (
+                                <div className="grid gap-2">
+                                  {clientFiles.map((file) => (
+                                    <div key={file.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                      <div className="flex items-center gap-3">
+                                        <FileText className="w-4 h-4 text-gray-500" />
+                                        <div>
+                                          <p className="text-sm font-medium">{file.name}</p>
+                                          <p className="text-xs text-gray-500">
+                                            Uploaded {new Date(file.uploaded_at).toLocaleDateString()}
+                                          </p>
+                                        </div>
+                                      </div>
+                                      {file.url && (
+                                        <Button 
+                                          variant="outline" 
+                                          size="sm"
+                                          onClick={() => window.open(file.url, '_blank')}
+                                          className="flex items-center gap-1"
+                                        >
+                                          <Eye className="w-3 h-3" />
+                                          View
+                                        </Button>
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
+                              ) : (
+                                <p className="text-sm text-gray-500">No files uploaded yet</p>
+                              )}
+                            </div>
+
+                            {/* Project Progress Section */}
+                            <div>
+                              <div className="flex items-center gap-2 mb-4">
+                                <BarChart3 className="w-5 h-5 text-rdr-navy" />
+                                <h4 className="font-semibold text-rdr-navy">Project Progress</h4>
+                              </div>
+                              {clientProgress.length > 0 ? (
+                                <div className="space-y-3">
+                                  {clientProgress.map((step) => (
+                                    <div key={step.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                                      <div className="flex items-center gap-2">
+                                        {step.status === 'completed' ? (
+                                          <CheckCircle className="w-5 h-5 text-green-500" />
+                                        ) : step.status === 'in_progress' ? (
+                                          <Timer className="w-5 h-5 text-blue-500" />
+                                        ) : (
+                                          <XCircle className="w-5 h-5 text-gray-400" />
+                                        )}
+                                      </div>
+                                      <div className="flex-1">
+                                        <div className="flex items-center justify-between">
+                                          <span className="font-medium">{step.step_name}</span>
+                                          <Badge variant={
+                                            step.status === 'completed' ? 'default' : 
+                                            step.status === 'in_progress' ? 'secondary' : 'outline'
+                                          }>
+                                            {step.status}
+                                          </Badge>
+                                        </div>
+                                        {step.completed_at && (
+                                          <p className="text-xs text-gray-500 mt-1">
+                                            Completed {new Date(step.completed_at).toLocaleDateString()}
+                                          </p>
+                                        )}
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              ) : (
+                                <p className="text-sm text-gray-500">No progress steps tracked yet</p>
+                              )}
+                            </div>
+
+                            {/* Status Tracker Section */}
+                            <div>
+                              <div className="flex items-center gap-2 mb-4">
+                                <Timer className="w-5 h-5 text-rdr-navy" />
+                                <h4 className="font-semibold text-rdr-navy">Recent Activity</h4>
+                              </div>
+                              {clientHistory.length > 0 ? (
+                                <div className="space-y-3">
+                                  {clientHistory.map((activity) => (
+                                    <div key={activity.id} className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
+                                      <div className="mt-1">
+                                        <CheckCircle className="w-4 h-4 text-blue-500" />
+                                      </div>
+                                      <div className="flex-1">
+                                        <p className="text-sm font-medium">{activity.description}</p>
+                                        <p className="text-xs text-gray-500">
+                                          {new Date(activity.created_at).toLocaleDateString()} at {new Date(activity.created_at).toLocaleTimeString()}
+                                        </p>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              ) : (
+                                <p className="text-sm text-gray-500">No recent activity</p>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               </CardContent>
