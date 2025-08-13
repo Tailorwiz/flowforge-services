@@ -1835,8 +1835,10 @@ export default function ClientPortal() {
           <div className="bg-white rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
             <ResumeUpload
               clientId={profile.id}
-              onUploadComplete={() => {
+              onUploadComplete={async () => {
                 setShowResumeUpload(false);
+                // Refetch profile to get updated resume_uploaded status
+                await fetchClientProfile();
                 toast({
                   title: "Documents Uploaded!",
                   description: "Your resume and documents have been uploaded successfully.",
