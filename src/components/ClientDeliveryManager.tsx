@@ -4,8 +4,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
-import { Package, Calendar, Eye, RefreshCw, Clock, CheckCircle, AlertCircle, Download, FileText } from "lucide-react";
+import { Package, Calendar, Eye, RefreshCw, Clock, CheckCircle, AlertCircle, Download, FileText, MessageSquare, Upload, Send } from "lucide-react";
 
 interface Delivery {
   id: string;
@@ -40,6 +44,13 @@ export function ClientDeliveryManager({ clientId, clientName }: ClientDeliveryMa
   const [deliveries, setDeliveries] = useState<Delivery[]>([]);
   const [revisionRequests, setRevisionRequests] = useState<RevisionRequest[]>([]);
   const [loading, setLoading] = useState(true);
+  const [respondingToRevision, setRespondingToRevision] = useState<string | null>(null);
+  const [revisionResponse, setRevisionResponse] = useState({
+    message: "",
+    status: "in_progress" as string,
+    estimatedCompletion: ""
+  });
+  const [uploadingFile, setUploadingFile] = useState(false);
 
   useEffect(() => {
     fetchDeliveryData();
@@ -103,6 +114,109 @@ export function ClientDeliveryManager({ clientId, clientName }: ClientDeliveryMa
         description: "Failed to update revision status",
         variant: "destructive"
       });
+    }
+  };
+
+  const handleRevisionResponse = async (revisionId: string) => {
+    try {
+      // Update revision status
+      const { error: updateError } = await supabase
+        .from('revision_requests')
+        .update({ 
+          status: revisionResponse.status,
+        })
+        .eq('id', revisionId);
+
+      if (updateError) throw updateError;
+
+      // Add a message/comment about the response
+      const { error: messageError } = await supabase
+        .from('messages')
+        .insert({
+          client_id: clientId,
+          sender_id: (await supabase.auth.getUser()).data.user?.id,
+          sender_type: 'admin',
+          message: `Revision response: ${revisionResponse.message}${revisionResponse.estimatedCompletion ? ` Estimated completion: ${revisionResponse.estimatedCompletion}` : ''}`,
+          message_type: 'text'
+        });
+
+      if (messageError) throw messageError;
+
+      toast({
+        title: "Success",
+        description: "Revision response sent successfully",
+      });
+
+      // Reset form and close dialog
+      setRevisionResponse({ message: "", status: "in_progress", estimatedCompletion: "" });
+      setRespondingToRevision(null);
+      
+      // Refresh data
+      fetchDeliveryData();
+    } catch (error) {
+      console.error('Error responding to revision:', error);
+      toast({
+        title: "Error",
+        description: "Failed to send revision response",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleFileUpload = async (revisionId: string, file: File) => {
+    setUploadingFile(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}.${fileExt}`;
+      const filePath = `${clientId}/${fileName}`;
+
+      // Upload file to Supabase storage
+      const { error: uploadError } = await supabase.storage
+        .from('client-deliveries')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: urlData } = supabase.storage
+        .from('client-deliveries')
+        .getPublicUrl(filePath);
+
+      // Create a new delivery record
+      const { error: deliveryError } = await supabase
+        .from('deliveries')
+        .insert({
+          client_id: clientId,
+          document_title: file.name,
+          document_type: 'revision_response',
+          file_path: filePath,
+          file_url: urlData.publicUrl,
+          file_size: file.size,
+          status: 'delivered',
+          delivered_at: new Date().toISOString()
+        });
+
+      if (deliveryError) throw deliveryError;
+
+      // Update revision status to completed
+      await updateRevisionStatus(revisionId, 'completed');
+
+      toast({
+        title: "Success",
+        description: "Revised file uploaded successfully",
+      });
+
+      // Refresh data
+      fetchDeliveryData();
+    } catch (error) {
+      console.error('Error uploading file:', error);
+      toast({
+        title: "Error",
+        description: "Failed to upload revised file",
+        variant: "destructive"
+      });
+    } finally {
+      setUploadingFile(false);
     }
   };
 
@@ -288,6 +402,99 @@ export function ClientDeliveryManager({ clientId, clientName }: ClientDeliveryMa
                         </div>
                         {revision.status === 'pending' && (
                           <div className="flex gap-2">
+                            <Dialog 
+                              open={respondingToRevision === revision.id} 
+                              onOpenChange={(open) => !open && setRespondingToRevision(null)}
+                            >
+                              <DialogTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => setRespondingToRevision(revision.id)}
+                                >
+                                  <MessageSquare className="w-4 h-4 mr-2" />
+                                  Respond
+                                </Button>
+                              </DialogTrigger>
+                              <DialogContent className="max-w-md">
+                                <DialogHeader>
+                                  <DialogTitle>Respond to Revision Request</DialogTitle>
+                                </DialogHeader>
+                                <div className="space-y-4">
+                                  <div>
+                                    <Label htmlFor="status">Status</Label>
+                                    <Select
+                                      value={revisionResponse.status}
+                                      onValueChange={(value) => setRevisionResponse(prev => ({ ...prev, status: value }))}
+                                    >
+                                      <SelectTrigger>
+                                        <SelectValue />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="in_progress">In Progress</SelectItem>
+                                        <SelectItem value="completed">Completed</SelectItem>
+                                        <SelectItem value="rejected">Rejected</SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+                                  
+                                  <div>
+                                    <Label htmlFor="message">Response Message</Label>
+                                    <Textarea
+                                      id="message"
+                                      placeholder="Enter your response to the client..."
+                                      value={revisionResponse.message}
+                                      onChange={(e) => setRevisionResponse(prev => ({ ...prev, message: e.target.value }))}
+                                      rows={4}
+                                    />
+                                  </div>
+
+                                  <div>
+                                    <Label htmlFor="completion">Estimated Completion (optional)</Label>
+                                    <Input
+                                      id="completion"
+                                      type="date"
+                                      value={revisionResponse.estimatedCompletion}
+                                      onChange={(e) => setRevisionResponse(prev => ({ ...prev, estimatedCompletion: e.target.value }))}
+                                    />
+                                  </div>
+
+                                  <div className="space-y-3">
+                                    <Label>Upload Revised File (optional)</Label>
+                                    <Input
+                                      type="file"
+                                      onChange={(e) => {
+                                        const file = e.target.files?.[0];
+                                        if (file) {
+                                          handleFileUpload(revision.id, file);
+                                        }
+                                      }}
+                                      disabled={uploadingFile}
+                                    />
+                                    {uploadingFile && (
+                                      <p className="text-sm text-muted-foreground">Uploading file...</p>
+                                    )}
+                                  </div>
+
+                                  <div className="flex gap-2 justify-end">
+                                    <Button
+                                      variant="outline"
+                                      onClick={() => setRespondingToRevision(null)}
+                                    >
+                                      Cancel
+                                    </Button>
+                                    <Button
+                                      onClick={() => handleRevisionResponse(revision.id)}
+                                      disabled={!revisionResponse.message.trim()}
+                                    >
+                                      <Send className="w-4 h-4 mr-2" />
+                                      Send Response
+                                    </Button>
+                                  </div>
+                                </div>
+                              </DialogContent>
+                            </Dialog>
+                            
                             <Select
                               value={revision.status}
                               onValueChange={(value) => updateRevisionStatus(revision.id, value)}
