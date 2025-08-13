@@ -41,7 +41,6 @@ interface Delivery {
   status: string;
   delivered_at: string;
   approved_at?: string;
-  clients: any;
 }
 
 interface RevisionRequest {
@@ -55,8 +54,6 @@ interface RevisionRequest {
   status: string;
   due_date: string;
   created_at: string;
-  clients: any;
-  deliveries: any;
 }
 
 export function AdminDeliveryManager() {
@@ -98,10 +95,7 @@ export function AdminDeliveryManager() {
     console.log('Fetching deliveries...');
     const { data, error } = await supabase
       .from('deliveries')
-      .select(`
-        *,
-        clients (id, name, email, service_types (name))
-      `)
+      .select('*')
       .order('delivered_at', { ascending: false });
 
     if (error) {
@@ -126,11 +120,7 @@ export function AdminDeliveryManager() {
   const fetchRevisionRequests = async () => {
     const { data, error } = await supabase
       .from('revision_requests')
-      .select(`
-        *,
-        clients (id, name, email),
-        deliveries (document_title, document_type)
-      `)
+      .select('*')
       .order('created_at', { ascending: false });
 
     if (error) throw error;
@@ -454,7 +444,7 @@ export function AdminDeliveryManager() {
                 <CardContent className="space-y-3">
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
-                      <span className="font-medium">Client:</span> {delivery.clients.name}
+                      <span className="font-medium">Client:</span> {clients.find(c => c.id === delivery.client_id)?.name || 'Unknown'}
                     </div>
                     <div>
                       <span className="font-medium">Type:</span> {delivery.document_type.replace('_', ' ')}
@@ -500,7 +490,7 @@ export function AdminDeliveryManager() {
                   <div className="flex items-center justify-between">
                     <CardTitle className="flex items-center gap-2">
                       <MessageSquare className="h-5 w-5" />
-                      {request.deliveries.document_title}
+                      {deliveries.find(d => d.id === request.delivery_id)?.document_title || 'Unknown Document'}
                     </CardTitle>
                     <div className="flex items-center gap-2">
                       <Badge className={getStatusColor(request.status)}>
@@ -518,7 +508,7 @@ export function AdminDeliveryManager() {
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
-                      <span className="font-medium">Client:</span> {request.clients.name}
+                      <span className="font-medium">Client:</span> {clients.find(c => c.id === request.client_id)?.name || 'Unknown'}
                     </div>
                     <div>
                       <span className="font-medium">Requested:</span> {format(new Date(request.created_at), 'MMM dd, yyyy')}
