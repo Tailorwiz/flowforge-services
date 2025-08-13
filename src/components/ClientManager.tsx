@@ -1140,7 +1140,7 @@ export function ClientManager() {
                             <SelectTrigger className="mt-1">
                               <SelectValue />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent className="bg-background border border-border shadow-lg z-50">
                               {serviceTypes.map((serviceType) => (
                                 <SelectItem key={serviceType.id} value={serviceType.id}>
                                   {serviceType.name}
