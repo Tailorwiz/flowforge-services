@@ -29,6 +29,20 @@ interface Delivery {
   updated_at: string;
   mime_type: string | null;
   project_id: string | null;
+  service_deliverable_id: string | null;
+  deliverable_instance: number | null;
+}
+
+interface ServiceDeliverable {
+  id: string;
+  service_type_id: string;
+  deliverable_name: string;
+  deliverable_category: string;
+  description: string;
+  quantity: number;
+  deliverable_order: number;
+  created_at: string;
+  updated_at: string;
 }
 
 interface Client {
@@ -37,11 +51,13 @@ interface Client {
   estimated_delivery_date?: string;
   is_rush: boolean;
   rush_deadline?: string;
+  service_type_id: string;
 }
 
 export function ClientDeliveries() {
   const { user } = useAuth();
   const [deliveries, setDeliveries] = useState<Delivery[]>([]);
+  const [serviceDeliverables, setServiceDeliverables] = useState<ServiceDeliverable[]>([]);
   const [client, setClient] = useState<Client | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedDelivery, setSelectedDelivery] = useState<Delivery | null>(null);
@@ -49,40 +65,69 @@ export function ClientDeliveries() {
   const [showTestimonialPrompt, setShowTestimonialPrompt] = useState(false);
 
   useEffect(() => {
-    if (user) {
+    if (user?.email) {
       fetchClientAndDeliveries();
     }
   }, [user]);
 
   const fetchClientAndDeliveries = async () => {
     try {
-      // First get the client record using email since clients don't have user_id
+      setLoading(true);
+      
+      // First, get the client data
       const { data: clientData, error: clientError } = await supabase
         .from('clients')
-        .select('*')
+        .select(`
+          id,
+          name,
+          email,
+          estimated_delivery_date,
+          is_rush,
+          rush_deadline,
+          service_type_id
+        `)
         .eq('email', user?.email)
         .single();
 
       if (clientError) {
         console.error('Error fetching client:', clientError);
-        throw clientError;
+        return;
       }
+
+      if (!clientData) {
+        console.log('No client found for email:', user?.email);
+        return;
+      }
+
       setClient(clientData);
 
-      // Then get deliveries for this client
+      // Get service deliverables using raw query to avoid type issues
+      const { data: deliverablesData } = await supabase
+        .from('service_deliverables' as any)
+        .select('*')
+        .eq('service_type_id', clientData.service_type_id)
+        .order('deliverable_order');
+      
+      setServiceDeliverables((deliverablesData as unknown || []) as ServiceDeliverable[]);
+
+      // Get actual deliveries for this client
       const { data: deliveriesData, error: deliveriesError } = await supabase
         .from('deliveries')
         .select('*')
         .eq('client_id', clientData.id)
-        .order('delivered_at', { ascending: false });
+        .order('created_at', { ascending: false });
 
-      if (deliveriesError) throw deliveriesError;
-      setDeliveries(deliveriesData || []);
+      if (deliveriesError) {
+        console.error('Error fetching deliveries:', deliveriesError);
+      } else {
+        setDeliveries((deliveriesData || []) as Delivery[]);
+      }
+
     } catch (error) {
-      console.error('Error fetching deliveries:', error);
+      console.error('Error in fetchClientAndDeliveries:', error);
       toast({
         title: "Error",
-        description: "Failed to load your deliveries.",
+        description: "Failed to load delivery data. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -245,114 +290,166 @@ export function ClientDeliveries() {
         </Card>
       )}
 
-      {/* Deliveries List */}
+      {/* Package Deliverables List */}
       <div className="space-y-4">
-        <h2 className="text-2xl font-bold">Your Deliveries</h2>
+        <h2 className="text-2xl font-bold">Your Package Deliverables</h2>
         
-        {deliveries.length === 0 ? (
+        {serviceDeliverables.length === 0 ? (
           <Card>
-            <CardContent className="py-8 text-center">
-              <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-medium mb-2">No deliveries yet</h3>
-              <p className="text-muted-foreground">
-                Your completed documents will appear here when they're ready.
-              </p>
+            <CardContent className="text-center py-8">
+              <FileText className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+              <p className="text-muted-foreground">No service package found for your account.</p>
             </CardContent>
           </Card>
         ) : (
-          deliveries.map((delivery) => (
-            <Card key={delivery.id}>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle className="flex items-center gap-2">
-                    <FileText className="h-5 w-5" />
-                    {delivery.document_title}
-                  </CardTitle>
-                  <Badge className={getStatusColor(delivery.status)}>
-                    {getStatusIcon(delivery.status)}
-                    <span className="ml-1 capitalize">
-                      {delivery.status.replace('_', ' ')}
-                    </span>
-                  </Badge>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between text-sm text-muted-foreground">
-                  <span>Delivered {format(new Date(delivery.delivered_at), 'MMM dd, yyyy')}</span>
-                  <span>{formatFileSize(delivery.file_size)}</span>
-                </div>
-
-                {/* Preview/Download Section */}
-                <div className="bg-muted/50 rounded-lg p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <FileText className="h-8 w-8 text-muted-foreground" />
-                      <div>
-                        <p className="font-medium">{delivery.document_title}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {delivery.document_type.replace('_', ' ').toUpperCase()}
-                        </p>
+          <div className="space-y-4">
+            {serviceDeliverables.map((deliverable) => {
+              // Find matching actual deliveries for this deliverable
+              const matchingDeliveries = deliveries.filter(d => 
+                d.service_deliverable_id === deliverable.id
+              );
+              
+              const isMultiInstance = deliverable.quantity > 1;
+              const completedCount = matchingDeliveries.filter(d => d.status === 'delivered').length;
+              const totalRequired = deliverable.quantity;
+              
+              return (
+                <Card key={deliverable.id} className="border-l-4 border-l-primary">
+                  <CardHeader>
+                    <CardTitle className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <FileText className="h-5 w-5" />
+                        {deliverable.deliverable_name}
+                        {isMultiInstance && (
+                          <Badge variant="secondary">
+                            {completedCount}/{totalRequired}
+                          </Badge>
+                        )}
                       </div>
-                    </div>
-                    <Button
-                      onClick={() => handleDownload(delivery.file_url, delivery.document_title)}
-                      size="sm"
-                    >
-                      <Download className="h-4 w-4 mr-2" />
-                      Download
-                    </Button>
-                  </div>
-                </div>
-
-                {/* Action Buttons */}
-                {delivery.status === 'delivered' && (
-                  <div className="flex gap-2">
-                    <Button
-                      onClick={() => handleApproveDelivery(delivery)}
-                      className="flex-1"
-                    >
-                      <CheckCircle className="h-4 w-4 mr-2" />
-                      Approve & Finalize
-                    </Button>
-                    <Button
-                      variant="outline"
-                      onClick={() => handleRequestRevision(delivery)}
-                      className="flex-1"
-                    >
-                      <MessageSquare className="h-4 w-4 mr-2" />
-                      Request Revisions
-                    </Button>
-                  </div>
-                )}
-
-                {delivery.status === 'revision_requested' && (
-                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-                    <p className="text-sm text-yellow-800">
-                      Revisions requested. We'll notify you once the updated version is ready 
-                      (usually within 3-5 business days).
-                    </p>
-                  </div>
-                )}
-
-                {delivery.status === 'approved' && delivery.approved_at && (
-                  <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-                    <p className="text-sm text-green-800">
-                      ✓ Approved on {format(new Date(delivery.approved_at), 'MMM dd, yyyy')}
-                    </p>
-                  </div>
-                )}
-
-                <Separator />
-
-                {/* Comments Section */}
-                <DeliveryComments deliveryId={delivery.id} clientId={delivery.client_id} />
-              </CardContent>
-            </Card>
-          ))
+                      <div className="flex items-center gap-2">
+                        {completedCount === totalRequired && totalRequired > 0 ? (
+                          <Badge className="bg-green-100 text-green-800 border-green-200">
+                            <CheckCircle className="w-3 h-3 mr-1" />
+                            Complete
+                          </Badge>
+                        ) : completedCount > 0 ? (
+                          <Badge variant="outline" className="border-blue-200 text-blue-800">
+                            <Clock className="w-3 h-3 mr-1" />
+                            In Progress
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="border-gray-200 text-gray-600">
+                            <Clock className="w-3 h-3 mr-1" />
+                            Pending
+                          </Badge>
+                        )}
+                      </div>
+                    </CardTitle>
+                    <p className="text-sm text-muted-foreground">{deliverable.description}</p>
+                    
+                    {isMultiInstance && (
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-sm">
+                          <span>Progress</span>
+                          <span>{completedCount}/{totalRequired} completed</span>
+                        </div>
+                        <Progress value={(completedCount / totalRequired) * 100} className="h-2" />
+                      </div>
+                    )}
+                  </CardHeader>
+                  
+                  {/* Show actual deliveries if any exist */}
+                  {matchingDeliveries.length > 0 && (
+                    <CardContent className="pt-0">
+                      <div className="space-y-3">
+                        <Separator />
+                        <h4 className="font-medium text-sm">Delivered Items:</h4>
+                        {matchingDeliveries.map((delivery) => (
+                          <div key={delivery.id} className="border rounded-lg p-4 space-y-3">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <FileText className="h-4 w-4" />
+                                <span className="font-medium">{delivery.document_title}</span>
+                                <Badge 
+                                  className={getStatusColor(delivery.status)}
+                                >
+                                  {getStatusIcon(delivery.status)}
+                                  {delivery.status.charAt(0).toUpperCase() + delivery.status.slice(1)}
+                                </Badge>
+                              </div>
+                              {delivery.status === 'delivered' && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleDownload(delivery.file_url, delivery.document_title)}
+                                  className="flex items-center gap-2"
+                                >
+                                  <Download className="h-4 w-4" />
+                                  Download
+                                </Button>
+                              )}
+                            </div>
+                            
+                            {delivery.delivered_at && (
+                              <p className="text-sm text-muted-foreground">
+                                Delivered: {format(new Date(delivery.delivered_at), 'MMM dd, yyyy')}
+                              </p>
+                            )}
+                            
+                            {delivery.file_size && (
+                              <p className="text-sm text-muted-foreground">
+                                File size: {formatFileSize(delivery.file_size)}
+                              </p>
+                            )}
+                            
+                            {delivery.status === 'delivered' && (
+                              <div className="flex gap-2">
+                                <Button
+                                  onClick={() => handleApproveDelivery(delivery)}
+                                  disabled={delivery.approved_at !== null}
+                                  size="sm"
+                                  className="flex items-center gap-2"
+                                >
+                                  <CheckCircle className="h-4 w-4" />
+                                  {delivery.approved_at ? 'Approved' : 'Approve'}
+                                </Button>
+                                
+                                <Button
+                                  variant="outline"
+                                  onClick={() => handleRequestRevision(delivery)}
+                                  size="sm"
+                                  className="flex items-center gap-2"
+                                >
+                                  <MessageSquare className="h-4 w-4" />
+                                  Request Revision
+                                </Button>
+                              </div>
+                            )}
+                            
+                            {delivery.status === 'revision_requested' && (
+                              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                                <p className="text-sm text-yellow-800">
+                                  <AlertCircle className="h-4 w-4 inline mr-1" />
+                                  Revision requested - our team is working on your feedback
+                                </p>
+                              </div>
+                            )}
+                            
+                            <Separator />
+                            <DeliveryComments deliveryId={delivery.id} clientId={delivery.client_id} />
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  )}
+                </Card>
+              );
+            })}
+          </div>
         )}
       </div>
 
-      {/* Revision Request Modal */}
+      {/* Modals */}
       {selectedDelivery && (
         <RevisionRequestModal
           delivery={selectedDelivery}
@@ -366,7 +463,6 @@ export function ClientDeliveries() {
         />
       )}
 
-      {/* Testimonial Prompt */}
       <TestimonialPrompt
         open={showTestimonialPrompt}
         onOpenChange={setShowTestimonialPrompt}
