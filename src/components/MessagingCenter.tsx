@@ -154,10 +154,14 @@ export const MessagingCenter: React.FC<MessagingCenterProps> = ({
         .select('*');
 
       console.log('Insert result:', { data, error });
+      console.log('Full error details:', JSON.stringify(error, null, 2));
 
       if (error) {
         console.error('Supabase error details:', error);
-        throw error;
+        console.error('Error code:', error.code);
+        console.error('Error hint:', error.hint);
+        console.error('Error details:', error.details);
+        throw new Error(`Database error: ${error.message} (Code: ${error.code})`);
       }
 
       setNewMessage('');
