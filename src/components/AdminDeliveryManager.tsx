@@ -445,28 +445,31 @@ export function AdminDeliveryManager() {
                 </Select>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="document_type">Deliverable Type</Label>
-                <Select 
-                  value={newDelivery.document_type} 
-                  onValueChange={(value) => setNewDelivery(prev => ({ ...prev, document_type: value }))}
-                  disabled={!newDelivery.client_id}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder={newDelivery.client_id ? "Select deliverable type" : "Select client first"} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {serviceDeliverables.map((deliverable) => (
-                      <SelectItem key={deliverable.id} value={deliverable.deliverable_name.toLowerCase().replace(/\s+/g, '_')}>
-                        {deliverable.deliverable_name}
-                        {deliverable.description && (
-                          <span className="text-muted-foreground ml-2">- {deliverable.description}</span>
-                        )}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              {/* Only show deliverable type for new deliveries */}
+              {!newDelivery.is_revision && (
+                <div className="space-y-2">
+                  <Label htmlFor="document_type">Deliverable Type</Label>
+                  <Select 
+                    value={newDelivery.document_type} 
+                    onValueChange={(value) => setNewDelivery(prev => ({ ...prev, document_type: value }))}
+                    disabled={!newDelivery.client_id}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder={newDelivery.client_id ? "Select deliverable type" : "Select client first"} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {serviceDeliverables.map((deliverable) => (
+                        <SelectItem key={deliverable.id} value={deliverable.deliverable_name.toLowerCase().replace(/\s+/g, '_')}>
+                          {deliverable.deliverable_name}
+                          {deliverable.description && (
+                            <span className="text-muted-foreground ml-2">- {deliverable.description}</span>
+                          )}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
 
               <div className="flex items-center space-x-2">
                 <Switch
@@ -482,7 +485,28 @@ export function AdminDeliveryManager() {
                   <Label htmlFor="revision_request">Revision Request</Label>
                   <Select 
                     value={newDelivery.revision_request_id} 
-                    onValueChange={(value) => setNewDelivery(prev => ({ ...prev, revision_request_id: value }))}
+                    onValueChange={(value) => {
+                      const selectedRequest = revisionRequests.find(r => r.id === value);
+                      const originalDelivery = deliveries.find(d => d.id === selectedRequest?.delivery_id);
+                      
+                      if (originalDelivery) {
+                        // Count existing revisions for this document
+                        const revisionCount = deliveries.filter(d => 
+                          d.document_title.includes(originalDelivery.document_title.split(' - Revised')[0])
+                        ).length;
+                        
+                        const baseTitle = originalDelivery.document_title.split(' - Revised')[0];
+                        const newTitle = `${baseTitle} - Revised ${revisionCount}`;
+                        
+                        setNewDelivery(prev => ({ 
+                          ...prev, 
+                          revision_request_id: value,
+                          document_title: newTitle 
+                        }));
+                      } else {
+                        setNewDelivery(prev => ({ ...prev, revision_request_id: value }));
+                      }
+                    }}
                     disabled={!newDelivery.client_id}
                   >
                     <SelectTrigger>
