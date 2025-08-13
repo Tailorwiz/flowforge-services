@@ -376,15 +376,36 @@ export function ClientDeliveries() {
                       
                       {delivery.status === 'delivered' && (
                         <>
-                          <Button
-                            onClick={() => handleApproveDelivery(delivery)}
-                            size="sm"
-                            variant="default"
-                            className="whitespace-nowrap"
-                          >
-                            <CheckCircle className="h-4 w-4 mr-1" />
-                            Approve
-                          </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button
+                                size="sm"
+                                variant="default"
+                                className="whitespace-nowrap"
+                              >
+                                <CheckCircle className="h-4 w-4 mr-1" />
+                                Approve
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Approve Document</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Are you sure you want to approve "{delivery.document_title}"? 
+                                  Once approved, this document will be marked as final and complete.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction 
+                                  onClick={() => handleApproveDelivery(delivery)}
+                                  className="bg-green-600 hover:bg-green-700"
+                                >
+                                  Yes, Approve Document
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
                           
                           <Button
                             onClick={() => handleRequestRevision(delivery)}
