@@ -118,6 +118,15 @@ export const MessagingCenter: React.FC<MessagingCenterProps> = ({
       console.log('userRole:', userRole);
       console.log('message:', newMessage.trim());
       
+      // Check auth status first
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      console.log('Current auth user:', user);
+      console.log('Auth error:', authError);
+      
+      if (!user) {
+        throw new Error('User not authenticated - please log in first');
+      }
+      
       const messageData = {
         client_id: clientId,
         sender_id: currentUserId,
