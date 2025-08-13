@@ -30,11 +30,13 @@ import {
   UserCheck,
   Edit,
   Save,
-  Package
+  Package,
+  ChevronDown
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import RDRLogo from "@/components/RDRLogo";
 import AvatarUpload from "@/components/AvatarUpload";
 import { ClientDeliveries } from "@/components/ClientDeliveries";
@@ -83,6 +85,7 @@ export default function ClientPortal() {
   const [actionItems, setActionItems] = useState<any[]>([]);
   const [showIntakeForm, setShowIntakeForm] = useState(false);
   const [showResumeUpload, setShowResumeUpload] = useState(false);
+  const [activeTab, setActiveTab] = useState("deliveries");
   const [formData, setFormData] = useState({
     currentJobTitle: '',
     targetJobTitle: '',
@@ -666,6 +669,10 @@ export default function ClientPortal() {
     });
   };
 
+  const handleMenuItemClick = (tab: string) => {
+    setActiveTab(tab);
+  };
+
   const handleSessionBookingClick = () => {
     console.log('Opening session booking...');
     toast({
@@ -1177,46 +1184,86 @@ export default function ClientPortal() {
             </div>
             <div className="flex items-center gap-4">
               <ClientNotificationBell />
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={async () => {
-                  await signOut();
-                  toast({
-                    title: "Logged out successfully",
-                    description: "You have been signed out of your account."
-                  });
-                  // Redirect to login selection page after logout
-                  window.location.href = "/login";
-                }}
-                className="flex items-center gap-2"
-              >
-                <LogOut className="h-4 w-4" />
-                Logout
-              </Button>
-              <div className="relative">
-                <Avatar className="h-12 w-12 ring-2 ring-primary/20">
-                  <AvatarImage src={profile.avatar_url} alt={profile.name} />
-                  <AvatarFallback>
-                    <User className="h-6 w-6" />
-                  </AvatarFallback>
-                </Avatar>
-                {!profile.avatar_url && (
-                  <div className="absolute -bottom-1 -right-1 bg-orange-500 text-white rounded-full p-1">
-                    <Camera className="h-3 w-3" />
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <div className="flex items-center gap-3 cursor-pointer hover:bg-slate-50 p-2 rounded-lg transition-colors">
+                    <div className="relative">
+                      <Avatar className="h-12 w-12 ring-2 ring-primary/20">
+                        <AvatarImage src={profile.avatar_url} alt={profile.name} />
+                        <AvatarFallback>
+                          <User className="h-6 w-6" />
+                        </AvatarFallback>
+                      </Avatar>
+                      {!profile.avatar_url && (
+                        <div className="absolute -bottom-1 -right-1 bg-orange-500 text-white rounded-full p-1">
+                          <Camera className="h-3 w-3" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-medium text-slate-800">{profile.name}</p>
+                      <p className="text-xs text-slate-600">{profile.service_type}</p>
+                      {alerts.filter(a => !a.read).length > 0 && (
+                        <div className="flex items-center gap-1 mt-1">
+                          <Bell className="h-3 w-3 text-orange-500" />
+                          <span className="text-xs text-orange-600">{alerts.filter(a => !a.read).length} new</span>
+                        </div>
+                      )}
+                    </div>
+                    <ChevronDown className="h-4 w-4 text-slate-400" />
                   </div>
-                )}
-              </div>
-              <div className="text-right">
-                <p className="text-sm font-medium text-slate-800">{profile.name}</p>
-                <p className="text-xs text-slate-600">{profile.service_type}</p>
-                {alerts.filter(a => !a.read).length > 0 && (
-                  <div className="flex items-center gap-1 mt-1">
-                    <Bell className="h-3 w-3 text-orange-500" />
-                    <span className="text-xs text-orange-600">{alerts.filter(a => !a.read).length} new</span>
-                  </div>
-                )}
-              </div>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56 bg-white border shadow-lg z-50">
+                  <DropdownMenuItem onClick={() => handleMenuItemClick("alerts")} className="flex items-center gap-2">
+                    <Bell className="h-4 w-4" />
+                    Alerts
+                    {alerts.filter(a => !a.read).length > 0 && (
+                      <Badge variant="secondary" className="ml-auto text-xs">
+                        {alerts.filter(a => !a.read).length}
+                      </Badge>
+                    )}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleMenuItemClick("profile")} className="flex items-center gap-2">
+                    <User className="h-4 w-4" />
+                    Profile
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleMenuItemClick("help")} className="flex items-center gap-2">
+                    <HelpCircle className="h-4 w-4" />
+                    Help
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleMenuItemClick("training")} className="flex items-center gap-2">
+                    <BookOpen className="h-4 w-4" />
+                    Training
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleMenuItemClick("action-items")} className="flex items-center gap-2">
+                    <ListTodo className="h-4 w-4" />
+                    Action Items
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleMenuItemClick("documents")} className="flex items-center gap-2">
+                    <FileText className="h-4 w-4" />
+                    My Uploaded Documents
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleMenuItemClick("deliveries")} className="flex items-center gap-2">
+                    <Package className="h-4 w-4" />
+                    Completed Document Deliveries
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem 
+                    onClick={async () => {
+                      await signOut();
+                      toast({
+                        title: "Logged out successfully",
+                        description: "You have been signed out of your account."
+                      });
+                      window.location.href = "/login";
+                    }}
+                    className="flex items-center gap-2 text-red-600 hover:text-red-700"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    Logout
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
         </div>
@@ -1340,7 +1387,7 @@ export default function ClientPortal() {
         </Card>
 
         {/* Main Content Tabs */}
-        <Tabs defaultValue="deliveries" className="space-y-6">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className="grid w-full grid-cols-8 bg-white shadow-sm border">
             <TabsTrigger value="deliveries" className="flex items-center gap-2">
               <Package className="w-4 h-4" />
