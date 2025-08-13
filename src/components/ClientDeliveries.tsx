@@ -346,7 +346,14 @@ export function ClientDeliveries() {
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">
                         <FileText className="h-4 w-4" />
-                        <span className="font-medium text-sm">{deliverable.deliverable_name}</span>
+                        <span className={`font-bold text-lg ${
+                          deliverable.deliverable_name.toLowerCase().includes('linkedin') ||
+                          deliverable.deliverable_name.toLowerCase().includes('resume')
+                            ? 'text-primary' 
+                            : 'text-foreground'
+                        }`}>
+                          {deliverable.deliverable_name}
+                        </span>
                         {isMultiInstance && (
                           <Badge variant="secondary" className="text-xs">
                             {completedCount}/{totalRequired}
