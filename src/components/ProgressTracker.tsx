@@ -133,15 +133,22 @@ const ProgressTracker: React.FC<ProgressTrackerProps> = ({
 
   const handleStepClick = async (stepId: number) => {
     console.log('Progress Tracker: Step clicked:', stepId);
-    const step = steps.find(s => s.id === stepId);
-    console.log('Progress Tracker: Step found:', step);
-    console.log('Progress Tracker: Step action available:', !!step?.action);
     
-    if (step?.action) {
-      console.log('Progress Tracker: Executing step action');
-      step.action();
-    } else {
-      console.log('Progress Tracker: No action available for step');
+    switch (stepId) {
+      case 1:
+        console.log('Progress Tracker: Opening intake form');
+        openIntakeForm();
+        break;
+      case 2:
+        console.log('Progress Tracker: Opening resume upload');
+        openResumeUpload();
+        break;
+      case 3:
+        console.log('Progress Tracker: Opening session booking');
+        openSessionBooking();
+        break;
+      default:
+        console.log('Progress Tracker: No action available for step', stepId);
     }
   };
 
