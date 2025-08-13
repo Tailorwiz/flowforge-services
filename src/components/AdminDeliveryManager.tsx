@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -79,7 +80,9 @@ export function AdminDeliveryManager() {
     client_id: '',
     document_type: '',
     document_title: '',
-    file: null as File | null
+    file: null as File | null,
+    is_revision: false,
+    revision_request_id: ''
   });
 
   useEffect(() => {
@@ -196,6 +199,15 @@ export function AdminDeliveryManager() {
       return;
     }
 
+    if (newDelivery.is_revision && !newDelivery.revision_request_id) {
+      toast({
+        title: "Missing revision request",
+        description: "Please select which revision request this delivery addresses.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       setLoading(true);
       console.log('Starting delivery creation process...');
@@ -229,6 +241,19 @@ export function AdminDeliveryManager() {
       if (error) {
         console.error('Database error creating delivery:', error);
         throw error;
+      }
+
+      // If this is a revision, update the revision request status
+      if (newDelivery.is_revision && newDelivery.revision_request_id) {
+        const { error: revisionError } = await supabase
+          .from('revision_requests')
+          .update({ status: 'completed' })
+          .eq('id', newDelivery.revision_request_id);
+
+        if (revisionError) {
+          console.error('Error updating revision request:', revisionError);
+          // Don't throw here, delivery was created successfully
+        }
       }
 
       console.log('Delivery created successfully:', deliveryData);
@@ -275,7 +300,9 @@ export function AdminDeliveryManager() {
         client_id: '',
         document_type: '',
         document_title: '',
-        file: null
+        file: null,
+        is_revision: false,
+        revision_request_id: ''
       });
       
       console.log('Refreshing deliveries list...');
@@ -367,7 +394,7 @@ export function AdminDeliveryManager() {
               <div className="space-y-2">
                 <Label htmlFor="client">Client</Label>
                 <Select value={newDelivery.client_id} onValueChange={(value) => {
-                  setNewDelivery(prev => ({ ...prev, client_id: value, document_type: '' }));
+                  setNewDelivery(prev => ({ ...prev, client_id: value, document_type: '', revision_request_id: '' }));
                   fetchServiceDeliverablesForClient(value);
                 }}>
                   <SelectTrigger>
@@ -406,13 +433,52 @@ export function AdminDeliveryManager() {
                 </Select>
               </div>
 
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="is_revision"
+                  checked={newDelivery.is_revision}
+                  onCheckedChange={(checked) => setNewDelivery(prev => ({ ...prev, is_revision: checked, revision_request_id: '' }))}
+                />
+                <Label htmlFor="is_revision" className="text-sm">This is a revision delivery</Label>
+              </div>
+
+              {newDelivery.is_revision && (
+                <div className="space-y-2">
+                  <Label htmlFor="revision_request">Revision Request</Label>
+                  <Select 
+                    value={newDelivery.revision_request_id} 
+                    onValueChange={(value) => setNewDelivery(prev => ({ ...prev, revision_request_id: value }))}
+                    disabled={!newDelivery.client_id}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select revision request" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {revisionRequests
+                        .filter(req => req.client_id === newDelivery.client_id && req.status !== 'completed')
+                        .map((request) => (
+                          <SelectItem key={request.id} value={request.id}>
+                            {deliveries.find(d => d.id === request.delivery_id)?.document_title || 'Unknown Document'} 
+                            <span className="text-muted-foreground ml-2">
+                              - {format(new Date(request.created_at), 'MMM dd')}
+                            </span>
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                  {newDelivery.client_id && revisionRequests.filter(req => req.client_id === newDelivery.client_id && req.status !== 'completed').length === 0 && (
+                    <p className="text-sm text-muted-foreground">No pending revision requests for this client</p>
+                  )}
+                </div>
+              )}
+
               <div className="space-y-2">
                 <Label htmlFor="title">Document Title</Label>
                 <Input
                   id="title"
                   value={newDelivery.document_title}
                   onChange={(e) => setNewDelivery(prev => ({ ...prev, document_title: e.target.value }))}
-                  placeholder="e.g., Professional Resume - Final Version"
+                  placeholder={newDelivery.is_revision ? "e.g., Professional Resume - Revised Version" : "e.g., Professional Resume - Final Version"}
                 />
               </div>
 
@@ -427,7 +493,7 @@ export function AdminDeliveryManager() {
               </div>
 
               <Button onClick={handleCreateDelivery} className="w-full">
-                Create Delivery
+                {newDelivery.is_revision ? 'Create Revision Delivery' : 'Create Delivery'}
               </Button>
             </div>
           </DialogContent>
