@@ -42,6 +42,7 @@ import AvatarUpload from "@/components/AvatarUpload";
 import { ClientDeliveries } from "@/components/ClientDeliveries";
 import { ClientNotificationBell } from "@/components/ClientNotificationBell";
 import ResumeUpload from "@/components/ResumeUpload";
+import { MessagingCenter } from '@/components/MessagingCenter';
 
 interface ClientProfile {
   id: string;
@@ -77,7 +78,7 @@ export default function ClientPortal() {
   const [profile, setProfile] = useState<ClientProfile | null>(null);
   const [needsPhotoUpload, setNeedsPhotoUpload] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [messages, setMessages] = useState<any[]>([]);
+  
   const [documents, setDocuments] = useState<any[]>([]);
   const [trainingMaterials, setTrainingMaterials] = useState<any[]>([]);
   const [alerts, setAlerts] = useState<any[]>([]);
@@ -146,7 +147,6 @@ export default function ClientPortal() {
   useEffect(() => {
     if (user) {
       fetchClientProfile();
-      fetchMessages();
       fetchDocuments();
       fetchTrainingMaterials();
       fetchAlerts();
@@ -307,18 +307,6 @@ export default function ClientPortal() {
     }
   };
 
-  const fetchMessages = async () => {
-    // Mock messages for now
-    setMessages([
-      {
-        id: 1,
-        sender: 'admin',
-        message: 'Welcome to RDR Project Portal! We\'ll be working together to create your professional documents.',
-        timestamp: new Date().toISOString(),
-        sender_name: 'Results Driven Resumes'
-      }
-    ]);
-  };
 
   const fetchDocuments = async () => {
     try {
@@ -1647,40 +1635,14 @@ export default function ClientPortal() {
 
           {/* Messages Tab */}
           <TabsContent value="messages">
-            <Card className="shadow-lg border-0">
-              <CardHeader>
-                <CardTitle>Messages</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4 max-h-96 overflow-y-auto">
-                  {messages.map((message) => (
-                    <div key={message.id} className="flex gap-3">
-                      <Avatar className="h-8 w-8">
-                        <AvatarFallback>RDR</AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1">
-                        <div className="bg-slate-100 rounded-lg p-3">
-                          <p className="text-sm">{message.message}</p>
-                        </div>
-                        <p className="text-xs text-slate-500 mt-1">
-                          {new Date(message.timestamp).toLocaleString()}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <div className="mt-4 pt-4 border-t">
-                  <div className="flex gap-2">
-                    <input 
-                      type="text" 
-                      placeholder="Type your message..."
-                      className="flex-1 px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-                    />
-                    <Button>Send</Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            {user && profile && (
+              <MessagingCenter
+                clientId={profile.id}
+                clientName={profile.name}
+                userRole="client"
+                currentUserId={user.id}
+              />
+            )}
           </TabsContent>
 
           {/* Alerts Tab */}

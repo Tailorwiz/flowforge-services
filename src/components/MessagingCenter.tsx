@@ -112,19 +112,28 @@ export const MessagingCenter: React.FC<MessagingCenterProps> = ({
     try {
       setLoading(true);
       
+      const messageData = {
+        client_id: clientId,
+        sender_id: currentUserId,
+        sender_type: userRole,
+        message: newMessage.trim(),
+        message_type: 'text' as const,
+      };
+
+      console.log('Sending message:', messageData);
+      
       const { error } = await supabase
         .from('messages')
-        .insert({
-          client_id: clientId,
-          sender_id: currentUserId,
-          sender_type: userRole,
-          message: newMessage.trim(),
-          message_type: 'text',
-        });
+        .insert(messageData);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error sending message:', error);
+        throw error;
+      }
 
       setNewMessage('');
+      console.log('Message sent successfully');
+      
       toast({
         title: "Message sent",
         description: "Your message has been sent successfully",
@@ -133,7 +142,7 @@ export const MessagingCenter: React.FC<MessagingCenterProps> = ({
       console.error('Error sending message:', error);
       toast({
         title: "Error",
-        description: "Failed to send message",
+        description: "Failed to send message. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -162,10 +171,10 @@ export const MessagingCenter: React.FC<MessagingCenterProps> = ({
     scrollToBottom();
   }, [messages]);
 
-  // Set up realtime subscription
+  // Set up realtime subscription for new messages and updates
   useEffect(() => {
     const channel = supabase
-      .channel('messages-changes')
+      .channel(`messages-changes-${clientId}`)
       .on(
         'postgres_changes',
         {
@@ -175,6 +184,8 @@ export const MessagingCenter: React.FC<MessagingCenterProps> = ({
           filter: `client_id=eq.${clientId}`,
         },
         async (payload) => {
+          console.log('New message received:', payload.new);
+          
           // Fetch sender profile for the new message
           const { data: profile } = await supabase
             .from('profiles')
@@ -189,7 +200,13 @@ export const MessagingCenter: React.FC<MessagingCenterProps> = ({
               : payload.new.sender_type === 'admin' ? 'Admin' : 'Client'
           } as Message;
 
-          setMessages(prev => [...prev, newMessage]);
+          setMessages(prev => {
+            // Avoid duplicate messages
+            if (prev.some(msg => msg.id === newMessage.id)) {
+              return prev;
+            }
+            return [...prev, newMessage];
+          });
 
           // Mark as read if it's not from current user
           if (payload.new.sender_id !== currentUserId) {
@@ -200,9 +217,31 @@ export const MessagingCenter: React.FC<MessagingCenterProps> = ({
           }
         }
       )
-      .subscribe();
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'messages',
+          filter: `client_id=eq.${clientId}`,
+        },
+        (payload) => {
+          console.log('Message updated:', payload.new);
+          
+          // Update the message in the local state
+          setMessages(prev => prev.map(msg => 
+            msg.id === payload.new.id 
+              ? { ...msg, ...payload.new }
+              : msg
+          ));
+        }
+      )
+      .subscribe((status) => {
+        console.log('Messages subscription status:', status);
+      });
 
     return () => {
+      console.log('Cleaning up messages subscription');
       supabase.removeChannel(channel);
     };
   }, [clientId, currentUserId]);
