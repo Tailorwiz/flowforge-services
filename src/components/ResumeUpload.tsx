@@ -104,6 +104,10 @@ export default function ResumeUpload({ clientId, onUploadComplete, onClose }: Re
     abortControllers.current.set(fileId, abortController);
 
     try {
+      console.log('*** UPLOAD DEBUG ***');
+      console.log('User ID:', user?.id);
+      console.log('Client ID:', clientId);
+      console.log('File:', file.name, file.size, file.type);
       // Validate file size
       if (file.size > MAX_FILE_SIZE) {
         throw new Error('File size exceeds 10MB limit');
