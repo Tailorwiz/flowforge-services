@@ -1424,12 +1424,12 @@ export default function ClientPortal() {
                           </Button>
                           <Button 
                             size="lg" 
-                            variant="outline" 
+                            variant="secondary" 
                             className="flex-1"
                             onClick={() => downloadPDF(material.content_url, material.name)}
                           >
                             <Download className="w-5 h-5 mr-2" />
-                            Download PDF
+                            Download
                           </Button>
                         </div>
                       </CardContent>
