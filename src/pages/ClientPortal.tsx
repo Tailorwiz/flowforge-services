@@ -318,23 +318,67 @@ export default function ClientPortal() {
   };
 
   const fetchDocuments = async () => {
-    // Mock documents for now
-    setDocuments([
-      {
-        id: 1,
-        name: 'Professional Resume',
-        type: 'resume',
-        status: 'in_progress',
-        icon: FileText
-      },
-      {
-        id: 2,
-        name: 'Cover Letter Template',
-        type: 'cover_letter',
-        status: 'pending',
-        icon: FileText
+    try {
+      if (!user) return;
+
+      // Find the current client's id
+      const { data: clientRow } = await supabase
+        .from('clients')
+        .select('id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (!clientRow) {
+        setDocuments([]);
+        return;
       }
-    ]);
+
+      // Fetch uploaded documents for this client
+      const { data: uploadedDocs, error } = await supabase
+        .from('document_uploads')
+        .select('*')
+        .eq('client_id', clientRow.id)
+        .eq('status', 'active')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      // Transform uploaded documents to match UI format
+      const transformedDocs = uploadedDocs?.map(doc => ({
+        id: doc.id,
+        name: doc.file_name,
+        type: doc.document_type,
+        status: 'completed', // Uploaded documents are completed
+        icon: FileText,
+        file_size: doc.file_size,
+        created_at: doc.created_at,
+        download_url: doc.file_path
+      })) || [];
+
+      // Add standard project documents (these are placeholders for deliverables)
+      const standardDocs = [
+        {
+          id: 'resume-deliverable',
+          name: 'Professional Resume',
+          type: 'resume',
+          status: 'in_progress',
+          icon: FileText
+        },
+        {
+          id: 'cover-letter-deliverable',
+          name: 'Cover Letter Template',
+          type: 'cover_letter',
+          status: 'pending',
+          icon: FileText
+        }
+      ];
+
+      // Combine uploaded docs with standard project docs
+      setDocuments([...transformedDocs, ...standardDocs]);
+    } catch (error) {
+      console.error('Error fetching documents:', error);
+      setDocuments([]);
+    }
   };
 
   const fetchTrainingMaterials = async () => {
@@ -1837,8 +1881,9 @@ export default function ClientPortal() {
               clientId={profile.id}
               onUploadComplete={async () => {
                 setShowResumeUpload(false);
-                // Refetch profile to get updated resume_uploaded status
+                // Refetch profile and documents to get updated data
                 await fetchClientProfile();
+                await fetchDocuments();
                 toast({
                   title: "Documents Uploaded!",
                   description: "Your resume and documents have been uploaded successfully.",
