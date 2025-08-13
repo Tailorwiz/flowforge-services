@@ -41,6 +41,7 @@ export const MessagingCenter: React.FC<MessagingCenterProps> = ({
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const [isLoadingMessages, setIsLoadingMessages] = useState(true);
+  const [otherPartyName, setOtherPartyName] = useState<string>('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
@@ -66,6 +67,21 @@ export const MessagingCenter: React.FC<MessagingCenterProps> = ({
 
       // Create a map of sender profiles
       const profileMap = new Map(profiles?.map(p => [p.id, p]) || []);
+
+      // Determine other party's name for header
+      if (userRole === 'client') {
+        // For clients, find admin's name
+        const adminMessage = messagesData?.find(msg => msg.sender_type === 'admin');
+        if (adminMessage) {
+          const adminProfile = profileMap.get(adminMessage.sender_id);
+          if (adminProfile) {
+            setOtherPartyName(`${adminProfile.first_name || ''} ${adminProfile.last_name || ''}`.trim());
+          }
+        }
+      } else {
+        // For admins, use the clientName prop
+        setOtherPartyName(clientName || 'Client');
+      }
 
       // Add sender names to messages
       const messagesWithNames = messagesData?.map(msg => {
@@ -296,7 +312,7 @@ export const MessagingCenter: React.FC<MessagingCenterProps> = ({
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2">
           <MessageSquare className="h-5 w-5" />
-          Messages {clientName && `with ${clientName}`}
+          Messages {otherPartyName && `with ${otherPartyName}`}
         </CardTitle>
       </CardHeader>
       
