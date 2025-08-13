@@ -476,10 +476,21 @@ export function ClientManager() {
       });
 
       if (error) {
-        console.error('Error sending login credentials:', error);
+        console.error('Supabase functions error:', error);
         toast({
           title: "Error",
-          description: "Failed to send login credentials: " + error.message,
+          description: `Failed to send login credentials: ${error.message}`,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Check if the response indicates an error from the function
+      if (data && !data.success) {
+        console.error('Function returned error:', data);
+        toast({
+          title: "Error", 
+          description: `Failed to send login credentials: ${data.error || 'Unknown error'}`,
           variant: "destructive",
         });
         return;
@@ -495,7 +506,7 @@ export function ClientManager() {
       console.error('Error in sendLoginCredentials:', error);
       toast({
         title: "Error",
-        description: "An unexpected error occurred: " + error.message,
+        description: `An unexpected error occurred: ${error.message}`,
         variant: "destructive",
       });
     }

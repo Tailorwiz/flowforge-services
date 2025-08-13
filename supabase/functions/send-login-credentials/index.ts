@@ -21,9 +21,24 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { client_id, client_name, client_email }: LoginCredentialsRequest = await req.json();
+    console.log('=== Send Login Credentials Function Started ===');
+    console.log('Request method:', req.method);
+    console.log('Request headers:', Object.fromEntries(req.headers));
+    
+    const body = await req.json();
+    console.log('Request body:', body);
+    
+    const { client_id, client_name, client_email }: LoginCredentialsRequest = body;
 
-    console.log('Sending login credentials to:', { client_email, client_name });
+    console.log('Sending login credentials to:', { client_email, client_name, client_id });
+
+    // Check if RESEND_API_KEY is available
+    const resendApiKey = Deno.env.get("RESEND_API_KEY");
+    console.log('RESEND_API_KEY available:', !!resendApiKey);
+    
+    if (!resendApiKey) {
+      throw new Error('RESEND_API_KEY environment variable is not set');
+    }
 
     const emailResponse = await resend.emails.send({
       from: "RDR Project Portal <onboarding@resend.dev>",
@@ -71,13 +86,21 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Check if there was an error in the response
     if (emailResponse.error) {
+      console.error("Resend API error:", emailResponse.error);
       throw new Error(`Email sending failed: ${emailResponse.error.message}`);
     }
+
+    if (!emailResponse.data) {
+      console.error("No data in email response:", emailResponse);
+      throw new Error('Email sending failed: No response data from Resend');
+    }
+
+    console.log("Email sent successfully with ID:", emailResponse.data.id);
 
     return new Response(JSON.stringify({ 
       success: true, 
       message: "Login credentials sent successfully",
-      email_id: emailResponse.data?.id 
+      email_id: emailResponse.data.id 
     }), {
       status: 200,
       headers: {
@@ -86,11 +109,18 @@ const handler = async (req: Request): Promise<Response> => {
       },
     });
   } catch (error: any) {
-    console.error("Error in send-login-credentials function:", error);
+    console.error("=== Error in send-login-credentials function ===");
+    console.error("Error type:", typeof error);
+    console.error("Error name:", error?.name);
+    console.error("Error message:", error?.message);
+    console.error("Error stack:", error?.stack);
+    console.error("Full error object:", error);
+    
     return new Response(
       JSON.stringify({ 
         success: false, 
-        error: error.message 
+        error: error.message || 'Unknown error occurred',
+        error_type: error?.name || 'UnknownError'
       }),
       {
         status: 500,
