@@ -244,25 +244,22 @@ export function ClientDeliveries() {
   };
 
   const getDeliveryProgress = () => {
-    if (!client?.estimated_delivery_date) return { progress: 0, message: "" };
+    const totalDeliveries = deliveries.length;
+    const approvedDeliveries = deliveries.filter(d => d.status === 'approved').length;
     
-    const deliveryDate = new Date(client.estimated_delivery_date);
-    const now = new Date();
-    const totalDays = client.is_rush ? 3 : 7; // Rush = 3 days, normal = 7 days
-    const startDate = new Date(deliveryDate);
-    startDate.setDate(startDate.getDate() - totalDays);
-    
-    const elapsed = differenceInDays(now, startDate);
-    const progress = Math.min(Math.max((elapsed / totalDays) * 100, 0), 100);
-    
-    if (isAfter(now, deliveryDate)) {
-      return { progress: 100, message: "Delivery window has passed" };
+    if (totalDeliveries === 0) {
+      return { progress: 0, message: "No deliveries yet" };
     }
     
-    const remaining = differenceInDays(deliveryDate, now);
+    const progress = (approvedDeliveries / totalDeliveries) * 100;
+    
+    if (progress === 100) {
+      return { progress: 100, message: "All deliveries approved!" };
+    }
+    
     return { 
       progress, 
-      message: remaining > 0 ? `${remaining} days remaining` : "Delivery expected today" 
+      message: `${approvedDeliveries} of ${totalDeliveries} deliveries approved`
     };
   };
 
@@ -286,11 +283,23 @@ export function ClientDeliveries() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Clock className="h-5 w-5" />
-              Project Status
+              <CheckCircle className="h-5 w-5" />
+              Project Delivery Status
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <div className="flex justify-between text-sm">
+                <span>Approval Progress</span>
+                <span className="font-medium">
+                  {Math.round(deliveryProgress.progress)}% Complete
+                </span>
+              </div>
+              <Progress value={deliveryProgress.progress} className="h-2" />
+              <p className="text-xs text-muted-foreground text-center">
+                {deliveryProgress.message}
+              </p>
+            </div>
             {client.estimated_delivery_date && (
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
@@ -302,10 +311,6 @@ export function ClientDeliveries() {
                     )}
                   </span>
                 </div>
-                <Progress value={deliveryProgress.progress} className="h-2" />
-                <p className="text-xs text-muted-foreground text-center">
-                  {deliveryProgress.message}
-                </p>
               </div>
             )}
           </CardContent>
