@@ -108,7 +108,6 @@ export default function ClientDashboard() {
     fetchCurrentUser();
     fetchClientData();
     fetchClientHistory();
-    fetchClientFiles();
     
     // Set up real-time listener for new uploads
     const channel = supabase
@@ -169,9 +168,11 @@ export default function ClientDashboard() {
       if (error) throw error;
       setClient(data);
       
-      // Fetch training materials after client data is loaded
+      // Fetch training materials and files after client data is loaded
       if (data) {
         fetchTrainingMaterialsForClient(data);
+        // Also fetch client files now that we have the client data
+        fetchClientFiles();
       }
     } catch (error) {
       console.error('Error fetching client:', error);
