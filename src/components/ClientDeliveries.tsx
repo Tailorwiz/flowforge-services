@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { toast } from "@/hooks/use-toast";
 import { Download, FileText, MessageSquare, CheckCircle, Clock, AlertCircle } from "lucide-react";
 import { format, differenceInDays, isAfter } from "date-fns";
@@ -399,15 +400,32 @@ export function ClientDeliveries() {
                           
                           {delivery.status === 'delivered' && (
                             <div className="flex gap-1">
-                              <Button
-                                onClick={() => handleApproveDelivery(delivery)}
-                                disabled={delivery.approved_at !== null}
-                                size="sm"
-                                className="h-6 px-2 text-xs flex-1"
-                              >
-                                <CheckCircle className="h-3 w-3 mr-1" />
-                                {delivery.approved_at ? 'Approved' : 'Approve'}
-                              </Button>
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button
+                                    disabled={delivery.approved_at !== null}
+                                    size="sm"
+                                    className="h-6 px-2 text-xs flex-1"
+                                  >
+                                    <CheckCircle className="h-3 w-3 mr-1" />
+                                    {delivery.approved_at ? 'Approved' : 'Approve'}
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>Approve Delivery</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      Are you sure you want to approve "{delivery.document_title}"? This action confirms you are satisfied with the delivery and cannot be undone.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction onClick={() => handleApproveDelivery(delivery)}>
+                                      Yes, Approve
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
                               
                               <Button
                                 variant="outline"
