@@ -15,7 +15,7 @@ import { format } from "date-fns";
 import { DocumentUploadParser } from "./DocumentUploadParser";
 import { DocumentUploadModal } from "./DocumentUploadModal";
 import { MessagingCenter } from '@/components/MessagingCenter';
-import { ClientDeliveryManager } from '@/components/ClientDeliveryManager';
+
 
 interface ServiceType {
   id: string;
@@ -1212,14 +1212,13 @@ export function ClientManager() {
               </DialogHeader>
 
               <Tabs defaultValue="overview" className="mt-6">
-                <TabsList className="grid w-full grid-cols-8">
+                <TabsList className="grid w-full grid-cols-7">
                   <TabsTrigger value="overview">Overview</TabsTrigger>
                   <TabsTrigger value="deliverables">Deliverables</TabsTrigger>
                   <TabsTrigger value="files">Files</TabsTrigger>
                   <TabsTrigger value="progress">Progress</TabsTrigger>
                   <TabsTrigger value="activity">Activity</TabsTrigger>
                   <TabsTrigger value="training">Training</TabsTrigger>
-                  <TabsTrigger value="delivery">Delivery Manager</TabsTrigger>
                   <TabsTrigger value="messages">Messages</TabsTrigger>
                 </TabsList>
 
@@ -1567,13 +1566,6 @@ export function ClientManager() {
                     )}
                   </TabsContent>
 
-                  {/* Delivery Manager Tab */}
-                  <TabsContent value="delivery">
-                    <ClientDeliveryManager
-                      clientId={viewingClient.id}
-                      clientName={viewingClient.name}
-                    />
-                  </TabsContent>
 
                   {/* Messages Tab */}
                   <TabsContent value="messages">
