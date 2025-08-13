@@ -292,17 +292,17 @@ export function ClientDeliveries() {
 
       {/* Package Deliverables List */}
       <div className="space-y-4">
-        <h2 className="text-2xl font-bold">Your Package Deliverables</h2>
+        <h2 className="text-xl font-bold">Your Package Deliverables</h2>
         
         {serviceDeliverables.length === 0 ? (
           <Card>
-            <CardContent className="text-center py-8">
-              <FileText className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-              <p className="text-muted-foreground">No service package found for your account.</p>
+            <CardContent className="text-center py-6">
+              <FileText className="mx-auto h-8 w-8 text-muted-foreground mb-2" />
+              <p className="text-sm text-muted-foreground">No service package found for your account.</p>
             </CardContent>
           </Card>
         ) : (
-          <div className="space-y-4">
+          <div className="grid gap-3">
             {serviceDeliverables.map((deliverable) => {
               // Find matching actual deliveries for this deliverable
               const matchingDeliveries = deliveries.filter(d => 
@@ -315,133 +315,129 @@ export function ClientDeliveries() {
               
               return (
                 <Card key={deliverable.id} className="border-l-4 border-l-primary">
-                  <CardHeader>
-                    <CardTitle className="flex items-center justify-between">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">
-                        <FileText className="h-5 w-5" />
-                        {deliverable.deliverable_name}
+                        <FileText className="h-4 w-4" />
+                        <span className="font-medium text-sm">{deliverable.deliverable_name}</span>
                         {isMultiInstance && (
-                          <Badge variant="secondary">
+                          <Badge variant="secondary" className="text-xs">
                             {completedCount}/{totalRequired}
                           </Badge>
                         )}
                       </div>
                       <div className="flex items-center gap-2">
                         {completedCount === totalRequired && totalRequired > 0 ? (
-                          <Badge className="bg-green-100 text-green-800 border-green-200">
+                          <Badge className="bg-green-100 text-green-800 border-green-200 text-xs">
                             <CheckCircle className="w-3 h-3 mr-1" />
                             Complete
                           </Badge>
                         ) : completedCount > 0 ? (
-                          <Badge variant="outline" className="border-blue-200 text-blue-800">
+                          <Badge variant="outline" className="border-blue-200 text-blue-800 text-xs">
                             <Clock className="w-3 h-3 mr-1" />
                             In Progress
                           </Badge>
                         ) : (
-                          <Badge variant="outline" className="border-gray-200 text-gray-600">
+                          <Badge variant="outline" className="border-gray-200 text-gray-600 text-xs">
                             <Clock className="w-3 h-3 mr-1" />
                             Pending
                           </Badge>
                         )}
                       </div>
-                    </CardTitle>
-                    <p className="text-sm text-muted-foreground">{deliverable.description}</p>
+                    </div>
+                    
+                    <p className="text-xs text-muted-foreground mb-3">{deliverable.description}</p>
                     
                     {isMultiInstance && (
-                      <div className="space-y-2">
-                        <div className="flex justify-between text-sm">
+                      <div className="space-y-1 mb-3">
+                        <div className="flex justify-between text-xs">
                           <span>Progress</span>
-                          <span>{completedCount}/{totalRequired} completed</span>
+                          <span>{completedCount}/{totalRequired}</span>
                         </div>
-                        <Progress value={(completedCount / totalRequired) * 100} className="h-2" />
+                        <Progress value={(completedCount / totalRequired) * 100} className="h-1" />
                       </div>
                     )}
-                  </CardHeader>
                   
                   {/* Show actual deliveries if any exist */}
                   {matchingDeliveries.length > 0 && (
-                    <CardContent className="pt-0">
-                      <div className="space-y-3">
-                        <Separator />
-                        <h4 className="font-medium text-sm">Delivered Items:</h4>
-                        {matchingDeliveries.map((delivery) => (
-                          <div key={delivery.id} className="border rounded-lg p-4 space-y-3">
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-2">
-                                <FileText className="h-4 w-4" />
-                                <span className="font-medium">{delivery.document_title}</span>
-                                <Badge 
-                                  className={getStatusColor(delivery.status)}
-                                >
-                                  {getStatusIcon(delivery.status)}
-                                  {delivery.status.charAt(0).toUpperCase() + delivery.status.slice(1)}
-                                </Badge>
-                              </div>
-                              {delivery.status === 'delivered' && (
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => handleDownload(delivery.file_url, delivery.document_title)}
-                                  className="flex items-center gap-2"
-                                >
-                                  <Download className="h-4 w-4" />
-                                  Download
-                                </Button>
-                              )}
+                    <div className="space-y-2 border-t pt-3">
+                      <h4 className="font-medium text-xs text-muted-foreground">Delivered Items:</h4>
+                      {matchingDeliveries.map((delivery) => (
+                        <div key={delivery.id} className="border rounded p-3 space-y-2 bg-muted/30">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <FileText className="h-3 w-3" />
+                              <span className="text-xs font-medium">{delivery.document_title}</span>
+                              <Badge 
+                                className={`${getStatusColor(delivery.status)} text-xs`}
+                              >
+                                {getStatusIcon(delivery.status)}
+                                {delivery.status.charAt(0).toUpperCase() + delivery.status.slice(1)}
+                              </Badge>
                             </div>
-                            
-                            {delivery.delivered_at && (
-                              <p className="text-sm text-muted-foreground">
-                                Delivered: {format(new Date(delivery.delivered_at), 'MMM dd, yyyy')}
-                              </p>
-                            )}
-                            
-                            {delivery.file_size && (
-                              <p className="text-sm text-muted-foreground">
-                                File size: {formatFileSize(delivery.file_size)}
-                              </p>
-                            )}
-                            
                             {delivery.status === 'delivered' && (
-                              <div className="flex gap-2">
-                                <Button
-                                  onClick={() => handleApproveDelivery(delivery)}
-                                  disabled={delivery.approved_at !== null}
-                                  size="sm"
-                                  className="flex items-center gap-2"
-                                >
-                                  <CheckCircle className="h-4 w-4" />
-                                  {delivery.approved_at ? 'Approved' : 'Approve'}
-                                </Button>
-                                
-                                <Button
-                                  variant="outline"
-                                  onClick={() => handleRequestRevision(delivery)}
-                                  size="sm"
-                                  className="flex items-center gap-2"
-                                >
-                                  <MessageSquare className="h-4 w-4" />
-                                  Request Revision
-                                </Button>
-                              </div>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleDownload(delivery.file_url, delivery.document_title)}
+                                className="h-6 px-2 text-xs"
+                              >
+                                <Download className="h-3 w-3 mr-1" />
+                                Download
+                              </Button>
                             )}
-                            
-                            {delivery.status === 'revision_requested' && (
-                              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-                                <p className="text-sm text-yellow-800">
-                                  <AlertCircle className="h-4 w-4 inline mr-1" />
-                                  Revision requested - our team is working on your feedback
-                                </p>
-                              </div>
+                          </div>
+                          
+                          <div className="flex justify-between text-xs text-muted-foreground">
+                            {delivery.delivered_at && (
+                              <span>Delivered: {format(new Date(delivery.delivered_at), 'MMM dd, yyyy')}</span>
                             )}
-                            
-                            <Separator />
+                            {delivery.file_size && (
+                              <span>{formatFileSize(delivery.file_size)}</span>
+                            )}
+                          </div>
+                          
+                          {delivery.status === 'delivered' && (
+                            <div className="flex gap-1">
+                              <Button
+                                onClick={() => handleApproveDelivery(delivery)}
+                                disabled={delivery.approved_at !== null}
+                                size="sm"
+                                className="h-6 px-2 text-xs flex-1"
+                              >
+                                <CheckCircle className="h-3 w-3 mr-1" />
+                                {delivery.approved_at ? 'Approved' : 'Approve'}
+                              </Button>
+                              
+                              <Button
+                                variant="outline"
+                                onClick={() => handleRequestRevision(delivery)}
+                                size="sm"
+                                className="h-6 px-2 text-xs flex-1"
+                              >
+                                <MessageSquare className="h-3 w-3 mr-1" />
+                                Revision
+                              </Button>
+                            </div>
+                          )}
+                          
+                          {delivery.status === 'revision_requested' && (
+                            <div className="bg-yellow-50 border border-yellow-200 rounded p-2">
+                              <p className="text-xs text-yellow-800">
+                                <AlertCircle className="h-3 w-3 inline mr-1" />
+                                Revision requested - team working on feedback
+                              </p>
+                            </div>
+                          )}
+                          
+                          <div className="border-t pt-2">
                             <DeliveryComments deliveryId={delivery.id} clientId={delivery.client_id} />
                           </div>
-                        ))}
-                      </div>
-                    </CardContent>
+                        </div>
+                      ))}
+                    </div>
                   )}
+                  </CardContent>
                 </Card>
               );
             })}
