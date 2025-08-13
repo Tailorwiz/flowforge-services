@@ -210,41 +210,49 @@ export function AdminDeliveryManager() {
 
     try {
       setLoading(true);
-      console.log('Starting delivery creation process...');
+      console.log('Starting delivery process...');
       
       // Upload file
       console.log('Uploading file:', newDelivery.file.name);
       const fileUrl = await uploadFile(newDelivery.file);
       console.log('File uploaded successfully:', fileUrl);
 
-      // Create delivery
-      const deliveryPayload = {
-        client_id: newDelivery.client_id,
-        document_type: newDelivery.document_type || 'document',
-        document_title: newDelivery.document_title,
-        file_path: `deliveries/${Date.now()}.${newDelivery.file.name.split('.').pop()}`,
-        file_url: fileUrl,
-        file_size: newDelivery.file.size,
-        mime_type: newDelivery.file.type,
-        status: 'delivered',
-        delivered_at: new Date().toISOString()
-      };
+      let deliveryData;
 
-      console.log('Creating delivery with payload:', deliveryPayload);
-
-      const { data: deliveryData, error } = await supabase
-        .from('deliveries')
-        .insert(deliveryPayload)
-        .select()
-        .single();
-
-      if (error) {
-        console.error('Database error creating delivery:', error);
-        throw error;
-      }
-
-      // If this is a revision, update the revision request status
       if (newDelivery.is_revision && newDelivery.revision_request_id) {
+        // For revisions, update the existing delivery
+        const revisionRequest = revisionRequests.find(r => r.id === newDelivery.revision_request_id);
+        if (!revisionRequest?.delivery_id) {
+          throw new Error('No original delivery found for this revision request');
+        }
+
+        const updatePayload = {
+          document_title: newDelivery.document_title,
+          file_path: `deliveries/${Date.now()}.${newDelivery.file.name.split('.').pop()}`,
+          file_url: fileUrl,
+          file_size: newDelivery.file.size,
+          mime_type: newDelivery.file.type,
+          status: 'delivered',
+          delivered_at: new Date().toISOString()
+        };
+
+        console.log('Updating existing delivery with payload:', updatePayload);
+
+        const { data, error } = await supabase
+          .from('deliveries')
+          .update(updatePayload)
+          .eq('id', revisionRequest.delivery_id)
+          .select()
+          .single();
+
+        if (error) {
+          console.error('Database error updating delivery:', error);
+          throw error;
+        }
+
+        deliveryData = data;
+
+        // Update the revision request status
         const { error: revisionError } = await supabase
           .from('revision_requests')
           .update({ status: 'completed' })
@@ -252,8 +260,35 @@ export function AdminDeliveryManager() {
 
         if (revisionError) {
           console.error('Error updating revision request:', revisionError);
-          // Don't throw here, delivery was created successfully
         }
+      } else {
+        // For new deliveries, create a new record
+        const deliveryPayload = {
+          client_id: newDelivery.client_id,
+          document_type: newDelivery.document_type || 'document',
+          document_title: newDelivery.document_title,
+          file_path: `deliveries/${Date.now()}.${newDelivery.file.name.split('.').pop()}`,
+          file_url: fileUrl,
+          file_size: newDelivery.file.size,
+          mime_type: newDelivery.file.type,
+          status: 'delivered',
+          delivered_at: new Date().toISOString()
+        };
+
+        console.log('Creating new delivery with payload:', deliveryPayload);
+
+        const { data, error } = await supabase
+          .from('deliveries')
+          .insert(deliveryPayload)
+          .select()
+          .single();
+
+        if (error) {
+          console.error('Database error creating delivery:', error);
+          throw error;
+        }
+
+        deliveryData = data;
       }
 
       console.log('Delivery created successfully:', deliveryData);
