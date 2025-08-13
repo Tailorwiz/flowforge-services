@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
-import { Plus, Calendar, CheckCircle, Search, ArrowUpDown, ExternalLink, Trash2, Users, Archive, Mail, RefreshCw } from "lucide-react";
+import { Plus, Calendar, CheckCircle, Search, ArrowUpDown, ExternalLink, Trash2, Users, Archive, Mail, RefreshCw, Send } from "lucide-react";
 import { DocumentUploadParser } from "./DocumentUploadParser";
 import { DocumentUploadModal } from "./DocumentUploadModal";
 
@@ -243,6 +243,45 @@ export function ClientManager() {
     }
     setSelectedClients(newSelected);
     console.log('New selected clients:', Array.from(newSelected));
+  };
+
+  // Send login credentials to client
+  const sendLoginCredentials = async (client: Client) => {
+    try {
+      console.log('Sending login credentials to:', client.email);
+      
+      const { data, error } = await supabase.functions.invoke('send-login-credentials', {
+        body: {
+          client_id: client.id,
+          client_name: client.name,
+          client_email: client.email
+        }
+      });
+
+      if (error) {
+        console.error('Error sending login credentials:', error);
+        toast({
+          title: "Error",
+          description: "Failed to send login credentials: " + error.message,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      console.log('Login credentials sent successfully:', data);
+      toast({
+        title: "Success",
+        description: `Login credentials sent to ${client.email}`,
+      });
+
+    } catch (error: any) {
+      console.error('Error in sendLoginCredentials:', error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred: " + error.message,
+        variant: "destructive",
+      });
+    }
   };
 
   // Comprehensive client deletion function
@@ -846,6 +885,18 @@ export function ClientManager() {
                         <p className="text-muted-foreground">{client.email}</p>
                       </div>
                       <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            sendLoginCredentials(client);
+                          }}
+                          className="flex items-center gap-1 text-xs bg-blue-50 hover:bg-blue-100"
+                        >
+                          <Send className="w-3 h-3" />
+                          Send Login
+                        </Button>
                         <Button
                           variant="destructive"
                           size="sm"
