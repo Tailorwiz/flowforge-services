@@ -1344,7 +1344,7 @@ export default function ClientPortal() {
           <TabsList className="grid w-full grid-cols-8 bg-white shadow-sm border">
             <TabsTrigger value="deliveries" className="flex items-center gap-2">
               <Package className="w-4 h-4" />
-              Deliveries
+              Completed Document Deliveries
             </TabsTrigger>
             <TabsTrigger value="documents" className="flex items-center gap-2">
               <FileText className="w-4 h-4" />
