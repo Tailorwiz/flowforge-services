@@ -39,6 +39,7 @@ import RDRLogo from "@/components/RDRLogo";
 import AvatarUpload from "@/components/AvatarUpload";
 import { ClientDeliveries } from "@/components/ClientDeliveries";
 import { ClientNotificationBell } from "@/components/ClientNotificationBell";
+import ResumeUpload from "@/components/ResumeUpload";
 
 interface ClientProfile {
   id: string;
@@ -81,6 +82,7 @@ export default function ClientPortal() {
   const [timeRemaining, setTimeRemaining] = useState({ days: 0, hours: 0, minutes: 0 });
   const [actionItems, setActionItems] = useState<any[]>([]);
   const [showIntakeForm, setShowIntakeForm] = useState(false);
+  const [showResumeUpload, setShowResumeUpload] = useState(false);
   const [formData, setFormData] = useState({
     currentJobTitle: '',
     targetJobTitle: '',
@@ -546,6 +548,36 @@ export default function ClientPortal() {
       title: "Intake Form",
       description: "Opening your intake questionnaire...",
     });
+  };
+
+  const handleResumeUploadClick = () => {
+    console.log('*** Opening resume upload modal ***');
+    setShowResumeUpload(true);
+  };
+
+  const handleSessionBookingClick = () => {
+    console.log('Opening session booking...');
+    toast({
+      title: "Session Booking",
+      description: "Session booking functionality will be implemented soon.",
+    });
+  };
+
+  const handleStepClick = (stepId: number) => {
+    console.log('*** Step clicked in ClientPortal:', stepId);
+    switch (stepId) {
+      case 1:
+        handleIntakeFormClick();
+        break;
+      case 2:
+        handleResumeUploadClick();
+        break;
+      case 3:
+        handleSessionBookingClick();
+        break;
+      default:
+        console.log('No handler for step:', stepId);
+    }
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -1144,7 +1176,7 @@ export default function ClientPortal() {
                         isCurrent ? 'bg-primary/5 border-primary/20' :
                         'bg-slate-50 border-slate-200'
                       } ${isClickable ? 'cursor-pointer hover:shadow-md hover:border-primary/40' : ''}`}
-                      onClick={() => isClickable && handleIntakeFormClick()}
+                      onClick={() => isClickable && handleStepClick(step.id)}
                     >
                       <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
                         isCompleted ? 'bg-green-500 text-white' :
@@ -1796,6 +1828,25 @@ export default function ClientPortal() {
           </Button>
         </div>
       </main>
+
+      {/* Resume Upload Modal */}
+      {showResumeUpload && profile && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <ResumeUpload
+              clientId={profile.id}
+              onUploadComplete={() => {
+                setShowResumeUpload(false);
+                toast({
+                  title: "Documents Uploaded!",
+                  description: "Your resume and documents have been uploaded successfully.",
+                });
+              }}
+              onClose={() => setShowResumeUpload(false)}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
