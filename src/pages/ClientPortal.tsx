@@ -352,7 +352,8 @@ export default function ClientPortal() {
         icon: FileText,
         file_size: doc.file_size,
         created_at: doc.created_at,
-        download_url: doc.file_path
+        download_url: doc.file_path,
+        bucket_name: doc.bucket_name
       })) || [];
 
       // Add standard project documents (these are placeholders for deliverables)
@@ -378,6 +379,48 @@ export default function ClientPortal() {
     } catch (error) {
       console.error('Error fetching documents:', error);
       setDocuments([]);
+    }
+  };
+
+  const handleDocumentDownload = async (doc: any) => {
+    try {
+      if (!doc.download_url || !doc.bucket_name) {
+        toast({
+          title: "Download Error",
+          description: "Document download information is missing.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Get signed URL for download
+      const { data, error } = await supabase.storage
+        .from(doc.bucket_name)
+        .createSignedUrl(doc.download_url, 60); // 60 seconds expiry
+
+      if (error) throw error;
+
+      if (data?.signedUrl) {
+        // Create a temporary link and trigger download
+        const link = document.createElement('a');
+        link.href = data.signedUrl;
+        link.download = doc.name;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        toast({
+          title: "Download Started",
+          description: `Downloading ${doc.name}...`,
+        });
+      }
+    } catch (error) {
+      console.error('Error downloading document:', error);
+      toast({
+        title: "Download Failed",
+        description: "There was an error downloading the document. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -1336,8 +1379,12 @@ export default function ClientPortal() {
                           <Badge variant={doc.status === 'in_progress' ? 'default' : 'secondary'}>
                             {doc.status === 'in_progress' ? 'In Progress' : 'Pending'}
                           </Badge>
-                          {doc.status === 'completed' && (
-                            <Button className="w-full mt-4" variant="outline">
+                          {doc.status === 'completed' && doc.download_url && (
+                            <Button 
+                              className="w-full mt-4" 
+                              variant="outline"
+                              onClick={() => handleDocumentDownload(doc)}
+                            >
                               <Download className="w-4 h-4 mr-2" />
                               Download
                             </Button>
