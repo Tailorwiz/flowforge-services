@@ -1881,6 +1881,13 @@ export default function ClientPortal() {
               clientId={profile.id}
               onUploadComplete={async () => {
                 setShowResumeUpload(false);
+                
+                // Update localStorage progress to mark step 2 as completed
+                const saved = localStorage.getItem(`progress_${user?.id}`) || '{}';
+                const localProgress = JSON.parse(saved);
+                localProgress[2] = true; // Mark step 2 (resume upload) as completed
+                localStorage.setItem(`progress_${user?.id}`, JSON.stringify(localProgress));
+                
                 // Refetch profile and documents to get updated data
                 await fetchClientProfile();
                 await fetchDocuments();
