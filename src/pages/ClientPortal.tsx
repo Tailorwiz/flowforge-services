@@ -973,20 +973,23 @@ export default function ClientPortal() {
             <div className="mb-4">
               <RDRLogo />
             </div>
-            <h2 className="text-xl font-bold mb-2 text-slate-800">Access Denied</h2>
+            <h2 className="text-xl font-bold mb-2 text-slate-800">Account Not Linked</h2>
             <p className="text-slate-600 mb-6">
-              You don't have access to the customer portal. Please contact support if you believe this is an error.
+              Your account isn't linked to a client profile yet. Please sign out and sign in again, or contact support if this issue persists.
             </p>
             <div className="space-y-3">
               <Button 
-                onClick={() => window.location.href = '/customer/login'} 
-                variant="outline" 
+                onClick={async () => {
+                  await signOut();
+                  navigate('/customer/login');
+                }} 
                 className="w-full"
               >
-                Back to Sign In
+                Sign Out & Try Again
               </Button>
               <Button 
                 onClick={() => window.location.href = 'mailto:support@resultsdrivenresumes.com'} 
+                variant="outline"
                 className="w-full"
               >
                 Contact Support
