@@ -7,7 +7,7 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.3 (519615d)"
@@ -102,6 +102,161 @@ export type Database = {
             columns: ["lesson_id"]
             isOneToOne: false
             referencedRelation: "lessons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      career_match_reports: {
+        Row: {
+          created_at: string
+          id: string
+          intake_data: Json
+          report_name: string | null
+          role_matches: Json
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          intake_data?: Json
+          report_name?: string | null
+          role_matches?: Json
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          intake_data?: Json
+          report_name?: string | null
+          role_matches?: Json
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      change_item_options: {
+        Row: {
+          ats_ok: boolean
+          change_item_id: string
+          created_at: string
+          id: string
+          length_ok: boolean
+          reasons: Json
+          score: number
+          selected_bool: boolean
+          style_ok: boolean
+          text: string
+          updated_at: string
+        }
+        Insert: {
+          ats_ok?: boolean
+          change_item_id: string
+          created_at?: string
+          id?: string
+          length_ok?: boolean
+          reasons?: Json
+          score?: number
+          selected_bool?: boolean
+          style_ok?: boolean
+          text: string
+          updated_at?: string
+        }
+        Update: {
+          ats_ok?: boolean
+          change_item_id?: string
+          created_at?: string
+          id?: string
+          length_ok?: boolean
+          reasons?: Json
+          score?: number
+          selected_bool?: boolean
+          style_ok?: boolean
+          text?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_change_item_options_change_item_id"
+            columns: ["change_item_id"]
+            isOneToOne: false
+            referencedRelation: "change_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      change_items: {
+        Row: {
+          chosen_option_id: string | null
+          created_at: string
+          id: string
+          instruction_text: string
+          length_rules: Json | null
+          nearby_bullets: Json | null
+          original_text: string
+          revision_session_id: string
+          scope_rules: Json
+          section_context: string | null
+          status: string
+          style_rules: Json | null
+          target_selector: string
+          updated_at: string
+          user_id: string
+          user_tweak_text: string | null
+        }
+        Insert: {
+          chosen_option_id?: string | null
+          created_at?: string
+          id?: string
+          instruction_text: string
+          length_rules?: Json | null
+          nearby_bullets?: Json | null
+          original_text: string
+          revision_session_id: string
+          scope_rules?: Json
+          section_context?: string | null
+          status?: string
+          style_rules?: Json | null
+          target_selector: string
+          updated_at?: string
+          user_id: string
+          user_tweak_text?: string | null
+        }
+        Update: {
+          chosen_option_id?: string | null
+          created_at?: string
+          id?: string
+          instruction_text?: string
+          length_rules?: Json | null
+          nearby_bullets?: Json | null
+          original_text?: string
+          revision_session_id?: string
+          scope_rules?: Json
+          section_context?: string | null
+          status?: string
+          style_rules?: Json | null
+          target_selector?: string
+          updated_at?: string
+          user_id?: string
+          user_tweak_text?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_change_items_chosen_option_id"
+            columns: ["chosen_option_id"]
+            isOneToOne: false
+            referencedRelation: "change_item_options"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_change_items_revision_session_id"
+            columns: ["revision_session_id"]
+            isOneToOne: false
+            referencedRelation: "revision_sessions"
             referencedColumns: ["id"]
           },
         ]
@@ -510,6 +665,48 @@ export type Database = {
           },
         ]
       }
+      custom_resume_templates: {
+        Row: {
+          created_at: string
+          field_mappings: Json
+          id: string
+          is_active: boolean
+          original_filename: string
+          style_metadata: Json
+          template_file_path: string
+          template_file_url: string | null
+          template_name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          field_mappings?: Json
+          id?: string
+          is_active?: boolean
+          original_filename: string
+          style_metadata?: Json
+          template_file_path: string
+          template_file_url?: string | null
+          template_name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          field_mappings?: Json
+          id?: string
+          is_active?: boolean
+          original_filename?: string
+          style_metadata?: Json
+          template_file_path?: string
+          template_file_url?: string | null
+          template_name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       daily_digest_preferences: {
         Row: {
           created_at: string
@@ -744,6 +941,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      document_prompts: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          document_type: string
+          id: string
+          is_active: boolean
+          is_default: boolean
+          metadata: Json | null
+          prompt_name: string
+          system_prompt: string
+          updated_at: string
+          user_prompt_template: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          document_type: string
+          id?: string
+          is_active?: boolean
+          is_default?: boolean
+          metadata?: Json | null
+          prompt_name: string
+          system_prompt: string
+          updated_at?: string
+          user_prompt_template: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          document_type?: string
+          id?: string
+          is_active?: boolean
+          is_default?: boolean
+          metadata?: Json | null
+          prompt_name?: string
+          system_prompt?: string
+          updated_at?: string
+          user_prompt_template?: string
+        }
+        Relationships: []
       }
       document_uploads: {
         Row: {
@@ -1147,6 +1386,185 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      linkedin_profile_files: {
+        Row: {
+          created_at: string
+          extracted_text: string | null
+          file_name: string
+          file_size: number
+          file_type: string
+          file_url: string
+          id: string
+          processing_progress: number | null
+          processing_status: string | null
+          profile_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          extracted_text?: string | null
+          file_name: string
+          file_size: number
+          file_type: string
+          file_url: string
+          id?: string
+          processing_progress?: number | null
+          processing_status?: string | null
+          profile_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          extracted_text?: string | null
+          file_name?: string
+          file_size?: number
+          file_type?: string
+          file_url?: string
+          id?: string
+          processing_progress?: number | null
+          processing_status?: string | null
+          profile_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "linkedin_profile_files_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "linkedin_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      linkedin_profiles: {
+        Row: {
+          audience_seniority: string | null
+          call_to_action: string | null
+          company_size: string | null
+          content_sources: Json | null
+          created_at: string
+          custom_usp: string | null
+          description: string | null
+          experience_highlights: Json | null
+          generated_headlines: Json | null
+          generated_profile: Json | null
+          generated_report_data: Json | null
+          headline_recommendation: Json | null
+          how_you_help: string | null
+          id: string
+          include_faith: string | null
+          industries: string[] | null
+          keywords: string | null
+          manually_entered_text: string | null
+          past_job_titles: string | null
+          pasted_text: string | null
+          primary_goals: string[] | null
+          profile_name: string | null
+          raw_content_data: Json | null
+          results_and_proof: string | null
+          skills: string | null
+          skip_experience_highlights: boolean | null
+          skip_results_and_proof: boolean | null
+          status: string | null
+          target_audience: string | null
+          target_job_titles: string | null
+          unique_selling_points: string[] | null
+          updated_at: string
+          uploaded_files: Json | null
+          use_case: string | null
+          user_categories: string[] | null
+          user_id: string
+          value_proposition: string | null
+          voice_style: string | null
+          what_you_help: string | null
+        }
+        Insert: {
+          audience_seniority?: string | null
+          call_to_action?: string | null
+          company_size?: string | null
+          content_sources?: Json | null
+          created_at?: string
+          custom_usp?: string | null
+          description?: string | null
+          experience_highlights?: Json | null
+          generated_headlines?: Json | null
+          generated_profile?: Json | null
+          generated_report_data?: Json | null
+          headline_recommendation?: Json | null
+          how_you_help?: string | null
+          id?: string
+          include_faith?: string | null
+          industries?: string[] | null
+          keywords?: string | null
+          manually_entered_text?: string | null
+          past_job_titles?: string | null
+          pasted_text?: string | null
+          primary_goals?: string[] | null
+          profile_name?: string | null
+          raw_content_data?: Json | null
+          results_and_proof?: string | null
+          skills?: string | null
+          skip_experience_highlights?: boolean | null
+          skip_results_and_proof?: boolean | null
+          status?: string | null
+          target_audience?: string | null
+          target_job_titles?: string | null
+          unique_selling_points?: string[] | null
+          updated_at?: string
+          uploaded_files?: Json | null
+          use_case?: string | null
+          user_categories?: string[] | null
+          user_id: string
+          value_proposition?: string | null
+          voice_style?: string | null
+          what_you_help?: string | null
+        }
+        Update: {
+          audience_seniority?: string | null
+          call_to_action?: string | null
+          company_size?: string | null
+          content_sources?: Json | null
+          created_at?: string
+          custom_usp?: string | null
+          description?: string | null
+          experience_highlights?: Json | null
+          generated_headlines?: Json | null
+          generated_profile?: Json | null
+          generated_report_data?: Json | null
+          headline_recommendation?: Json | null
+          how_you_help?: string | null
+          id?: string
+          include_faith?: string | null
+          industries?: string[] | null
+          keywords?: string | null
+          manually_entered_text?: string | null
+          past_job_titles?: string | null
+          pasted_text?: string | null
+          primary_goals?: string[] | null
+          profile_name?: string | null
+          raw_content_data?: Json | null
+          results_and_proof?: string | null
+          skills?: string | null
+          skip_experience_highlights?: boolean | null
+          skip_results_and_proof?: boolean | null
+          status?: string | null
+          target_audience?: string | null
+          target_job_titles?: string | null
+          unique_selling_points?: string[] | null
+          updated_at?: string
+          uploaded_files?: Json | null
+          use_case?: string | null
+          user_categories?: string[] | null
+          user_id?: string
+          value_proposition?: string | null
+          voice_style?: string | null
+          what_you_help?: string | null
+        }
+        Relationships: []
       }
       messages: {
         Row: {
@@ -1582,57 +2000,114 @@ export type Database = {
         }
         Relationships: []
       }
+      resumejs: {
+        Row: {
+          created_at: string
+          document_id: string | null
+          document_type: string
+          id: string
+          json_data: Json
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          document_id?: string | null
+          document_type: string
+          id?: string
+          json_data: Json
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          document_id?: string | null
+          document_type?: string
+          id?: string
+          json_data?: Json
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       resumes: {
         Row: {
           analysis_results: Json | null
           company_name: string | null
-          content: string
+          content: string | null
           created_at: string
+          document_json_data: Json | null
           file_name: string | null
           file_type: string | null
           id: string
           job_description: string | null
           job_title: string | null
           match_score: number | null
+          original_content: string | null
+          original_file_path: string | null
+          original_file_url: string | null
           original_match_score: number | null
           original_resume_id: string | null
+          parsed_resume_data: Json | null
+          processing_status: string | null
           title: string
           updated_at: string
           user_id: string
+          word_document_path: string | null
+          word_document_url: string | null
         }
         Insert: {
           analysis_results?: Json | null
           company_name?: string | null
-          content: string
+          content?: string | null
           created_at?: string
+          document_json_data?: Json | null
           file_name?: string | null
           file_type?: string | null
           id?: string
           job_description?: string | null
           job_title?: string | null
           match_score?: number | null
+          original_content?: string | null
+          original_file_path?: string | null
+          original_file_url?: string | null
           original_match_score?: number | null
           original_resume_id?: string | null
+          parsed_resume_data?: Json | null
+          processing_status?: string | null
           title: string
           updated_at?: string
           user_id: string
+          word_document_path?: string | null
+          word_document_url?: string | null
         }
         Update: {
           analysis_results?: Json | null
           company_name?: string | null
-          content?: string
+          content?: string | null
           created_at?: string
+          document_json_data?: Json | null
           file_name?: string | null
           file_type?: string | null
           id?: string
           job_description?: string | null
           job_title?: string | null
           match_score?: number | null
+          original_content?: string | null
+          original_file_path?: string | null
+          original_file_url?: string | null
           original_match_score?: number | null
           original_resume_id?: string | null
+          parsed_resume_data?: Json | null
+          processing_status?: string | null
           title?: string
           updated_at?: string
           user_id?: string
+          word_document_path?: string | null
+          word_document_url?: string | null
         }
         Relationships: []
       }
@@ -1675,6 +2150,102 @@ export type Database = {
           reasons?: string[]
           status?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      revision_sessions: {
+        Row: {
+          accuracy_report: Json | null
+          additional_documents: Json | null
+          change_log: Json | null
+          created_at: string
+          current_resume_content: Json
+          id: string
+          original_resume_content: Json
+          resume_id: string
+          revision_notes: string | null
+          session_name: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          accuracy_report?: Json | null
+          additional_documents?: Json | null
+          change_log?: Json | null
+          created_at?: string
+          current_resume_content?: Json
+          id?: string
+          original_resume_content?: Json
+          resume_id: string
+          revision_notes?: string | null
+          session_name: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          accuracy_report?: Json | null
+          additional_documents?: Json | null
+          change_log?: Json | null
+          created_at?: string
+          current_resume_content?: Json
+          id?: string
+          original_resume_content?: Json
+          resume_id?: string
+          revision_notes?: string | null
+          session_name?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      saved_job_analyses: {
+        Row: {
+          all_requirements: Json
+          all_responsibilities: Json
+          all_skills: Json
+          created_at: string
+          id: string
+          industry: string | null
+          job_title: string
+          position_display_name: string
+          selected_requirements: Json
+          selected_responsibilities: Json
+          selected_skills: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          all_requirements?: Json
+          all_responsibilities?: Json
+          all_skills?: Json
+          created_at?: string
+          id?: string
+          industry?: string | null
+          job_title: string
+          position_display_name: string
+          selected_requirements?: Json
+          selected_responsibilities?: Json
+          selected_skills?: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          all_requirements?: Json
+          all_responsibilities?: Json
+          all_skills?: Json
+          created_at?: string
+          id?: string
+          industry?: string | null
+          job_title?: string
+          position_display_name?: string
+          selected_requirements?: Json
+          selected_responsibilities?: Json
+          selected_skills?: Json
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -1789,6 +2360,90 @@ export type Database = {
           results_count?: number | null
           session_id?: string | null
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      secure_document_sessions: {
+        Row: {
+          company_name: string
+          created_at: string
+          id: string
+          job_description: string | null
+          job_title: string
+          session_metadata: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          company_name: string
+          created_at?: string
+          id?: string
+          job_description?: string | null
+          job_title: string
+          session_metadata?: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          company_name?: string
+          created_at?: string
+          id?: string
+          job_description?: string | null
+          job_title?: string
+          session_metadata?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      secure_documents: {
+        Row: {
+          company_name: string | null
+          content_data: Json
+          created_at: string
+          document_type: string
+          id: string
+          is_protected: boolean
+          job_description: string | null
+          job_title: string | null
+          metadata: Json
+          session_id: string
+          title: string
+          updated_at: string
+          user_id: string
+          version: number
+        }
+        Insert: {
+          company_name?: string | null
+          content_data?: Json
+          created_at?: string
+          document_type: string
+          id?: string
+          is_protected?: boolean
+          job_description?: string | null
+          job_title?: string | null
+          metadata?: Json
+          session_id: string
+          title: string
+          updated_at?: string
+          user_id: string
+          version?: number
+        }
+        Update: {
+          company_name?: string | null
+          content_data?: Json
+          created_at?: string
+          document_type?: string
+          id?: string
+          is_protected?: boolean
+          job_description?: string | null
+          job_title?: string | null
+          metadata?: Json
+          session_id?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+          version?: number
         }
         Relationships: []
       }
@@ -2031,6 +2686,111 @@ export type Database = {
         }
         Relationships: []
       }
+      tailored_documents: {
+        Row: {
+          analysis_results: Json | null
+          company_name: string | null
+          content: string
+          created_at: string
+          document_json_data: Json | null
+          document_type: string
+          file_name: string | null
+          file_type: string | null
+          id: string
+          job_description: string | null
+          job_title: string | null
+          match_score: number | null
+          original_content: string | null
+          original_match_score: number | null
+          original_resume_id: string | null
+          parsed_document_data: Json | null
+          processing_status: string
+          tailoring_session_id: string
+          title: string
+          updated_at: string
+          user_id: string
+          word_document_path: string | null
+          word_document_url: string | null
+        }
+        Insert: {
+          analysis_results?: Json | null
+          company_name?: string | null
+          content: string
+          created_at?: string
+          document_json_data?: Json | null
+          document_type: string
+          file_name?: string | null
+          file_type?: string | null
+          id?: string
+          job_description?: string | null
+          job_title?: string | null
+          match_score?: number | null
+          original_content?: string | null
+          original_match_score?: number | null
+          original_resume_id?: string | null
+          parsed_document_data?: Json | null
+          processing_status?: string
+          tailoring_session_id: string
+          title: string
+          updated_at?: string
+          user_id: string
+          word_document_path?: string | null
+          word_document_url?: string | null
+        }
+        Update: {
+          analysis_results?: Json | null
+          company_name?: string | null
+          content?: string
+          created_at?: string
+          document_json_data?: Json | null
+          document_type?: string
+          file_name?: string | null
+          file_type?: string | null
+          id?: string
+          job_description?: string | null
+          job_title?: string | null
+          match_score?: number | null
+          original_content?: string | null
+          original_match_score?: number | null
+          original_resume_id?: string | null
+          parsed_document_data?: Json | null
+          processing_status?: string
+          tailoring_session_id?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+          word_document_path?: string | null
+          word_document_url?: string | null
+        }
+        Relationships: []
+      }
+      tailoring_tasks: {
+        Row: {
+          created_at: string
+          error: string | null
+          id: string
+          result: Json | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          error?: string | null
+          id?: string
+          result?: Json | null
+          status: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          error?: string | null
+          id?: string
+          result?: Json | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       tasks: {
         Row: {
           created_at: string
@@ -2106,6 +2866,42 @@ export type Database = {
         }
         Relationships: []
       }
+      user_activity_logs: {
+        Row: {
+          action_details: Json | null
+          activity_type: string
+          created_at: string | null
+          id: string
+          ip_address: unknown
+          session_id: string | null
+          tool_name: string | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action_details?: Json | null
+          activity_type: string
+          created_at?: string | null
+          id?: string
+          ip_address?: unknown
+          session_id?: string | null
+          tool_name?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action_details?: Json | null
+          activity_type?: string
+          created_at?: string | null
+          id?: string
+          ip_address?: unknown
+          session_id?: string | null
+          tool_name?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           assigned_at: string
@@ -2134,7 +2930,7 @@ export type Database = {
         Row: {
           created_at: string
           id: string
-          ip_address: unknown | null
+          ip_address: unknown
           last_activity: string
           session_id: string
           user_agent: string | null
@@ -2143,7 +2939,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           last_activity?: string
           session_id: string
           user_agent?: string | null
@@ -2152,7 +2948,7 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           last_activity?: string
           session_id?: string
           user_agent?: string | null
@@ -2169,57 +2965,51 @@ export type Database = {
         Args: { client_id_param: string }
         Returns: Json
       }
-      delete_user_completely: {
-        Args: { user_id_param: string }
-        Returns: Json
-      }
+      delete_user_completely: { Args: { user_id_param: string }; Returns: Json }
       generate_compelling_summary: {
-        Args: { lesson_title: string; lesson_content: string }
+        Args: { lesson_content: string; lesson_title: string }
         Returns: string
       }
       get_admin_client_overview: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
+          approved_at: string
+          client_email: string
           client_id: string
           client_name: string
-          client_email: string
-          service_type_id: string
-          deliverable_name: string
           deliverable_category: string
           deliverable_description: string
-          expected_quantity: number
+          deliverable_name: string
+          delivered_at: string
           delivery_id: string
+          delivery_status: string
           document_title: string
           document_type: string
+          expected_quantity: number
           file_url: string
-          delivery_status: string
-          delivered_at: string
-          approved_at: string
+          service_type_id: string
         }[]
       }
       get_client_deliverable_progress: {
         Args: { client_id_param: string }
         Returns: {
-          deliverable_name: string
-          deliverable_category: string
-          expected_quantity: number
-          delivered_quantity: number
           completion_percentage: number
+          deliverable_category: string
+          deliverable_name: string
+          delivered_quantity: number
+          expected_quantity: number
         }[]
       }
       has_role: {
         Args: {
-          _user_id: string
           _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
         }
         Returns: boolean
       }
-      is_admin: {
-        Args: { _user_id: string }
-        Returns: boolean
-      }
+      is_admin: { Args: { _user_id: string }; Returns: boolean }
       save_intake_draft: {
-        Args: { p_client_id: string; p_user_id: string; p_form_data: Json }
+        Args: { p_client_id: string; p_form_data: Json; p_user_id: string }
         Returns: string
       }
     }
