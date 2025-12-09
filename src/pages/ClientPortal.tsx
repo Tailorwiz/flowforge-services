@@ -39,7 +39,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import RDRLogo from "@/components/RDRLogo";
 import AvatarUpload from "@/components/AvatarUpload";
-import { ClientDeliveries } from "@/components/ClientDeliveries";
+import { ClientDeliveriesSimple } from "@/components/ClientDeliveriesSimple";
 import { ClientNotificationBell } from "@/components/ClientNotificationBell";
 import ResumeUpload from "@/components/ResumeUpload";
 import { MessagingCenter } from '@/components/MessagingCenter';
@@ -1444,7 +1444,7 @@ export default function ClientPortal() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <ClientDeliveries />
+                <ClientDeliveriesSimple />
               </CardContent>
             </Card>
           </TabsContent>
