@@ -1311,16 +1311,19 @@ export default function ClientPortal() {
                   const isCompleted = profile.progress_step > step.id;
                   const isCurrent = profile.progress_step === step.id;
                   const IconComponent = step.icon;
+                  // Step 4 is locked until session is booked (step 3 complete)
+                  const isStep4Locked = step.id === 4 && profile.progress_step < 4;
                   // Make intake form and resume upload always clickable, others only when current
-                  const isClickable = step.id === 1 || step.id === 2 || (step.id === profile.progress_step && !isCompleted);
+                  const isClickable = !isStep4Locked && (step.id === 1 || step.id === 2 || (step.id === profile.progress_step && !isCompleted));
                   
-                  console.log(`Step ${step.id}: progress_step=${profile.progress_step}, isCompleted=${isCompleted}, isClickable=${isClickable}`);
+                  console.log(`Step ${step.id}: progress_step=${profile.progress_step}, isCompleted=${isCompleted}, isClickable=${isClickable}, isStep4Locked=${isStep4Locked}`);
                   
                   return (
                     <div 
                       key={step.id} 
                       className={`flex items-center gap-4 p-4 rounded-lg border transition-all ${
                         isCompleted ? 'bg-green-50 border-green-200' :
+                        isStep4Locked ? 'bg-slate-100 border-slate-200 opacity-60' :
                         isCurrent ? 'bg-primary/5 border-primary/20' :
                         'bg-slate-50 border-slate-200'
                       } ${isClickable ? 'cursor-pointer hover:shadow-md hover:border-primary/40' : ''}`}
@@ -1328,6 +1331,7 @@ export default function ClientPortal() {
                     >
                       <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
                         isCompleted ? 'bg-green-500 text-white' :
+                        isStep4Locked ? 'bg-slate-400 text-white' :
                         isCurrent ? 'bg-primary text-white' :
                         'bg-slate-300 text-slate-600'
                       }`}>
@@ -1339,19 +1343,28 @@ export default function ClientPortal() {
                       </div>
                       <div className="flex-1">
                         <h4 className="font-semibold text-slate-800">{step.title}</h4>
-                        <p className="text-sm text-slate-600">{step.description}</p>
+                        <p className="text-sm text-slate-600">
+                          {isStep4Locked 
+                            ? "Complete your consultation first - we'll start after your session" 
+                            : step.description}
+                        </p>
                       </div>
                       {isCompleted && (
                         <Badge variant="default" className="bg-green-500">
                           Complete
                         </Badge>
                       )}
-                      {isCurrent && (
+                      {isStep4Locked && (
+                        <Badge variant="secondary" className="bg-slate-300 text-slate-600">
+                          Waiting for Session
+                        </Badge>
+                      )}
+                      {isCurrent && !isStep4Locked && (
                         <Badge variant="default">
                           In Progress
                         </Badge>
                       )}
-                      {(isClickable || step.id === 1 || step.id === 2) && (
+                      {(isClickable || step.id === 1 || step.id === 2) && !isStep4Locked && (
                         <Button 
                           variant="outline" 
                           size="sm"
