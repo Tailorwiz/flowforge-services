@@ -83,9 +83,7 @@ export default function ClientPortal() {
   
   const [documents, setDocuments] = useState<any[]>([]);
   const [trainingMaterials, setTrainingMaterials] = useState<any[]>([]);
-  const [alerts, setAlerts] = useState<any[]>([]);
   const [timeRemaining, setTimeRemaining] = useState({ days: 0, hours: 0, minutes: 0 });
-  const [actionItems, setActionItems] = useState<any[]>([]);
   const [showIntakeForm, setShowIntakeForm] = useState(false);
   const [showResumeUpload, setShowResumeUpload] = useState(false);
   const [showCalendlyBooking, setShowCalendlyBooking] = useState(false);
@@ -152,8 +150,6 @@ export default function ClientPortal() {
       fetchClientProfile();
       fetchDocuments();
       fetchTrainingMaterials();
-      fetchAlerts();
-      fetchActionItems();
       loadSavedProgress();
     }
   }, [user]);
@@ -485,84 +481,6 @@ export default function ClientPortal() {
     }
   };
 
-  const fetchAlerts = async () => {
-    // Mock alerts for now
-    setAlerts([
-      {
-        id: 1,
-        type: 'info',
-        title: 'Welcome!',
-        message: 'Your project has been started. We\'ll keep you updated on progress.',
-        timestamp: new Date().toISOString(),
-        read: false
-      },
-      {
-        id: 2,
-        type: 'reminder',
-        title: 'Document Upload',
-        message: 'Please upload your current resume when convenient.',
-        timestamp: new Date(Date.now() - 86400000).toISOString(),
-        read: true
-      }
-    ]);
-  };
-
-  const fetchActionItems = async () => {
-    try {
-      if (!profile?.id) return;
-      
-      const { data } = await supabase
-        .from('client_tasks')
-        .select('*')
-        .eq('client_id', profile.id)
-        .order('task_order', { ascending: true });
-      
-      // Add sample action items if no data
-      const sampleItems = data && data.length > 0 ? data : [
-        {
-          id: 1,
-          name: 'Complete Intake Questionnaire',
-          description: 'Please fill out the detailed questionnaire about your career goals and experience.',
-          status: 'pending',
-          due_date: new Date(Date.now() + 86400000 * 2).toISOString().split('T')[0], // 2 days from now
-          task_order: 1,
-          assigned_date: new Date().toISOString().split('T')[0]
-        },
-        {
-          id: 2,
-          name: 'Upload Current Resume',
-          description: 'Upload your existing resume so we can review and improve it.',
-          status: 'pending',
-          due_date: new Date(Date.now() + 86400000 * 3).toISOString().split('T')[0], // 3 days from now
-          task_order: 2,
-          assigned_date: new Date().toISOString().split('T')[0]
-        },
-        {
-          id: 3,
-          name: 'Initial Draft Review',
-          description: 'We are preparing your initial resume draft based on your requirements.',
-          status: 'waiting_admin',
-          due_date: new Date(Date.now() + 86400000 * 5).toISOString().split('T')[0], // 5 days from now
-          task_order: 3,
-          assigned_date: new Date().toISOString().split('T')[0]
-        },
-        {
-          id: 4,
-          name: 'Review and Provide Feedback',
-          description: 'Review the initial draft and provide any feedback or revision requests.',
-          status: 'blocked',
-          due_date: new Date(Date.now() + 86400000 * 6).toISOString().split('T')[0], // 6 days from now
-          task_order: 4,
-          assigned_date: new Date().toISOString().split('T')[0]
-        }
-      ];
-      
-      setActionItems(sampleItems);
-    } catch (error) {
-      console.error('Error fetching action items:', error);
-    }
-  };
-
   const determineProgressStep = (clientData: any) => {
     // Check localStorage for saved progress
     const saved = localStorage.getItem(`progress_${user?.id}`);
@@ -889,11 +807,6 @@ export default function ClientPortal() {
     window.location.href = `mailto:support@resultsdrivenresumes.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
   };
 
-  const markAlertAsRead = (alertId: number) => {
-    setAlerts(prev => prev.map(alert => 
-      alert.id === alertId ? { ...alert, read: true } : alert
-    ));
-  };
 
   // Download PDF function
   const downloadPDF = async (fileUrl: string, fileName: string) => {
@@ -1204,26 +1117,11 @@ export default function ClientPortal() {
                     <div className="text-right">
                       <p className="text-sm font-medium text-slate-800">{profile.name}</p>
                       <p className="text-xs text-slate-600">{profile.service_type}</p>
-                      {alerts.filter(a => !a.read).length > 0 && (
-                        <div className="flex items-center gap-1 mt-1">
-                          <Bell className="h-3 w-3 text-orange-500" />
-                          <span className="text-xs text-orange-600">{alerts.filter(a => !a.read).length} new</span>
-                        </div>
-                      )}
                     </div>
                     <ChevronDown className="h-4 w-4 text-slate-400" />
                   </div>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56 bg-white border shadow-lg z-50">
-                  <DropdownMenuItem onClick={() => handleMenuItemClick("alerts")} className="flex items-center gap-2">
-                    <Bell className="h-4 w-4" />
-                    Alerts
-                    {alerts.filter(a => !a.read).length > 0 && (
-                      <Badge variant="secondary" className="ml-auto text-xs">
-                        {alerts.filter(a => !a.read).length}
-                      </Badge>
-                    )}
-                  </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => handleMenuItemClick("profile")} className="flex items-center gap-2">
                     <User className="h-4 w-4" />
                     Profile
@@ -1410,10 +1308,6 @@ export default function ClientPortal() {
               <FileText className="w-4 h-4" />
               My Uploaded Documents
             </TabsTrigger>
-            <TabsTrigger value="action-items" className="flex items-center gap-2">
-              <ListTodo className="w-4 h-4" />
-              Action Items
-            </TabsTrigger>
             <TabsTrigger value="training" className="flex items-center gap-2">
               <BookOpen className="w-4 h-4" />
               Training
@@ -1421,15 +1315,6 @@ export default function ClientPortal() {
             <TabsTrigger value="messages" className="flex items-center gap-2">
               <MessageCircle className="w-4 h-4" />
               Messages
-            </TabsTrigger>
-            <TabsTrigger value="alerts" className="flex items-center gap-2">
-              <Bell className="w-4 h-4" />
-              Alerts
-              {alerts.filter(a => !a.read).length > 0 && (
-                <span className="bg-orange-500 text-white text-xs rounded-full px-1.5 py-0.5 ml-1">
-                  {alerts.filter(a => !a.read).length}
-                </span>
-              )}
             </TabsTrigger>
           </TabsList>
 
@@ -1488,115 +1373,6 @@ export default function ClientPortal() {
             </Card>
           </TabsContent>
 
-          {/* Action Items Tab */}
-          <TabsContent value="action-items">
-            <Card className="shadow-lg border-0">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <ListTodo className="w-5 h-5 text-primary" />
-                  Action Items & Next Steps
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {actionItems.map((item) => {
-                    const getStatusIcon = (status: string) => {
-                      switch (status) {
-                        case 'completed':
-                          return <CheckCircle className="w-5 h-5 text-green-600" />;
-                        case 'pending':
-                          return <Clock className="w-5 h-5 text-orange-600" />;
-                        case 'waiting_admin':
-                          return <UserCheck className="w-5 h-5 text-blue-600" />;
-                        case 'blocked':
-                          return <AlertCircle className="w-5 h-5 text-red-600" />;
-                        default:
-                          return <Clock className="w-5 h-5 text-slate-400" />;
-                      }
-                    };
-
-                    const getStatusBadge = (status: string) => {
-                      switch (status) {
-                        case 'completed':
-                          return <Badge variant="default" className="bg-green-500">Completed</Badge>;
-                        case 'pending':
-                          return <Badge variant="default" className="bg-orange-500">Action Required</Badge>;
-                        case 'waiting_admin':
-                          return <Badge variant="default" className="bg-blue-500">Waiting for Us</Badge>;
-                        case 'blocked':
-                          return <Badge variant="secondary">Blocked</Badge>;
-                        default:
-                          return <Badge variant="secondary">Unknown</Badge>;
-                      }
-                    };
-
-                    const getStatusColor = (status: string) => {
-                      switch (status) {
-                        case 'completed':
-                          return 'border-green-200 bg-green-50';
-                        case 'pending':
-                          return 'border-orange-200 bg-orange-50';
-                        case 'waiting_admin':
-                          return 'border-blue-200 bg-blue-50';
-                        case 'blocked':
-                          return 'border-red-200 bg-red-50';
-                        default:
-                          return 'border-slate-200 bg-slate-50';
-                      }
-                    };
-
-                    return (
-                      <Card key={item.id} className={`border ${getStatusColor(item.status)} transition-shadow hover:shadow-md`}>
-                        <CardContent className="p-6">
-                          <div className="flex items-start gap-4">
-                            <div className="flex-shrink-0 mt-1">
-                              {getStatusIcon(item.status)}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-start justify-between gap-4 mb-2">
-                                <h3 className="text-lg font-semibold text-slate-800">{item.name}</h3>
-                                {getStatusBadge(item.status)}
-                              </div>
-                              <p className="text-slate-600 mb-3">{item.description}</p>
-                              <div className="flex items-center gap-6 text-sm text-slate-500">
-                                {item.due_date && (
-                                  <div className="flex items-center gap-1">
-                                    <Calendar className="w-4 h-4" />
-                                    <span>Due: {new Date(item.due_date).toLocaleDateString()}</span>
-                                  </div>
-                                )}
-                                {item.assigned_date && (
-                                  <div className="flex items-center gap-1">
-                                    <Clock className="w-4 h-4" />
-                                    <span>Assigned: {new Date(item.assigned_date).toLocaleDateString()}</span>
-                                  </div>
-                                )}
-                              </div>
-                              {item.status === 'pending' && (
-                                <div className="mt-4">
-                                  <Button size="sm" className="w-full sm:w-auto">
-                                    Start Task
-                                  </Button>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    );
-                  })}
-                  
-                  {actionItems.length === 0 && (
-                    <div className="text-center py-12">
-                      <ListTodo className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-                      <p className="text-slate-500 text-lg">No action items at this time.</p>
-                      <p className="text-slate-400 text-sm">Check back later for updates on your project.</p>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
 
           {/* Training Materials Tab */}
           <TabsContent value="training">
@@ -1670,58 +1446,6 @@ export default function ClientPortal() {
             )}
           </TabsContent>
 
-          {/* Alerts Tab */}
-          <TabsContent value="alerts">
-            <Card className="shadow-lg border-0">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Bell className="w-5 h-5 text-primary" />
-                  Notifications & Alerts
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {alerts.map((alert) => (
-                    <div 
-                      key={alert.id} 
-                      className={`p-4 rounded-lg border-l-4 ${
-                        alert.type === 'info' ? 'bg-blue-50 border-blue-400' :
-                        alert.type === 'reminder' ? 'bg-orange-50 border-orange-400' :
-                        'bg-gray-50 border-gray-400'
-                      } ${!alert.read ? 'ring-2 ring-primary/20' : ''}`}
-                      onClick={() => markAlertAsRead(alert.id)}
-                    >
-                      <div className="flex items-start gap-3">
-                        <div className={`p-2 rounded-full ${
-                          alert.type === 'info' ? 'bg-blue-100' :
-                          alert.type === 'reminder' ? 'bg-orange-100' :
-                          'bg-gray-100'
-                        }`}>
-                          {alert.type === 'info' ? (
-                            <AlertCircle className="w-4 h-4 text-blue-600" />
-                          ) : (
-                            <Clock className="w-4 h-4 text-orange-600" />
-                          )}
-                        </div>
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <h4 className="font-semibold text-slate-800">{alert.title}</h4>
-                            {!alert.read && (
-                              <div className="w-2 h-2 bg-primary rounded-full"></div>
-                            )}
-                          </div>
-                          <p className="text-sm text-slate-600 mb-2">{alert.message}</p>
-                          <p className="text-xs text-slate-500">
-                            {new Date(alert.timestamp).toLocaleDateString()} at {new Date(alert.timestamp).toLocaleTimeString()}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
 
           {/* Profile Tab */}
           <TabsContent value="profile">
