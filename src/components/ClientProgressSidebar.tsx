@@ -202,6 +202,34 @@ export function ClientProgressSidebar({
 
         <Separator className="my-4" />
 
+        {/* My New Resume Documents! */}
+        <button
+          onClick={() => onStepSelect(10)}
+          className={cn(
+            "w-full flex items-center gap-3 p-3 rounded-lg text-left transition-all",
+            currentStep === 10 && "bg-primary/10 border border-primary/20",
+            currentStep !== 10 && "hover:bg-muted/50"
+          )}
+        >
+          <div className={cn(
+            "w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0",
+            currentStep === 10 && "bg-primary text-primary-foreground",
+            currentStep !== 10 && "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600"
+          )}>
+            <FileText className="h-4 w-4" />
+          </div>
+          <div className="flex-1">
+            <span className={cn(
+              "text-sm font-medium",
+              currentStep === 10 && "text-primary"
+            )}>
+              My New Resume Documents!
+            </span>
+          </div>
+        </button>
+
+        <Separator className="my-4" />
+
         {/* Quick Links */}
         <div className="space-y-1">
           <button

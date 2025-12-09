@@ -6,6 +6,7 @@ import { toast } from "@/hooks/use-toast";
 import { ClientProgressSidebar } from "@/components/ClientProgressSidebar";
 import { ClientStepContent } from "@/components/ClientStepContent";
 import { ClientDeliveriesSimple } from "@/components/ClientDeliveriesSimple";
+import { ClientDocumentsChecklist } from "@/components/ClientDocumentsChecklist";
 import { MessagingCenter } from "@/components/MessagingCenter";
 import ResumeUpload from "@/components/ResumeUpload";
 import CalendlyEmbed from "@/components/CalendlyEmbed";
@@ -627,6 +628,15 @@ export default function ClientPortalSimple() {
                   </div>
                 </CardContent>
               </Card>
+            </div>
+          )}
+
+          {/* My New Resume Documents (Step 10) */}
+          {currentStep === 10 && (
+            <div className="p-6">
+              <div className="max-w-4xl mx-auto">
+                <ClientDocumentsChecklist />
+              </div>
             </div>
           )}
         </main>
