@@ -1,4 +1,4 @@
-import { Check, FileText, Upload, Calendar, Clock, FolderOpen, MessageCircle, User, LogOut, HelpCircle, BookOpen } from "lucide-react";
+import { Check, ClipboardList, BarChart3, FileText, FolderPlus, MessageSquareText, MessageCircle, User, LogOut, HelpCircle, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
@@ -27,7 +27,7 @@ interface ClientProgressSidebarProps {
   onHelp: () => void;
 }
 
-const STEP_ICONS = [FileText, Upload, Calendar, Clock, FolderOpen];
+const STEP_ICONS = [ClipboardList, BarChart3, FileText, FolderPlus, MessageSquareText];
 
 export function ClientProgressSidebar({
   steps,
@@ -71,7 +71,7 @@ export function ClientProgressSidebar({
       {/* Steps List */}
       <div className="flex-1 overflow-y-auto p-3">
         <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3 px-2">
-          Your Journey
+          Onboarding Process
         </p>
         
         <div className="space-y-1">

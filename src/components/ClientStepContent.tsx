@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { FileText, Upload, Calendar, Clock, FolderOpen, CheckCircle, ArrowRight, AlertCircle } from "lucide-react";
+import { ClipboardList, BarChart3, FileText, FolderPlus, MessageSquareText, CheckCircle, ArrowRight, AlertCircle } from "lucide-react";
 
 interface ClientStepContentProps {
   stepId: number;
@@ -14,59 +14,59 @@ interface ClientStepContentProps {
 
 const STEP_CONFIG = {
   1: {
-    icon: FileText,
-    title: "Complete Your Intake Form",
-    description: "Tell us about your career goals, experience, and what you're looking for. This helps us create the perfect documents for you.",
-    completedTitle: "Intake Form Completed",
-    completedDescription: "Great job! We have all the information we need. You can update your responses anytime.",
-    actionLabel: "Start Form",
-    updateLabel: "Update Responses",
+    icon: ClipboardList,
+    title: "New Client Worksheet",
+    description: "Tell us about yourself, your career history, and your goals. This foundational information helps us understand your unique story.",
+    completedTitle: "New Client Worksheet Completed",
+    completedDescription: "Thank you! We have your background information. You can update your responses anytime.",
+    actionLabel: "Start Worksheet",
+    updateLabel: "Update Worksheet",
     color: "text-blue-500",
     bgColor: "bg-blue-50 dark:bg-blue-950/20"
   },
   2: {
-    icon: Upload,
-    title: "Upload Your Resume",
-    description: "Share your current resume so we can review it and create an improved version tailored to your goals.",
-    completedTitle: "Resume Uploaded",
-    completedDescription: "We've received your resume and are reviewing it. You can upload additional documents if needed.",
-    actionLabel: "Upload Resume",
-    updateLabel: "Upload More",
+    icon: BarChart3,
+    title: "Quantifications & Metrics Worksheet",
+    description: "Share your accomplishments with numbers - revenue generated, team sizes, cost savings, and measurable impacts from your career.",
+    completedTitle: "Metrics Worksheet Completed",
+    completedDescription: "Great! Your quantifiable achievements are recorded. Add more anytime.",
+    actionLabel: "Start Worksheet",
+    updateLabel: "Update Metrics",
     color: "text-purple-500",
     bgColor: "bg-purple-50 dark:bg-purple-950/20"
   },
   3: {
-    icon: Calendar,
-    title: "Book Your Consultation",
-    description: "Schedule a call with our team to discuss your career goals and document strategy.",
-    completedTitle: "Session Booked",
-    completedDescription: "Your consultation is scheduled. Check your email for details.",
-    actionLabel: "Book Session",
-    updateLabel: "Reschedule",
+    icon: FileText,
+    title: "Resume(s)",
+    description: "Upload your current resume(s) so we can review them and create improved versions tailored to your goals.",
+    completedTitle: "Resume(s) Uploaded",
+    completedDescription: "We've received your resume(s) and are reviewing them. You can upload additional versions if needed.",
+    actionLabel: "Upload Resume",
+    updateLabel: "Upload More",
     color: "text-green-500",
     bgColor: "bg-green-50 dark:bg-green-950/20"
   },
   4: {
-    icon: Clock,
-    title: "We're Working on Your Documents",
-    description: "Our team is crafting your personalized career documents. We'll notify you when they're ready for review.",
-    completedTitle: "Documents Ready!",
-    completedDescription: "Your documents are complete! Head to the next step to review and download them.",
-    actionLabel: null,
-    updateLabel: null,
+    icon: FolderPlus,
+    title: "Additional Documents",
+    description: "Upload any supporting documents - job descriptions, cover letters, LinkedIn exports, performance reviews, or other relevant materials.",
+    completedTitle: "Additional Documents Uploaded",
+    completedDescription: "Documents received! You can continue adding more files as needed.",
+    actionLabel: "Upload Documents",
+    updateLabel: "Upload More",
     color: "text-orange-500",
     bgColor: "bg-orange-50 dark:bg-orange-950/20"
   },
   5: {
-    icon: FolderOpen,
-    title: "Review & Download Your Documents",
-    description: "Your completed documents are ready! Review each one and download when you're satisfied.",
-    completedTitle: "All Documents Approved",
-    completedDescription: "Congratulations! You've approved all your documents. Download them anytime.",
-    actionLabel: "View Documents",
-    updateLabel: "View Documents",
-    color: "text-emerald-500",
-    bgColor: "bg-emerald-50 dark:bg-emerald-950/20"
+    icon: MessageSquareText,
+    title: "Special Requests & Notes",
+    description: "Share any special requests, notes, or additional context for the RDR team. Let us know anything that will help us serve you better.",
+    completedTitle: "Notes Submitted",
+    completedDescription: "Your notes have been received. Feel free to add more anytime.",
+    actionLabel: "Add Notes",
+    updateLabel: "Update Notes",
+    color: "text-teal-500",
+    bgColor: "bg-teal-50 dark:bg-teal-950/20"
   }
 };
 
