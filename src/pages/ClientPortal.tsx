@@ -70,7 +70,7 @@ const PROGRESS_STEPS = [
   { id: 2, title: "Upload Resume", description: "Upload your current resume", icon: Upload },
   { id: 3, title: "Book Session", description: "Schedule your consultation", icon: Calendar },
   { id: 4, title: "In Progress", description: "We're working on your documents", icon: Clock },
-  { id: 5, title: "Review & Download", description: "Review and download your completed documents", icon: Download }
+  { id: 5, title: "Review & Download", description: "View your package checklist and download completed documents", icon: Download }
 ];
 
 export default function ClientPortal() {
@@ -682,6 +682,14 @@ export default function ClientPortal() {
         break;
       case 3:
         handleSessionBookingClick();
+        break;
+      case 5:
+        // Navigate to deliveries tab to see package checklist
+        setActiveTab('deliveries');
+        toast({
+          title: "Your Package Deliverables",
+          description: "View your package checklist and download completed documents.",
+        });
         break;
       default:
         console.log('No handler for step:', stepId);
@@ -1367,25 +1375,20 @@ export default function ClientPortal() {
                           In Progress
                         </Badge>
                       )}
-                      {/* Show button for steps 1, 2, 3 - but different labels based on completion */}
-                      {(step.id === 1 || step.id === 2 || step.id === 3) && !isStep4Locked && (
+                      {/* Show button for steps 1, 2, 3, 5 - but different labels based on completion */}
+                      {(step.id === 1 || step.id === 2 || step.id === 3 || step.id === 5) && !isStep4Locked && (
                         <Button 
                           variant="outline" 
                           size="sm"
                           onClick={(e) => {
                             e.stopPropagation();
-                            if (step.id === 1) {
-                              handleIntakeFormClick();
-                            } else if (step.id === 2) {
-                              handleResumeUploadClick();
-                            } else if (step.id === 3) {
-                              handleSessionBookingClick();
-                            }
+                            handleStepClick(step.id);
                           }}
                         >
                           {step.id === 1 && isCompleted ? 'Update' : 
                            step.id === 2 && isCompleted ? 'Add More' : 
-                           step.id === 3 && isCompleted ? 'Rebook' : 'Start'} →
+                           step.id === 3 && isCompleted ? 'Rebook' : 
+                           step.id === 5 ? 'View Checklist' : 'Start'} →
                         </Button>
                       )}
                     </div>
