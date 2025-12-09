@@ -1994,34 +1994,20 @@ export default function ClientPortal() {
 
       {/* Calendly Booking Modal */}
       {showCalendlyBooking && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-2">
-          <div className="bg-white rounded-xl w-full max-w-5xl h-[95vh] overflow-hidden shadow-2xl">
-            <CalendlyEmbed
-              calendlyUrl="https://calendly.com/resultsdrivenresumes/resume-clarity-research-review-interview-session"
-              onBookingComplete={async () => {
-                setShowCalendlyBooking(false);
-                
-                // Update localStorage progress to mark step 3 as completed
-                const saved = localStorage.getItem(`progress_${user?.id}`) || '{}';
-                const localProgress = JSON.parse(saved);
-                localProgress[3] = true;
-                localStorage.setItem(`progress_${user?.id}`, JSON.stringify(localProgress));
-                
-                // Update database
-                if (profile?.id) {
-                  await supabase
-                    .from('clients')
-                    .update({ session_booked: true, updated_at: new Date().toISOString() })
-                    .eq('id', profile.id);
-                }
-                
-                await fetchClientProfile();
-                toast({
-                  title: "Session Booked!",
-                  description: "Your consultation has been scheduled successfully.",
-                });
-              }}
-              onClose={() => setShowCalendlyBooking(false)}
+        <div className="fixed inset-0 bg-background z-50 flex flex-col">
+          <div className="flex items-center justify-between p-4 border-b bg-background">
+            <h2 className="text-xl font-semibold">Schedule Your Consultation</h2>
+            <Button variant="ghost" size="sm" onClick={() => setShowCalendlyBooking(false)}>
+              ✕
+            </Button>
+          </div>
+          <div className="flex-1">
+            <iframe
+              src="https://calendly.com/resultsdrivenresumes/resume-clarity-research-review-interview-session"
+              width="100%"
+              height="100%"
+              frameBorder="0"
+              title="Schedule Consultation"
             />
           </div>
         </div>
