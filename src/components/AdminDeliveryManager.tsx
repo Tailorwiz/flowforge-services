@@ -21,9 +21,11 @@ import {
   Package,
   MessageSquare,
   Plus,
-  Eye
+  Eye,
+  FolderUp
 } from "lucide-react";
 import { format } from "date-fns";
+import { BulkDeliveryUpload } from "./BulkDeliveryUpload";
 
 interface Client {
   id: string;
@@ -565,6 +567,10 @@ export function AdminDeliveryManager() {
             <Package className="h-4 w-4 mr-2" />
             All Deliveries
           </TabsTrigger>
+          <TabsTrigger value="bulk">
+            <FolderUp className="h-4 w-4 mr-2" />
+            Bulk Upload
+          </TabsTrigger>
           <TabsTrigger value="revisions">
             <MessageSquare className="h-4 w-4 mr-2" />
             Revision Requests
@@ -575,6 +581,11 @@ export function AdminDeliveryManager() {
             )}
           </TabsTrigger>
         </TabsList>
+
+        {/* Bulk Upload Tab */}
+        <TabsContent value="bulk">
+          <BulkDeliveryUpload />
+        </TabsContent>
 
         {/* Deliveries Tab */}
         <TabsContent value="deliveries" className="space-y-4">
