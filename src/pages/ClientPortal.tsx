@@ -301,6 +301,7 @@ export default function ClientPortal() {
             industry: profileData?.industry,
             website: profileData?.website,
             bio: profileData?.bio,
+            session_booked: false
           });
         }
       }
@@ -1314,11 +1315,11 @@ export default function ClientPortal() {
                   const isCurrent = profile.progress_step === step.id;
                   const IconComponent = step.icon;
                   // Step 4 is locked until session is booked (using actual database value, not localStorage)
-                  const isStep4Locked = step.id === 4 && !profile.session_booked;
+                  const isStep4Locked = step.id === 4 && profile.session_booked !== true;
                   // Make intake form and resume upload always clickable, others only when current
-                  const isClickable = !isStep4Locked && (step.id === 1 || step.id === 2 || (step.id === profile.progress_step && !isCompleted));
+                  const isClickable = !isStep4Locked && (step.id === 1 || step.id === 2 || step.id === 3 || (step.id === profile.progress_step && !isCompleted));
                   
-                  console.log(`Step ${step.id}: progress_step=${profile.progress_step}, isCompleted=${isCompleted}, isClickable=${isClickable}, isStep4Locked=${isStep4Locked}`);
+                  console.log(`Step ${step.id}: session_booked=${profile.session_booked}, isStep4Locked=${isStep4Locked}`);
                   
                   return (
                     <div 
