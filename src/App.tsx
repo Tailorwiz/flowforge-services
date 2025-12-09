@@ -10,7 +10,7 @@ import LoginSelect from "./pages/LoginSelect";
 import CustomerAuth from "./pages/CustomerAuth";
 import AdminAuth from "./pages/AdminAuth";
 import ClientDashboard from "./pages/ClientDashboard";
-import ClientPortal from "./pages/ClientPortal";
+import ClientPortalSimple from "./pages/ClientPortalSimple";
 import IntakeForm from "./pages/IntakeForm";
 import SMSOptInPolicy from "./pages/SMSOptInPolicy";
 
@@ -35,12 +35,12 @@ const App = () => (
           <Route path="/*" element={
             <AuthProvider>
               <Routes>
-                <Route path="/" element={<ClientPortal />} />
+                <Route path="/" element={<ClientPortalSimple />} />
                 <Route path="/admin" element={<Index />} />
                 
                 <Route path="/auth" element={<Auth />} />
                 <Route path="/client/:clientId" element={<ClientDashboard />} />
-                <Route path="/portal" element={<ClientPortal />} />
+                <Route path="/portal" element={<ClientPortalSimple />} />
                 <Route path="/intake-form" element={<IntakeForm />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
@@ -54,3 +54,4 @@ const App = () => (
 );
 
 export default App;
+
