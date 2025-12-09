@@ -1,4 +1,4 @@
-import { Check, FileText, Upload, Calendar, Clock, FolderOpen, MessageCircle, User, LogOut, HelpCircle } from "lucide-react";
+import { Check, FileText, Upload, Calendar, Clock, FolderOpen, MessageCircle, User, LogOut, HelpCircle, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
@@ -137,18 +137,35 @@ export function ClientProgressSidebar({
         <div className="space-y-1">
           <button
             onClick={() => onStepSelect(6)} // Messages
-            className="w-full flex items-center gap-3 p-3 rounded-lg text-left hover:bg-muted/50 transition-colors"
+            className={cn(
+              "w-full flex items-center gap-3 p-3 rounded-lg text-left hover:bg-muted/50 transition-colors",
+              currentStep === 6 && "bg-primary/10 border border-primary/20"
+            )}
           >
-            <MessageCircle className="h-5 w-5 text-muted-foreground" />
-            <span className="text-sm">Messages</span>
+            <MessageCircle className={cn("h-5 w-5", currentStep === 6 ? "text-primary" : "text-muted-foreground")} />
+            <span className={cn("text-sm", currentStep === 6 && "text-primary font-medium")}>Messages</span>
+          </button>
+          
+          <button
+            onClick={() => onStepSelect(8)} // Training
+            className={cn(
+              "w-full flex items-center gap-3 p-3 rounded-lg text-left hover:bg-muted/50 transition-colors",
+              currentStep === 8 && "bg-primary/10 border border-primary/20"
+            )}
+          >
+            <BookOpen className={cn("h-5 w-5", currentStep === 8 ? "text-primary" : "text-muted-foreground")} />
+            <span className={cn("text-sm", currentStep === 8 && "text-primary font-medium")}>Training Materials</span>
           </button>
           
           <button
             onClick={() => onStepSelect(7)} // Profile
-            className="w-full flex items-center gap-3 p-3 rounded-lg text-left hover:bg-muted/50 transition-colors"
+            className={cn(
+              "w-full flex items-center gap-3 p-3 rounded-lg text-left hover:bg-muted/50 transition-colors",
+              currentStep === 7 && "bg-primary/10 border border-primary/20"
+            )}
           >
-            <User className="h-5 w-5 text-muted-foreground" />
-            <span className="text-sm">My Profile</span>
+            <User className={cn("h-5 w-5", currentStep === 7 ? "text-primary" : "text-muted-foreground")} />
+            <span className={cn("text-sm", currentStep === 7 && "text-primary font-medium")}>My Profile</span>
           </button>
         </div>
       </div>
