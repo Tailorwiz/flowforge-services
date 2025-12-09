@@ -1,4 +1,4 @@
-import { Check, ClipboardList, BarChart3, FileText, FolderPlus, MessageSquareText, MessageCircle, User, LogOut, HelpCircle, BookOpen } from "lucide-react";
+import { Check, ClipboardList, BarChart3, FileText, FolderPlus, MessageSquareText, MessageCircle, User, LogOut, HelpCircle, BookOpen, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
@@ -70,13 +70,14 @@ export function ClientProgressSidebar({
 
       {/* Steps List */}
       <div className="flex-1 overflow-y-auto p-3">
-        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3 px-2">
-          Onboarding Process
+        {/* Section 1: Send Us Your Documents */}
+        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2 px-2">
+          Send Us Your Documents
         </p>
         
-        <div className="space-y-1">
-          {steps.map((step, index) => {
-            const Icon = STEP_ICONS[index] || FileText;
+        <div className="space-y-1 mb-4">
+          {steps.slice(0, 5).map((step, index) => {
+            const Icon = STEP_ICONS[index] || ClipboardList;
             const isSelected = currentStep === step.id;
             
             return (
@@ -85,47 +86,78 @@ export function ClientProgressSidebar({
                 onClick={() => !step.isLocked && onStepSelect(step.id)}
                 disabled={step.isLocked}
                 className={cn(
-                  "w-full flex items-start gap-3 p-3 rounded-lg text-left transition-all",
+                  "w-full flex items-center gap-3 p-2.5 rounded-lg text-left transition-all",
                   isSelected && "bg-primary/10 border border-primary/20",
                   !isSelected && !step.isLocked && "hover:bg-muted/50",
                   step.isLocked && "opacity-50 cursor-not-allowed"
                 )}
               >
-                {/* Step Number/Check */}
+                {/* Status Indicator */}
                 <div className={cn(
-                  "w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-sm font-medium",
+                  "w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0",
                   step.isCompleted && "bg-green-500 text-white",
                   !step.isCompleted && isSelected && "bg-primary text-primary-foreground",
                   !step.isCompleted && !isSelected && "bg-muted text-muted-foreground"
                 )}>
                   {step.isCompleted ? (
-                    <Check className="h-4 w-4" />
+                    <Check className="h-3.5 w-3.5" />
                   ) : (
-                    step.id
+                    <Icon className="h-3.5 w-3.5" />
                   )}
                 </div>
                 
                 {/* Step Info */}
-                <div className="flex-1 min-w-0">
-                  <p className={cn(
-                    "font-medium text-sm",
-                    isSelected && "text-primary",
-                    step.isLocked && "text-muted-foreground"
-                  )}>
-                    {step.title}
-                  </p>
-                  <p className="text-xs text-muted-foreground truncate">
-                    {step.isLocked ? "Complete previous steps" : step.description}
-                  </p>
-                </div>
+                <span className={cn(
+                  "text-sm",
+                  isSelected && "text-primary font-medium",
+                  step.isLocked && "text-muted-foreground"
+                )}>
+                  {step.title}
+                </span>
+              </button>
+            );
+          })}
+        </div>
 
-                {/* Status Icon */}
-                <Icon className={cn(
-                  "h-4 w-4 flex-shrink-0 mt-1",
-                  step.isCompleted && "text-green-500",
-                  !step.isCompleted && isSelected && "text-primary",
-                  !step.isCompleted && !isSelected && "text-muted-foreground"
-                )} />
+        {/* Section 2: Book Your Clarity Call */}
+        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2 px-2">
+          Book Your Clarity Call
+        </p>
+        
+        <div className="space-y-1">
+          {steps.slice(5, 6).map((step) => {
+            const isSelected = currentStep === step.id;
+            
+            return (
+              <button
+                key={step.id}
+                onClick={() => !step.isLocked && onStepSelect(step.id)}
+                disabled={step.isLocked}
+                className={cn(
+                  "w-full flex items-center gap-3 p-2.5 rounded-lg text-left transition-all",
+                  isSelected && "bg-primary/10 border border-primary/20",
+                  !isSelected && !step.isLocked && "hover:bg-muted/50",
+                  step.isLocked && "opacity-50 cursor-not-allowed"
+                )}
+              >
+                <div className={cn(
+                  "w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0",
+                  step.isCompleted && "bg-green-500 text-white",
+                  !step.isCompleted && isSelected && "bg-primary text-primary-foreground",
+                  !step.isCompleted && !isSelected && "bg-muted text-muted-foreground"
+                )}>
+                  {step.isCompleted ? (
+                    <Check className="h-3.5 w-3.5" />
+                  ) : (
+                    <Calendar className="h-3.5 w-3.5" />
+                  )}
+                </div>
+                <span className={cn(
+                  "text-sm",
+                  isSelected && "text-primary font-medium"
+                )}>
+                  {step.title}
+                </span>
               </button>
             );
           })}
