@@ -209,12 +209,22 @@ export default function ClientPortalSimple() {
         navigate(`/intake-form?clientId=${profile?.id}`);
         break;
       case 2:
-        setShowResumeUpload(true);
+        // TODO: Metrics worksheet
+        toast({ title: "Coming Soon", description: "Metrics worksheet will be available soon." });
         break;
       case 3:
-        setShowCalendly(true);
+        setShowResumeUpload(true);
+        break;
+      case 4:
+        // TODO: Additional documents upload
+        toast({ title: "Coming Soon", description: "Document upload will be available soon." });
         break;
       case 5:
+        // TODO: Notes textarea
+        toast({ title: "Coming Soon", description: "Notes section will be available soon." });
+        break;
+      case 6:
+        setShowCalendly(true);
         break;
     }
   };
@@ -244,10 +254,11 @@ export default function ClientPortalSimple() {
 
   // Build steps data - Onboarding Process
   const steps = [
+    // Section 1: Send Us Your Documents
     {
       id: 1,
-      title: "New Client Worksheet",
-      description: profile?.intake_form_submitted ? "Completed" : "Tell us about you",
+      title: "Client Worksheet",
+      description: profile?.intake_form_submitted ? "Completed" : "About you",
       isCompleted: !!profile?.intake_form_submitted,
       isActive: currentStep === 1,
       isLocked: false
@@ -255,7 +266,7 @@ export default function ClientPortalSimple() {
     {
       id: 2,
       title: "Metrics Worksheet",
-      description: "Quantifications & achievements",
+      description: "Your achievements",
       isCompleted: false,
       isActive: currentStep === 2,
       isLocked: false
@@ -263,31 +274,40 @@ export default function ClientPortalSimple() {
     {
       id: 3,
       title: "Resume(s)",
-      description: profile?.resume_uploaded ? "Uploaded" : "Upload your resume(s)",
+      description: profile?.resume_uploaded ? "Uploaded" : "Current resume",
       isCompleted: !!profile?.resume_uploaded,
       isActive: currentStep === 3,
       isLocked: false
     },
     {
       id: 4,
-      title: "Additional Documents",
-      description: "Supporting materials",
+      title: "Other Documents",
+      description: "Supporting files",
       isCompleted: false,
       isActive: currentStep === 4,
       isLocked: false
     },
     {
       id: 5,
-      title: "Special Requests & Notes",
-      description: "Notes for RDR Team",
+      title: "Notes for Us",
+      description: "Special requests",
       isCompleted: false,
       isActive: currentStep === 5,
+      isLocked: false
+    },
+    // Section 2: Book Your Clarity Call
+    {
+      id: 6,
+      title: "Schedule Clarity Call",
+      description: profile?.session_booked ? "Booked" : "Book your call",
+      isCompleted: !!profile?.session_booked,
+      isActive: currentStep === 6,
       isLocked: false
     }
   ];
 
   const completedSteps = steps.filter(s => s.isCompleted).length;
-  const overallProgress = (completedSteps / 5) * 100;
+  const overallProgress = (completedSteps / 6) * 100;
 
   if (loading || authLoading) {
     return (
@@ -404,15 +424,15 @@ export default function ClientPortalSimple() {
 
         {/* Main Content */}
         <main className="flex-1 pt-14 lg:pt-0" style={{ paddingTop: hasDeadline ? 'calc(52px + 56px)' : undefined }}>
-          {/* Steps 1-5 Content */}
-          {currentStep >= 1 && currentStep <= 5 && (
+          {/* Steps 1-6 Content */}
+          {currentStep >= 1 && currentStep <= 6 && (
             <ClientStepContent
               stepId={currentStep}
               isCompleted={steps[currentStep - 1].isCompleted}
               isLocked={steps[currentStep - 1].isLocked}
               onAction={() => handleStepAction(currentStep)}
             >
-              {currentStep === 2 && showResumeUpload && (
+              {currentStep === 3 && showResumeUpload && (
                 <ResumeUpload
                   clientId={profile.id}
                   onUploadComplete={() => {
@@ -423,19 +443,17 @@ export default function ClientPortalSimple() {
                 />
               )}
 
-              {currentStep === 3 && showCalendly && (
+              {currentStep === 6 && showCalendly && (
                 <CalendlyEmbed
                   calendlyUrl="https://calendly.com/resultsdrivenresumes"
                   onBookingComplete={() => {
                     setShowCalendly(false);
                     fetchClientProfile();
-                    toast({ title: "Session Booked!", description: "Your consultation has been scheduled." });
+                    toast({ title: "Call Booked!", description: "Your clarity call has been scheduled." });
                   }}
                   onClose={() => setShowCalendly(false)}
                 />
               )}
-
-              {currentStep === 5 && <ClientDeliveriesSimple />}
             </ClientStepContent>
           )}
 
