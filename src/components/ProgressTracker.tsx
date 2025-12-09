@@ -250,32 +250,15 @@ const ProgressTracker: React.FC<ProgressTrackerProps> = ({
       console.log('Client ID:', clientData?.id);
       console.log('User ID:', user?.id);
 
-      if (!clientData?.id) {
-        throw new Error('Client information not loaded');
+      if (!clientData?.id || clientData.id === 'demo') {
+        throw new Error('Your account is not linked to a client profile. Please contact support.');
       }
 
       if (!user?.id) {
         throw new Error('User not authenticated');
       }
 
-      // Save intake form data to client history
-      const { data: historyData, error: historyError } = await supabase
-        .from('client_history')
-        .insert({
-          client_id: clientData.id,
-          action_type: 'intake_form_completed',
-          description: 'Client completed intake questionnaire',
-          metadata: formData,
-          created_by: user.id
-        })
-        .select();
-
-      if (historyError) {
-        console.error('History insert error:', historyError);
-        throw historyError;
-      }
-
-      // Update client progress
+      // Update client progress first (this is the critical operation)
       const { error: updateError } = await supabase
         .from('clients')
         .update({ 
@@ -287,6 +270,22 @@ const ProgressTracker: React.FC<ProgressTrackerProps> = ({
       if (updateError) {
         console.error('Client update error:', updateError);
         throw updateError;
+      }
+
+      // Save intake form data to client history (non-critical, don't fail if this errors)
+      const { error: historyError } = await supabase
+        .from('client_history')
+        .insert({
+          client_id: clientData.id,
+          action_type: 'intake_form_completed',
+          description: 'Client completed intake questionnaire',
+          metadata: formData,
+          created_by: user.id
+        });
+
+      if (historyError) {
+        console.error('Error inserting client history (non-critical):', historyError);
+        // Don't throw - this is not a critical error
       }
 
       // Mark step as completed
@@ -313,7 +312,7 @@ const ProgressTracker: React.FC<ProgressTrackerProps> = ({
       console.error('Error submitting intake form:', error);
       toast({
         title: "Error",
-        description: `Failed to submit intake form: ${error.message || 'Please try again.'}`,
+        description: error.message || 'Failed to submit form. Please try again.',
         variant: "destructive",
       });
     } finally {
