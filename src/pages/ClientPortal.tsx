@@ -62,6 +62,7 @@ interface ClientProfile {
   industry?: string;
   website?: string;
   bio?: string;
+  session_booked?: boolean;
 }
 
 const PROGRESS_STEPS = [
@@ -260,7 +261,8 @@ export default function ClientPortal() {
           job_title: profileData?.job_title,
           industry: profileData?.industry,
           website: profileData?.website,
-          bio: profileData?.bio
+          bio: profileData?.bio,
+          session_booked: clientData.session_booked || false
         });
 
         // Check if profile photo is needed
@@ -1311,8 +1313,8 @@ export default function ClientPortal() {
                   const isCompleted = profile.progress_step > step.id;
                   const isCurrent = profile.progress_step === step.id;
                   const IconComponent = step.icon;
-                  // Step 4 is locked until session is booked (step 3 complete)
-                  const isStep4Locked = step.id === 4 && profile.progress_step < 4;
+                  // Step 4 is locked until session is booked (using actual database value, not localStorage)
+                  const isStep4Locked = step.id === 4 && !profile.session_booked;
                   // Make intake form and resume upload always clickable, others only when current
                   const isClickable = !isStep4Locked && (step.id === 1 || step.id === 2 || (step.id === profile.progress_step && !isCompleted));
                   
