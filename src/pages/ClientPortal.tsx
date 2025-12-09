@@ -1367,7 +1367,8 @@ export default function ClientPortal() {
                           In Progress
                         </Badge>
                       )}
-                      {(isClickable || step.id === 1 || step.id === 2) && !isStep4Locked && (
+                      {/* Show button for steps 1, 2, 3 - but different labels based on completion */}
+                      {(step.id === 1 || step.id === 2 || step.id === 3) && !isStep4Locked && (
                         <Button 
                           variant="outline" 
                           size="sm"
@@ -1377,11 +1378,14 @@ export default function ClientPortal() {
                               handleIntakeFormClick();
                             } else if (step.id === 2) {
                               handleResumeUploadClick();
+                            } else if (step.id === 3) {
+                              handleSessionBookingClick();
                             }
                           }}
                         >
-                          {isCompleted && step.id === 1 ? 'Update' : 
-                           isCompleted && step.id === 2 ? 'Add More' : 'Start'} →
+                          {step.id === 1 && isCompleted ? 'Update' : 
+                           step.id === 2 && isCompleted ? 'Add More' : 
+                           step.id === 3 && isCompleted ? 'Rebook' : 'Start'} →
                         </Button>
                       )}
                     </div>
