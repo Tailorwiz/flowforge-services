@@ -43,6 +43,7 @@ import { ClientDeliveries } from "@/components/ClientDeliveries";
 import { ClientNotificationBell } from "@/components/ClientNotificationBell";
 import ResumeUpload from "@/components/ResumeUpload";
 import { MessagingCenter } from '@/components/MessagingCenter';
+import CalendlyEmbed from "@/components/CalendlyEmbed";
 
 interface ClientProfile {
   id: string;
@@ -86,6 +87,7 @@ export default function ClientPortal() {
   const [actionItems, setActionItems] = useState<any[]>([]);
   const [showIntakeForm, setShowIntakeForm] = useState(false);
   const [showResumeUpload, setShowResumeUpload] = useState(false);
+  const [showCalendlyBooking, setShowCalendlyBooking] = useState(false);
   const [activeTab, setActiveTab] = useState("deliveries");
   const [formData, setFormData] = useState({
     currentJobTitle: '',
@@ -663,10 +665,7 @@ export default function ClientPortal() {
 
   const handleSessionBookingClick = () => {
     console.log('Opening session booking...');
-    toast({
-      title: "Session Booking",
-      description: "Session booking functionality will be implemented soon.",
-    });
+    setShowCalendlyBooking(true);
   };
 
   const handleStepClick = (stepId: number) => {
@@ -1988,6 +1987,41 @@ export default function ClientPortal() {
                 });
               }}
               onClose={() => setShowResumeUpload(false)}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Calendly Booking Modal */}
+      {showCalendlyBooking && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <CalendlyEmbed
+              calendlyUrl="https://calendly.com/resultsdrivenresumes/resume-clarity-research-review-interview-session"
+              onBookingComplete={async () => {
+                setShowCalendlyBooking(false);
+                
+                // Update localStorage progress to mark step 3 as completed
+                const saved = localStorage.getItem(`progress_${user?.id}`) || '{}';
+                const localProgress = JSON.parse(saved);
+                localProgress[3] = true;
+                localStorage.setItem(`progress_${user?.id}`, JSON.stringify(localProgress));
+                
+                // Update database
+                if (profile?.id) {
+                  await supabase
+                    .from('clients')
+                    .update({ session_booked: true, updated_at: new Date().toISOString() })
+                    .eq('id', profile.id);
+                }
+                
+                await fetchClientProfile();
+                toast({
+                  title: "Session Booked!",
+                  description: "Your consultation has been scheduled successfully.",
+                });
+              }}
+              onClose={() => setShowCalendlyBooking(false)}
             />
           </div>
         </div>
