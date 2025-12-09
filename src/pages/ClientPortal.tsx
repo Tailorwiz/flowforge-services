@@ -1997,9 +1997,39 @@ export default function ClientPortal() {
         <div className="fixed inset-0 bg-background z-50 flex flex-col">
           <div className="flex items-center justify-between p-4 border-b bg-background">
             <h2 className="text-xl font-semibold">Schedule Your Consultation</h2>
-            <Button variant="ghost" size="sm" onClick={() => setShowCalendlyBooking(false)}>
-              ✕
-            </Button>
+            <div className="flex items-center gap-3">
+              <Button 
+                variant="default"
+                onClick={async () => {
+                  setShowCalendlyBooking(false);
+                  
+                  // Update localStorage progress to mark step 3 as completed
+                  const saved = localStorage.getItem(`progress_${user?.id}`) || '{}';
+                  const localProgress = JSON.parse(saved);
+                  localProgress[3] = true;
+                  localStorage.setItem(`progress_${user?.id}`, JSON.stringify(localProgress));
+                  
+                  // Update database
+                  if (profile?.id) {
+                    await supabase
+                      .from('clients')
+                      .update({ session_booked: true, updated_at: new Date().toISOString() })
+                      .eq('id', profile.id);
+                  }
+                  
+                  await fetchClientProfile();
+                  toast({
+                    title: "Session Booked!",
+                    description: "Your consultation has been scheduled successfully.",
+                  });
+                }}
+              >
+                I've Booked My Session
+              </Button>
+              <Button variant="outline" onClick={() => setShowCalendlyBooking(false)}>
+                Back to Dashboard
+              </Button>
+            </div>
           </div>
           <div className="flex-1">
             <iframe
