@@ -457,8 +457,8 @@ export default function ClientPortalSimple() {
             </ClientStepContent>
           )}
 
-          {/* Messages (Step 6) */}
-          {currentStep === 6 && (
+          {/* Messages (Step 7) */}
+          {currentStep === 7 && (
             <div className="p-6">
               <MessagingCenter
                 clientId={profile.id}
@@ -469,8 +469,82 @@ export default function ClientPortalSimple() {
             </div>
           )}
 
-          {/* Profile (Step 7) */}
-          {currentStep === 7 && (
+          {/* Training Materials (Step 8) */}
+          {currentStep === 8 && (
+            <div className="p-6">
+              <div className="max-w-4xl mx-auto">
+                <div className="mb-6">
+                  <h1 className="text-2xl font-bold flex items-center gap-2">
+                    <BookOpen className="h-6 w-6 text-primary" />
+                    Training Materials
+                  </h1>
+                  <p className="text-muted-foreground">
+                    Resources to help you with your job search and career development.
+                  </p>
+                </div>
+
+                {trainingMaterials.length === 0 ? (
+                  <Card>
+                    <CardContent className="py-12 text-center">
+                      <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                      <h3 className="text-lg font-medium mb-2">No Training Materials Yet</h3>
+                      <p className="text-muted-foreground">Check back soon for helpful resources.</p>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {trainingMaterials.map((material) => (
+                      <Card key={material.id} className="overflow-hidden hover:shadow-lg transition-shadow">
+                        {material.thumbnail_url && (
+                          <div className="aspect-video bg-muted">
+                            <img 
+                              src={material.thumbnail_url} 
+                              alt={material.name}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                        )}
+                        <CardContent className="p-4">
+                          <div className="flex items-start gap-3">
+                            <div className="p-2 rounded-lg bg-primary/10">
+                              {material.type === 'VIDEO' ? (
+                                <Play className="h-4 w-4 text-primary" />
+                              ) : (
+                                <FileText className="h-4 w-4 text-primary" />
+                              )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <h3 className="font-medium text-sm mb-1 truncate">{material.name}</h3>
+                              {material.description && (
+                                <p className="text-xs text-muted-foreground line-clamp-2">{material.description}</p>
+                              )}
+                              <Badge variant="secondary" className="mt-2 text-xs">
+                                {material.type}
+                              </Badge>
+                            </div>
+                          </div>
+                          {material.content_url && (
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="w-full mt-3"
+                              onClick={() => window.open(material.content_url, '_blank')}
+                            >
+                              <ExternalLink className="h-3 w-3 mr-2" />
+                              View
+                            </Button>
+                          )}
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Profile (Step 9) */}
+          {currentStep === 9 && (
             <div className="max-w-2xl mx-auto p-6">
               <Card>
                 <CardHeader>
@@ -553,80 +627,6 @@ export default function ClientPortalSimple() {
                   </div>
                 </CardContent>
               </Card>
-            </div>
-          )}
-
-          {/* Training Materials (Step 8) */}
-          {currentStep === 8 && (
-            <div className="p-6">
-              <div className="max-w-4xl mx-auto">
-                <div className="mb-6">
-                  <h1 className="text-2xl font-bold flex items-center gap-2">
-                    <BookOpen className="h-6 w-6 text-primary" />
-                    Training Materials
-                  </h1>
-                  <p className="text-muted-foreground">
-                    Resources to help you with your job search and career development.
-                  </p>
-                </div>
-
-                {trainingMaterials.length === 0 ? (
-                  <Card>
-                    <CardContent className="py-12 text-center">
-                      <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                      <h3 className="text-lg font-medium mb-2">No Training Materials Yet</h3>
-                      <p className="text-muted-foreground">Check back soon for helpful resources.</p>
-                    </CardContent>
-                  </Card>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {trainingMaterials.map((material) => (
-                      <Card key={material.id} className="overflow-hidden hover:shadow-lg transition-shadow">
-                        {material.thumbnail_url && (
-                          <div className="aspect-video bg-muted">
-                            <img 
-                              src={material.thumbnail_url} 
-                              alt={material.name}
-                              className="w-full h-full object-cover"
-                            />
-                          </div>
-                        )}
-                        <CardContent className="p-4">
-                          <div className="flex items-start gap-3">
-                            <div className="p-2 rounded-lg bg-primary/10">
-                              {material.type === 'VIDEO' ? (
-                                <Play className="h-4 w-4 text-primary" />
-                              ) : (
-                                <FileText className="h-4 w-4 text-primary" />
-                              )}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <h3 className="font-medium text-sm mb-1 truncate">{material.name}</h3>
-                              {material.description && (
-                                <p className="text-xs text-muted-foreground line-clamp-2">{material.description}</p>
-                              )}
-                              <Badge variant="secondary" className="mt-2 text-xs">
-                                {material.type}
-                              </Badge>
-                            </div>
-                          </div>
-                          {material.content_url && (
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
-                              className="w-full mt-3"
-                              onClick={() => window.open(material.content_url, '_blank')}
-                            >
-                              <ExternalLink className="h-3 w-3 mr-2" />
-                              View
-                            </Button>
-                          )}
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                )}
-              </div>
             </div>
           )}
         </main>
