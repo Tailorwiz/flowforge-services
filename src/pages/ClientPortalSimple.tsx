@@ -242,11 +242,11 @@ export default function ClientPortalSimple() {
     }
   };
 
-  // Build steps data
+  // Build steps data - Onboarding Process
   const steps = [
     {
       id: 1,
-      title: "Intake Form",
+      title: "New Client Worksheet",
       description: profile?.intake_form_submitted ? "Completed" : "Tell us about you",
       isCompleted: !!profile?.intake_form_submitted,
       isActive: currentStep === 1,
@@ -254,32 +254,32 @@ export default function ClientPortalSimple() {
     },
     {
       id: 2,
-      title: "Upload Resume",
-      description: profile?.resume_uploaded ? "Uploaded" : "Share your current resume",
-      isCompleted: !!profile?.resume_uploaded,
+      title: "Metrics Worksheet",
+      description: "Quantifications & achievements",
+      isCompleted: false,
       isActive: currentStep === 2,
       isLocked: false
     },
     {
       id: 3,
-      title: "Book Session",
-      description: profile?.session_booked ? "Scheduled" : "Schedule consultation",
-      isCompleted: !!profile?.session_booked,
+      title: "Resume(s)",
+      description: profile?.resume_uploaded ? "Uploaded" : "Upload your resume(s)",
+      isCompleted: !!profile?.resume_uploaded,
       isActive: currentStep === 3,
       isLocked: false
     },
     {
       id: 4,
-      title: "In Progress",
-      description: "We're working on it",
+      title: "Additional Documents",
+      description: "Supporting materials",
       isCompleted: false,
       isActive: currentStep === 4,
-      isLocked: !profile?.intake_form_submitted || !profile?.resume_uploaded || !profile?.session_booked
+      isLocked: false
     },
     {
       id: 5,
-      title: "Your Documents",
-      description: "Review & download",
+      title: "Special Requests & Notes",
+      description: "Notes for RDR Team",
       isCompleted: false,
       isActive: currentStep === 5,
       isLocked: false
