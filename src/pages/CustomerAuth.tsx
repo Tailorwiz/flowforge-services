@@ -10,6 +10,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { toast } from "@/hooks/use-toast";
 import { Eye, EyeOff, Mail, Lock, UserPlus, LogIn, Users, Shield } from "lucide-react";
 import RDRLogo from "@/components/RDRLogo";
+import { registerReferralSignup } from "@/lib/affiliate";
 
 export default function CustomerAuth() {
   const [email, setEmail] = useState("");
@@ -89,6 +90,8 @@ export default function CustomerAuth() {
           setError(error.message);
         }
       } else {
+        // Attribute this signup to a referring affiliate, if any.
+        await registerReferralSignup(email);
         toast({
           title: "Account created successfully!",
           description: "Please check your email for verification (if required)."

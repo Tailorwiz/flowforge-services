@@ -13,6 +13,7 @@ import ClientDashboard from "./pages/ClientDashboard";
 import ClientPortalSimple from "./pages/ClientPortalSimple";
 import IntakeForm from "./pages/IntakeForm";
 import SMSOptInPolicy from "./pages/SMSOptInPolicy";
+import AffiliateDashboard from "./pages/AffiliateDashboard";
 
 import NotFound from "./pages/NotFound";
 
@@ -41,6 +42,7 @@ const App = () => (
                 <Route path="/auth" element={<Auth />} />
                 <Route path="/client/:clientId" element={<ClientDashboard />} />
                 <Route path="/portal" element={<ClientPortalSimple />} />
+                <Route path="/affiliate" element={<AffiliateDashboard />} />
                 <Route path="/intake-form" element={<IntakeForm />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />

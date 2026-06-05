@@ -9,6 +9,7 @@ import { AdminCommandCenter } from "@/components/AdminCommandCenter";
 import { NotificationCenter } from "@/components/NotificationCenter";
 import TrainingMaterialUpload from "@/components/TrainingMaterialUpload";
 import { AdminDeliveryManager } from "@/components/AdminDeliveryManager";
+import { AffiliateAdmin } from "@/components/AffiliateAdmin";
 
 import CalendlyAppointments from "@/components/CalendlyAppointments";
 import { Button } from "@/components/ui/button";
@@ -27,7 +28,8 @@ import {
   AlertTriangle,
   ChevronDown,
   FileText,
-  Package
+  Package,
+  Handshake
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import RDRLogo from "@/components/RDRLogo";
@@ -43,7 +45,7 @@ import {
 
 const Index = () => {
   const [searchParams] = useSearchParams();
-  const [activeTab, setActiveTab] = useState<'digest' | 'command' | 'clients' | 'training' | 'reminders' | 'notifications' | 'services' | 'profile' | 'deliveries' | 'progress'>('digest');
+  const [activeTab, setActiveTab] = useState<'digest' | 'command' | 'clients' | 'training' | 'reminders' | 'notifications' | 'services' | 'profile' | 'deliveries' | 'progress' | 'affiliates'>('digest');
   const [userProfile, setUserProfile] = useState<any>(null);
   const [dashboardStats, setDashboardStats] = useState({
     rushCount: 0,
@@ -136,7 +138,7 @@ const Index = () => {
   // Handle URL tab parameter
   useEffect(() => {
     const tabFromUrl = searchParams.get('tab');
-    if (tabFromUrl && ['digest', 'command', 'clients', 'training', 'reminders', 'notifications', 'services', 'profile', 'deliveries', 'progress'].includes(tabFromUrl)) {
+    if (tabFromUrl && ['digest', 'command', 'clients', 'training', 'reminders', 'notifications', 'services', 'profile', 'deliveries', 'progress', 'affiliates'].includes(tabFromUrl)) {
       setActiveTab(tabFromUrl as any);
     }
   }, [searchParams]);
@@ -239,6 +241,7 @@ const Index = () => {
     { id: 'deliveries', label: 'Delivery Manager', icon: Package, color: 'text-emerald-600' },
     
     { id: 'clients', label: 'Client Management', icon: Users, color: 'text-blue-600' },
+    { id: 'affiliates', label: 'Affiliate Program', icon: Handshake, color: 'text-rdr-gold' },
     { id: 'digest', label: 'Daily Digest', icon: Calendar, color: 'text-green-600' },
     { id: 'training', label: 'Training Materials', icon: BookOpen, color: 'text-purple-600' },
     { id: 'reminders', label: 'Reminders', icon: Clock, color: 'text-orange-600' },
@@ -385,6 +388,7 @@ const Index = () => {
             {activeTab === 'deliveries' && <AdminDeliveryManager />}
             
             {activeTab === 'clients' && <ClientManager />}
+            {activeTab === 'affiliates' && <AffiliateAdmin />}
             {activeTab === 'training' && <TrainingMaterialUpload />}
             {activeTab === 'reminders' && <ReminderManager />}
             {activeTab === 'notifications' && <NotificationCenter />}

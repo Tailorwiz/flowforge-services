@@ -14,6 +14,291 @@ export type Database = {
   }
   public: {
     Tables: {
+      affiliates: {
+        Row: {
+          id: string
+          user_id: string | null
+          name: string
+          email: string
+          company: string | null
+          referral_code: string
+          status: string
+          commission_plan_id: string | null
+          override_flat_amount: number | null
+          override_percent_rate: number | null
+          payout_method: string | null
+          payout_details: string | null
+          notes: string | null
+          invited_by: string | null
+          invited_at: string
+          joined_at: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id?: string | null
+          name: string
+          email: string
+          company?: string | null
+          referral_code: string
+          status?: string
+          commission_plan_id?: string | null
+          override_flat_amount?: number | null
+          override_percent_rate?: number | null
+          payout_method?: string | null
+          payout_details?: string | null
+          notes?: string | null
+          invited_by?: string | null
+          invited_at?: string
+          joined_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string | null
+          name?: string
+          email?: string
+          company?: string | null
+          referral_code?: string
+          status?: string
+          commission_plan_id?: string | null
+          override_flat_amount?: number | null
+          override_percent_rate?: number | null
+          payout_method?: string | null
+          payout_details?: string | null
+          notes?: string | null
+          invited_by?: string | null
+          invited_at?: string
+          joined_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      commission_plans: {
+        Row: {
+          id: string
+          name: string
+          description: string | null
+          is_default: boolean
+          status: string
+          flat_amount: number
+          percent_rate: number
+          recurring_enabled: boolean
+          recurring_percent: number
+          recurring_months: number | null
+          tiers: Json
+          cookie_window_days: number
+          currency: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          description?: string | null
+          is_default?: boolean
+          status?: string
+          flat_amount?: number
+          percent_rate?: number
+          recurring_enabled?: boolean
+          recurring_percent?: number
+          recurring_months?: number | null
+          tiers?: Json
+          cookie_window_days?: number
+          currency?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          description?: string | null
+          is_default?: boolean
+          status?: string
+          flat_amount?: number
+          percent_rate?: number
+          recurring_enabled?: boolean
+          recurring_percent?: number
+          recurring_months?: number | null
+          tiers?: Json
+          cookie_window_days?: number
+          currency?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      referrals: {
+        Row: {
+          id: string
+          affiliate_id: string
+          referral_code: string
+          referred_email: string | null
+          referred_name: string | null
+          referred_client_id: string | null
+          status: string
+          landing_url: string | null
+          source: string | null
+          created_at: string
+          converted_at: string | null
+        }
+        Insert: {
+          id?: string
+          affiliate_id: string
+          referral_code: string
+          referred_email?: string | null
+          referred_name?: string | null
+          referred_client_id?: string | null
+          status?: string
+          landing_url?: string | null
+          source?: string | null
+          created_at?: string
+          converted_at?: string | null
+        }
+        Update: {
+          id?: string
+          affiliate_id?: string
+          referral_code?: string
+          referred_email?: string | null
+          referred_name?: string | null
+          referred_client_id?: string | null
+          status?: string
+          landing_url?: string | null
+          source?: string | null
+          created_at?: string
+          converted_at?: string | null
+        }
+        Relationships: []
+      }
+      referral_clicks: {
+        Row: {
+          id: string
+          affiliate_id: string | null
+          referral_code: string
+          landing_url: string | null
+          referrer: string | null
+          user_agent: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          affiliate_id?: string | null
+          referral_code: string
+          landing_url?: string | null
+          referrer?: string | null
+          user_agent?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          affiliate_id?: string | null
+          referral_code?: string
+          landing_url?: string | null
+          referrer?: string | null
+          user_agent?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
+      affiliate_commissions: {
+        Row: {
+          id: string
+          affiliate_id: string
+          referral_id: string | null
+          client_id: string | null
+          commission_type: string
+          source_amount: number
+          amount: number
+          currency: string
+          status: string
+          payout_id: string | null
+          description: string | null
+          created_at: string
+          approved_at: string | null
+          paid_at: string | null
+        }
+        Insert: {
+          id?: string
+          affiliate_id: string
+          referral_id?: string | null
+          client_id?: string | null
+          commission_type: string
+          source_amount?: number
+          amount?: number
+          currency?: string
+          status?: string
+          payout_id?: string | null
+          description?: string | null
+          created_at?: string
+          approved_at?: string | null
+          paid_at?: string | null
+        }
+        Update: {
+          id?: string
+          affiliate_id?: string
+          referral_id?: string | null
+          client_id?: string | null
+          commission_type?: string
+          source_amount?: number
+          amount?: number
+          currency?: string
+          status?: string
+          payout_id?: string | null
+          description?: string | null
+          created_at?: string
+          approved_at?: string | null
+          paid_at?: string | null
+        }
+        Relationships: []
+      }
+      affiliate_payouts: {
+        Row: {
+          id: string
+          affiliate_id: string
+          amount: number
+          currency: string
+          status: string
+          method: string | null
+          reference: string | null
+          notes: string | null
+          created_by: string | null
+          created_at: string
+          paid_at: string | null
+          paid_by: string | null
+        }
+        Insert: {
+          id?: string
+          affiliate_id: string
+          amount?: number
+          currency?: string
+          status?: string
+          method?: string | null
+          reference?: string | null
+          notes?: string | null
+          created_by?: string | null
+          created_at?: string
+          paid_at?: string | null
+          paid_by?: string | null
+        }
+        Update: {
+          id?: string
+          affiliate_id?: string
+          amount?: number
+          currency?: string
+          status?: string
+          method?: string | null
+          reference?: string | null
+          notes?: string | null
+          created_by?: string | null
+          created_at?: string
+          paid_at?: string | null
+          paid_by?: string | null
+        }
+        Relationships: []
+      }
       admin_notifications: {
         Row: {
           client_id: string | null
@@ -2961,6 +3246,44 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      record_referral_click: {
+        Args: {
+          p_code: string
+          p_landing_url?: string
+          p_referrer?: string
+          p_user_agent?: string
+        }
+        Returns: undefined
+      }
+      register_referral: {
+        Args: {
+          p_code: string
+          p_email: string
+          p_name?: string
+          p_landing_url?: string
+        }
+        Returns: undefined
+      }
+      award_referral_commission: {
+        Args: { p_client_id: string; p_amount?: number }
+        Returns: undefined
+      }
+      record_referred_payment: {
+        Args: { p_client_id: string; p_amount: number }
+        Returns: undefined
+      }
+      generate_referral_code: {
+        Args: { p_seed?: string }
+        Returns: string
+      }
+      current_affiliate_id: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      claim_affiliate_account: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       delete_customer_completely: {
         Args: { client_id_param: string }
         Returns: Json
@@ -3014,7 +3337,7 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin" | "user"
+      app_role: "admin" | "user" | "affiliate"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -3142,7 +3465,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "user"],
+      app_role: ["admin", "user", "affiliate"],
     },
   },
 } as const
