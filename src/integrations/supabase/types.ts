@@ -14,6 +14,54 @@ export type Database = {
   }
   public: {
     Tables: {
+      affiliate_applications: {
+        Row: {
+          id: string
+          name: string
+          email: string
+          company: string | null
+          website: string | null
+          audience: string | null
+          promo_plan: string | null
+          social_links: string | null
+          status: string
+          reviewed_by: string | null
+          reviewed_at: string | null
+          created_affiliate_id: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          email: string
+          company?: string | null
+          website?: string | null
+          audience?: string | null
+          promo_plan?: string | null
+          social_links?: string | null
+          status?: string
+          reviewed_by?: string | null
+          reviewed_at?: string | null
+          created_affiliate_id?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          email?: string
+          company?: string | null
+          website?: string | null
+          audience?: string | null
+          promo_plan?: string | null
+          social_links?: string | null
+          status?: string
+          reviewed_by?: string | null
+          reviewed_at?: string | null
+          created_affiliate_id?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
       affiliates: {
         Row: {
           id: string
@@ -3246,6 +3294,22 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      submit_affiliate_application: {
+        Args: {
+          p_name: string
+          p_email: string
+          p_company?: string
+          p_website?: string
+          p_audience?: string
+          p_promo_plan?: string
+          p_social_links?: string
+        }
+        Returns: string
+      }
+      approve_affiliate_application: {
+        Args: { p_application_id: string; p_commission_plan_id?: string }
+        Returns: string
+      }
       record_referral_click: {
         Args: {
           p_code: string

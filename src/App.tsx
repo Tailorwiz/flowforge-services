@@ -14,6 +14,7 @@ import ClientPortalSimple from "./pages/ClientPortalSimple";
 import IntakeForm from "./pages/IntakeForm";
 import SMSOptInPolicy from "./pages/SMSOptInPolicy";
 import AffiliateDashboard from "./pages/AffiliateDashboard";
+import AffiliateLanding from "./pages/AffiliateLanding";
 
 import NotFound from "./pages/NotFound";
 
@@ -28,6 +29,9 @@ const App = () => (
         <Routes>
           {/* Public routes */}
           <Route path="/sms-policy" element={<SMSOptInPolicy />} />
+          <Route path="/affiliates" element={<AffiliateLanding />} />
+          <Route path="/affiliates/apply" element={<AffiliateLanding />} />
+          <Route path="/partners" element={<AffiliateLanding />} />
           <Route path="/login" element={<LoginSelect />} />
           <Route path="/customer/login" element={<CustomerAuth />} />
           <Route path="/admin/login" element={<AdminAuth />} />

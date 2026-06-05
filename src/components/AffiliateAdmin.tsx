@@ -47,16 +47,18 @@ export function AffiliateAdmin() {
   const [commissions, setCommissions] = useState<any[]>([]);
   const [payouts, setPayouts] = useState<any[]>([]);
   const [referrals, setReferrals] = useState<any[]>([]);
+  const [applications, setApplications] = useState<any[]>([]);
   const [clicks, setClicks] = useState<number>(0);
 
   const refresh = useCallback(async () => {
     setLoading(true);
-    const [a, p, c, po, r, cl] = await Promise.all([
+    const [a, p, c, po, r, ap, cl] = await Promise.all([
       supabase.from("affiliates").select("*").order("created_at", { ascending: false }),
       supabase.from("commission_plans").select("*").order("created_at", { ascending: true }),
       supabase.from("affiliate_commissions").select("*").order("created_at", { ascending: false }),
       supabase.from("affiliate_payouts").select("*").order("created_at", { ascending: false }),
       supabase.from("referrals").select("*").order("created_at", { ascending: false }),
+      supabase.from("affiliate_applications").select("*").order("created_at", { ascending: false }),
       supabase.from("referral_clicks").select("id", { count: "exact", head: true }),
     ]);
     setAffiliates(a.data || []);
@@ -64,6 +66,7 @@ export function AffiliateAdmin() {
     setCommissions(c.data || []);
     setPayouts(po.data || []);
     setReferrals(r.data || []);
+    setApplications(ap.data || []);
     setClicks(cl.count || 0);
     setLoading(false);
   }, []);
@@ -76,6 +79,7 @@ export function AffiliateAdmin() {
     approved: commissions.filter((c) => c.status === "approved").reduce((s, c) => s + Number(c.amount), 0),
     paid: commissions.filter((c) => c.status === "paid").reduce((s, c) => s + Number(c.amount), 0),
   };
+  const pendingApps = applications.filter((a) => a.status === "pending").length;
 
   if (loading) {
     return (
@@ -97,9 +101,15 @@ export function AffiliateAdmin() {
       </div>
 
       <Tabs value={tab} onValueChange={setTab}>
-        <TabsList className="grid grid-cols-5 w-full max-w-2xl">
+        <TabsList className="grid grid-cols-6 w-full max-w-3xl">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="affiliates">Affiliates</TabsTrigger>
+          <TabsTrigger value="applications" className="relative">
+            Applications
+            {pendingApps > 0 && (
+              <span className="ml-1 inline-flex items-center justify-center text-[10px] font-bold rounded-full bg-rdr-gold text-rdr-navy w-4 h-4">{pendingApps}</span>
+            )}
+          </TabsTrigger>
           <TabsTrigger value="plans">Plans</TabsTrigger>
           <TabsTrigger value="commissions">Commissions</TabsTrigger>
           <TabsTrigger value="payouts">Payouts</TabsTrigger>
@@ -194,6 +204,57 @@ export function AffiliateAdmin() {
                   )}
                 </TableBody>
               </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* APPLICATIONS */}
+        <TabsContent value="applications" className="space-y-4 mt-6">
+          <p className="text-sm text-muted-foreground">
+            Public applications from <code className="bg-muted px-1.5 py-0.5 rounded">/affiliates</code>. Approving one
+            creates an affiliate (status <i>invited</i>) with a fresh referral code.
+          </p>
+          <Card>
+            <CardContent className="pt-6 space-y-4">
+              {applications.length === 0 && (
+                <p className="text-center text-muted-foreground py-8">No applications yet.</p>
+              )}
+              {applications.map((ap) => (
+                <div key={ap.id} className="border rounded-lg p-4">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">{ap.name}</span>
+                        <Badge className={STATUS_COLORS[ap.status] || "bg-gray-100 text-gray-700"}>{ap.status}</Badge>
+                      </div>
+                      <div className="text-sm text-muted-foreground">{ap.email}{ap.company ? ` · ${ap.company}` : ""}</div>
+                      {ap.website && <div className="text-sm"><a href={ap.website} target="_blank" rel="noreferrer" className="text-blue-600 underline">{ap.website}</a></div>}
+                      {ap.social_links && <div className="text-sm text-muted-foreground">Social: {ap.social_links}</div>}
+                      {ap.audience && <p className="text-sm mt-2"><span className="text-muted-foreground">Audience:</span> {ap.audience}</p>}
+                      {ap.promo_plan && <p className="text-sm"><span className="text-muted-foreground">Plan:</span> {ap.promo_plan}</p>}
+                      <div className="text-xs text-muted-foreground mt-1">{new Date(ap.created_at).toLocaleDateString()}</div>
+                    </div>
+                    {ap.status === "pending" && (
+                      <div className="flex flex-col gap-2 shrink-0">
+                        <Button size="sm" onClick={async () => {
+                          const { error } = await supabase.rpc("approve_affiliate_application", { p_application_id: ap.id });
+                          if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
+                          toast({ title: "Approved", description: `${ap.name} is now an affiliate.` });
+                          refresh();
+                        }}>Approve</Button>
+                        <Button size="sm" variant="ghost" className="text-red-600" onClick={async () => {
+                          const { data: { user } } = await supabase.auth.getUser();
+                          await supabase.from("affiliate_applications").update({ status: "rejected", reviewed_by: user?.id, reviewed_at: new Date().toISOString() }).eq("id", ap.id);
+                          refresh();
+                        }}>Reject</Button>
+                      </div>
+                    )}
+                    {ap.status === "approved" && ap.created_affiliate_id && (
+                      <Badge className="bg-emerald-100 text-emerald-800 shrink-0">Affiliate created</Badge>
+                    )}
+                  </div>
+                </div>
+              ))}
             </CardContent>
           </Card>
         </TabsContent>
