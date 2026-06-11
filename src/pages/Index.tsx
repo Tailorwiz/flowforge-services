@@ -6,6 +6,7 @@ import { ReminderManager } from "@/components/ReminderManager";
 import { DailyDigest } from "@/components/DailyDigest";
 import { AdminProfile } from "@/components/AdminProfile";
 import { AdminCommandCenter } from "@/components/AdminCommandCenter";
+import { OnboardingHub } from "@/components/onboarding/OnboardingHub";
 import { NotificationCenter } from "@/components/NotificationCenter";
 import TrainingMaterialUpload from "@/components/TrainingMaterialUpload";
 import { AdminDeliveryManager } from "@/components/AdminDeliveryManager";
@@ -27,7 +28,8 @@ import {
   AlertTriangle,
   ChevronDown,
   FileText,
-  Package
+  Package,
+  Rocket
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import RDRLogo from "@/components/RDRLogo";
@@ -43,7 +45,7 @@ import {
 
 const Index = () => {
   const [searchParams] = useSearchParams();
-  const [activeTab, setActiveTab] = useState<'digest' | 'command' | 'clients' | 'training' | 'reminders' | 'notifications' | 'services' | 'profile' | 'deliveries' | 'progress'>('digest');
+  const [activeTab, setActiveTab] = useState<'digest' | 'command' | 'onboarding' | 'clients' | 'training' | 'reminders' | 'notifications' | 'services' | 'profile' | 'deliveries' | 'progress'>('digest');
   const [userProfile, setUserProfile] = useState<any>(null);
   const [dashboardStats, setDashboardStats] = useState({
     rushCount: 0,
@@ -136,7 +138,7 @@ const Index = () => {
   // Handle URL tab parameter
   useEffect(() => {
     const tabFromUrl = searchParams.get('tab');
-    if (tabFromUrl && ['digest', 'command', 'clients', 'training', 'reminders', 'notifications', 'services', 'profile', 'deliveries', 'progress'].includes(tabFromUrl)) {
+    if (tabFromUrl && ['digest', 'command', 'onboarding', 'clients', 'training', 'reminders', 'notifications', 'services', 'profile', 'deliveries', 'progress'].includes(tabFromUrl)) {
       setActiveTab(tabFromUrl as any);
     }
   }, [searchParams]);
@@ -236,6 +238,7 @@ const Index = () => {
 
   const sidebarItems = [
     { id: 'command', label: 'Command Center', icon: LayoutDashboard, color: 'text-rdr-navy' },
+    { id: 'onboarding', label: 'Onboarding Wizard', icon: Rocket, color: 'text-rdr-gold' },
     { id: 'deliveries', label: 'Delivery Manager', icon: Package, color: 'text-emerald-600' },
     
     { id: 'clients', label: 'Client Management', icon: Users, color: 'text-blue-600' },
@@ -382,6 +385,7 @@ const Index = () => {
           <div className="bg-white rounded-xl shadow-lg border border-border min-h-[600px] p-6 mt-1">
             {activeTab === 'digest' && <DailyDigest />}
             {activeTab === 'command' && <AdminCommandCenter />}
+            {activeTab === 'onboarding' && <OnboardingHub />}
             {activeTab === 'deliveries' && <AdminDeliveryManager />}
             
             {activeTab === 'clients' && <ClientManager />}
