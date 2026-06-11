@@ -54,28 +54,39 @@ A web app can't write directly to your computer, so the desktop folder comes fro
    (e.g. `C:\Users\Marcus\My Drive\Clients\EJOD`). The wizard and tracker will show each
    client's exact desktop path, and the folders appear there automatically as Drive syncs.
 
-### 4. TailorWiz / JobIntel / Jobs on Demand Academy accounts
+### 4. TailorWiz / JobIntel 360 / Jobs On Demand Academy accounts
 
-In **Onboarding → Settings → Account Platforms**, for each platform set:
+The login URLs are already seeded from your live platforms:
 
-- **Login URL** — included in the client's welcome PDF
-- **API base URL** + **signup endpoint path** — where the wizard POSTs
-  `{ name, email, password }` with a `Authorization: Bearer <key>` header
+| Platform | Login URL |
+| --- | --- |
+| TailorWiz | https://tailorwiz.com |
+| JobIntel 360 | https://jobintel360.com |
+| Jobs On Demand Academy | https://www.jobsondemandacademy.com |
 
-Then add the API key secrets in Supabase Edge Functions:
+The wizard generates **one username (the client's email) and one shared password** that
+works across all platforms — matching your existing onboarding process — and the welcome
+PDF tells clients to log in to TailorWiz first, then Jobs On Demand Academy, then
+JobIntel 360 last (which kicks off their Career Intelligence Profile setup).
+
+To have the wizard create the accounts on each platform automatically, set the **API base
+URL** + **signup endpoint path** in Onboarding → Settings (the wizard POSTs
+`{ name, email, password }` with an `Authorization: Bearer <key>` header) and add the API
+key secrets in Supabase Edge Functions:
 
 | Secret | Platform |
 | --- | --- |
 | `TAILORWIZ_API_KEY` | TailorWiz |
-| `JOBINTEL_API_KEY` | JobIntel |
-| `JOBSONDEMANDACADEMY_API_KEY` | Jobs on Demand Academy |
+| `JOBINTEL_API_KEY` | JobIntel 360 |
+| `JOBSONDEMANDACADEMY_API_KEY` | Jobs On Demand Academy |
 
-Until a platform's API is configured, the wizard still **generates credentials** for it and
-marks the account **manual_required** so you can create it by hand — the credentials still go
-into the client's welcome PDF either way.
+Until a platform's API is configured, the wizard still generates the shared credentials,
+puts them in the client's welcome PDF, and marks the account **manual_required** on the
+tracker so you know to create it on that platform by hand (taking ~30 seconds since the
+email/password are already decided).
 
-The **client portal** account is created automatically (real Supabase auth user with a strong
-temporary password) — no setup needed.
+The **client portal** account is created automatically (real Supabase auth user with the
+same shared password) — no setup needed.
 
 ### 5. Database migration
 
@@ -97,8 +108,14 @@ Everything is editable in **Onboarding → Settings** per business:
 - **Document naming pattern** — default `{client_name} - {document_label} - {date}`;
   also supports `{business}`
 - **Welcome email subject and body** — placeholders `{{client_name}}`, `{{business_name}}`,
-  `{{service_name}}`, `{{delivery_date}}`, `{{portal_url}}`, `{{accounts_table}}`
+  `{{service_name}}`, `{{delivery_date}}`, `{{portal_url}}`, `{{accounts_table}}`.
+  The Executive Jobs on Demand template is pre-seeded with your real onboarding email
+  (the 4-step "Do these 4 things" message with your Calendly kickoff link and signature).
 - Brand color (used in the email header and login PDF)
+
+The login PDF is attached as
+`{Client Name} - Job Search Tools & Training Logins & Instructions {year}.PDF`,
+matching the naming you already use.
 
 ## The Tracker
 

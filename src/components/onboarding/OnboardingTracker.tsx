@@ -47,7 +47,7 @@ interface PlatformAccount {
 const PLATFORM_LABELS: Record<string, string> = {
   portal: "Portal",
   tailorwiz: "TailorWiz",
-  jobintel: "JobIntel",
+  jobintel: "JobIntel 360",
   jobsondemandacademy: "JOD Academy",
 };
 

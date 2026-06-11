@@ -153,7 +153,7 @@ export function OnboardingWizard({ onCompleted }: { onCompleted?: () => void }) 
       { key: "client", label: "Create client record", status: "pending" },
       { key: "docs", label: `Save ${documents.length} document(s) with your naming convention`, status: "pending" },
       { key: "folders", label: "Create cloud + desktop folders and file documents", status: "pending" },
-      { key: "accounts", label: "Create TailorWiz, JobIntel, Jobs on Demand Academy & portal accounts", status: "pending" },
+      { key: "accounts", label: "Create TailorWiz, JobIntel 360, Jobs On Demand Academy & portal accounts", status: "pending" },
       { key: "email", label: "Send welcome email with login PDF attached", status: "pending" },
     ];
     setLaunchSteps(steps);
@@ -444,8 +444,8 @@ export function OnboardingWizard({ onCompleted }: { onCompleted?: () => void }) 
                 <p><strong>Folders:</strong> "{client.name || "Client"}" + {folderTemplates.length} subfolders ({folderTemplates.map((f) => f.folder_name).join(", ")})</p>
                 <p className="text-muted-foreground">
                   Launching will create the client, build their cloud/desktop folders, file the documents, create their
-                  TailorWiz / JobIntel / Jobs on Demand Academy and portal accounts, email the welcome packet with the
-                  login PDF attached, and log everything to the tracker.
+                  TailorWiz / JobIntel 360 / Jobs On Demand Academy and portal accounts (one shared login), email the
+                  welcome packet with the login PDF attached, and log everything to the tracker.
                 </p>
                 <Button onClick={launch} className="bg-rdr-navy hover:bg-rdr-navy/90 mt-2">
                   <Rocket className="w-4 h-4 mr-2" /> Launch Onboarding

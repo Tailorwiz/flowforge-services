@@ -45,11 +45,16 @@ const handler = async (req: Request): Promise<Response> => {
 
     const results: Record<string, { status: string; error?: string }> = {};
 
+    // One username (the client's email) and ONE password shared across the
+    // portal and all three platforms — clients get a single login that works
+    // everywhere, exactly like the existing manual onboarding process.
+    const sharedPassword = generateTempPassword();
+
     // ---------------------------------------------------------
     // 1. Client portal account (Supabase auth user) so the welcome
     //    email PDF contains a real, working login.
     // ---------------------------------------------------------
-    const portalPassword = generateTempPassword();
+    const portalPassword = sharedPassword;
     let portalStatus = "created";
     let portalError: string | undefined;
     try {
@@ -97,7 +102,7 @@ const handler = async (req: Request): Promise<Response> => {
       .eq("is_enabled", true);
 
     for (const platform of platforms || []) {
-      const tempPassword = generateTempPassword();
+      const tempPassword = sharedPassword;
       let status = "manual_required";
       let errorMessage: string | undefined;
       let externalId: string | undefined;

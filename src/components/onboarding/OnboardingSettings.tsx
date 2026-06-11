@@ -242,7 +242,7 @@ export function OnboardingSettings() {
       {/* Platform integrations */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2"><Plug className="w-5 h-5" /> Account Platforms (TailorWiz, JobIntel, Jobs on Demand Academy)</CardTitle>
+          <CardTitle className="flex items-center gap-2"><Plug className="w-5 h-5" /> Account Platforms (TailorWiz, JobIntel 360, Jobs On Demand Academy)</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           {platforms.map((p, i) => (

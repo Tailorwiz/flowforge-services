@@ -24,8 +24,18 @@ interface AccountRow {
 const PLATFORM_LABELS: Record<string, string> = {
   portal: "Client Portal",
   tailorwiz: "TailorWiz",
-  jobintel: "JobIntel",
-  jobsondemandacademy: "Jobs on Demand Academy",
+  jobintel: "JobIntel 360",
+  jobsondemandacademy: "Jobs On Demand Academy",
+};
+
+// Clients log in to the platforms in this order — JobIntel 360 goes last
+// because logging in there kicks off the Career Intelligence Profile setup.
+const PLATFORM_ORDER = ["tailorwiz", "jobsondemandacademy", "jobintel", "portal"];
+const PLATFORM_NOTES: Record<string, string> = {
+  tailorwiz: "Log in here FIRST.",
+  jobsondemandacademy: "Log in here SECOND.",
+  jobintel: "Log in here LAST — this kicks off your Career Intelligence Profile setup.",
+  portal: "Your private client portal for documents, drafts, and messages.",
 };
 
 function hexToRgb(hex: string) {
@@ -41,7 +51,9 @@ async function buildLoginPdf(
   businessName: string,
   brandColor: string,
   clientName: string,
-  accounts: { label: string; url: string | null; email: string; password: string | null; note: string | null }[],
+  loginEmail: string,
+  sharedPassword: string | null,
+  accounts: { label: string; url: string | null; note: string | null }[],
 ): Promise<Uint8Array> {
   const pdf = await PDFDocument.create();
   const page = pdf.addPage([612, 792]); // US Letter
@@ -54,34 +66,41 @@ async function buildLoginPdf(
   page.drawRectangle({ x: 0, y: 760, width: 612, height: 32, color: brand });
   page.drawText(businessName, { x: 40, y: 769, size: 14, font: bold, color: rgb(1, 1, 1) });
 
-  page.drawText("Your Account Logins", { x: 40, y, size: 22, font: bold, color: brand });
+  page.drawText("Your Job Search Tools & Training Logins", { x: 40, y, size: 20, font: bold, color: brand });
   y -= 26;
   page.drawText(`Prepared for ${clientName} on ${new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}`, {
     x: 40, y, size: 11, font, color: gray,
   });
-  y -= 18;
-  page.drawText("Please change each password after your first login.", { x: 40, y, size: 11, font, color: gray });
-  y -= 30;
+  y -= 34;
 
+  // One username + one password works on every platform
+  page.drawRectangle({ x: 36, y: y - 58, width: 540, height: 84, color: rgb(0.96, 0.97, 0.98) });
+  page.drawText("One username and one password work for ALL platforms below:", {
+    x: 48, y, size: 12, font: bold, color: brand,
+  });
+  y -= 22;
+  page.drawText(`Username / Email: ${loginEmail}`, { x: 48, y, size: 12, font, color: rgb(0, 0, 0) });
+  y -= 18;
+  page.drawText(`Password: ${sharedPassword || "(will be sent separately)"}`, { x: 48, y, size: 12, font, color: rgb(0, 0, 0) });
+  y -= 40;
+
+  page.drawText("Log in to each platform in this order:", { x: 40, y, size: 13, font: bold, color: brand });
+  y -= 26;
+
+  let step = 1;
   for (const acct of accounts) {
-    page.drawRectangle({ x: 36, y: y - 78, width: 540, height: 96, color: rgb(0.96, 0.97, 0.98) });
-    page.drawText(acct.label, { x: 48, y, size: 14, font: bold, color: brand });
-    y -= 20;
+    page.drawText(`${step}. ${acct.label}`, { x: 48, y, size: 13, font: bold, color: rgb(0, 0, 0) });
+    y -= 17;
     if (acct.url) {
-      page.drawText(`Login at: ${acct.url}`, { x: 48, y, size: 11, font, color: rgb(0, 0, 0) });
+      page.drawText(acct.url, { x: 64, y, size: 11, font, color: rgb(0.1, 0.35, 0.75) });
       y -= 16;
     }
-    page.drawText(`Email: ${acct.email}`, { x: 48, y, size: 11, font, color: rgb(0, 0, 0) });
-    y -= 16;
-    page.drawText(`Temporary password: ${acct.password || "(will be sent separately)"}`, {
-      x: 48, y, size: 11, font, color: rgb(0, 0, 0),
-    });
-    y -= 16;
     if (acct.note) {
-      page.drawText(acct.note, { x: 48, y, size: 9, font, color: gray });
-      y -= 14;
+      page.drawText(acct.note, { x: 64, y, size: 9.5, font, color: gray });
+      y -= 16;
     }
-    y -= 22;
+    y -= 12;
+    step += 1;
   }
 
   page.drawText("Keep this document somewhere safe and do not share it.", { x: 40, y: 50, size: 9, font, color: gray });
@@ -132,16 +151,25 @@ const handler = async (req: Request): Promise<Response> => {
     const loginUrls: Record<string, string | null> = { portal: business.portal_url || null };
     for (const p of platforms || []) loginUrls[p.platform_key] = p.login_url;
 
-    const pdfAccounts = ((accounts || []) as AccountRow[]).map((a) => ({
-      label: PLATFORM_LABELS[a.platform_key] || a.platform_key,
-      url: loginUrls[a.platform_key] || null,
-      email: a.account_email,
-      password: a.temp_password,
-      note: a.status !== "created" ? "This account is being finalized — we'll confirm once it's ready." : null,
-    }));
+    const accountRows = (accounts || []) as AccountRow[];
+    const sharedPassword = accountRows.find((a) => a.temp_password)?.temp_password ?? null;
+    const pdfAccounts = PLATFORM_ORDER
+      .filter((key) => accountRows.some((a) => a.platform_key === key))
+      .map((key) => ({
+        label: PLATFORM_LABELS[key] || key,
+        url: loginUrls[key] || null,
+        note: PLATFORM_NOTES[key] || null,
+      }));
 
-    // ----- PDF attachment with all logins -----
-    const pdfBytes = await buildLoginPdf(business.name, business.brand_color, client.name, pdfAccounts);
+    // ----- PDF attachment with the shared login -----
+    const pdfBytes = await buildLoginPdf(
+      business.name,
+      business.brand_color,
+      client.name,
+      client.email,
+      sharedPassword,
+      pdfAccounts,
+    );
 
     // ----- Welcome email from the business template -----
     const deliveryDate = client.estimated_delivery_date
@@ -195,7 +223,7 @@ const handler = async (req: Request): Promise<Response> => {
       subject,
       html,
       attachments: [{
-        filename: `${client.name} - Account Logins - ${business.name}.pdf`,
+        filename: `${client.name} - Job Search Tools & Training Logins & Instructions ${new Date().getFullYear()}.PDF`,
         content: uint8ToBase64(pdfBytes),
       }],
     });
@@ -225,7 +253,8 @@ const handler = async (req: Request): Promise<Response> => {
     // ----- Schedule the due items that show up on the tracker -----
     const inDays = (n: number) => new Date(Date.now() + n * 24 * 60 * 60 * 1000).toISOString();
     const dueItems = [
-      { title: "Client to complete New Client Worksheet", due_at: inDays(2), detail: { kind: "client_action" } },
+      { title: "Client to log in to all 3 platforms & complete Career Intelligence Profile", due_at: inDays(2), detail: { kind: "client_action" } },
+      { title: "Client to book kickoff & clarity call (calendly.com/marcusbhall/jod-onboarding)", due_at: inDays(3), detail: { kind: "client_action" } },
       { title: "Follow-up / check-in email due", due_at: inDays(7), detail: { kind: "email" } },
     ];
     if (client.estimated_delivery_date) {
